@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  superadmin
+  hotel_owner
+  staff
+}
+
+enum HotelPlan {
+  Basic
+  Pro
+  Enterprise
+}
+
+enum HotelStatus {
+  active
+  paused
+  suspended
+}
+
+enum SessionStatus {
+  open
+  checkout_initiated
+  bill_printed
+  closed
+}
+
+enum PaymentMethod {
+  Cash
+  UPI
+  Card
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String?
+  role          UserRole
+  hotelId       String?
+  hotel         Hotel?    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      AuthSession[]
+
+  @@index([hotelId])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Hotel {
+  id              String        @id @default(cuid())
+  name            String
+  ownerName       String
+  ownerEmail      String
+  ownerPhone      String
+  loginEmail      String        @unique
+  plan            HotelPlan     @default(Basic)
+  status          HotelStatus   @default(active)
+  billingAmount   Float         @default(0)
+  lastPaymentDate DateTime?
+  nextDueDate     DateTime?
+  gstNumber       String?
+  logo            String?
+  address         String?
+  taxRate         Float         @default(5)
+  createdAt       DateTime      @default(now())
+  users           User[]
+  tables          Table[]
+  sessions        TableSession[]
+  menuCategories  MenuCategory[]
+  menuItems       MenuItem[]
+}
+
+model Table {
+  id               String         @id @default(cuid())
+  hotelId          String
+  hotel            Hotel          @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  tableNumber      Int
+  label            String?
+  qrCodeUrl        String?
+  currentSessionId String?        @unique
+  currentSession   TableSession?  @relation("CurrentSession", fields: [currentSessionId], references: [id], onDelete: SetNull)
+  sessions         TableSession[] @relation("TableSessions")
+
+  @@unique([hotelId, tableNumber])
+  @@index([hotelId])
+}
+
+model TableSession {
+  id            String         @id @default(cuid())
+  hotelId       String
+  hotel         Hotel          @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  tableId       String
+  table         Table          @relation("TableSessions", fields: [tableId], references: [id], onDelete: Cascade)
+  tableNumber   Int
+  startTime     DateTime       @default(now())
+  endTime       DateTime?
+  status        SessionStatus  @default(open)
+  subtotal      Float          @default(0)
+  taxAmount     Float          @default(0)
+  total         Float          @default(0)
+  paymentMethod PaymentMethod?
+  closedAt      DateTime?
+  customerCount Int            @default(1)
+  items         SessionItem[]
+  currentFor    Table?         @relation("CurrentSession")
+
+  @@index([hotelId])
+  @@index([tableId])
+  @@index([status])
+}
+
+model SessionItem {
+  id         String       @id @default(cuid())
+  sessionId  String
+  session    TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  menuItemId String?
+  name       String
+  price      Float
+  quantity   Int          @default(1)
+  addedAt    DateTime     @default(now())
+
+  @@index([sessionId])
+}
+
+model MenuCategory {
+  id        String     @id @default(cuid())
+  hotelId   String
+  hotel     Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  name      String
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+
+  @@index([hotelId])
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  hotelId     String
+  hotel       Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  isAvailable Boolean      @default(true)
+
+  @@index([hotelId])
+  @@index([categoryId])
+}
