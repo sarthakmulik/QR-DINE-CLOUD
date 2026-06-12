@@ -56,12 +56,20 @@
   to { opacity: 1; }
 }
 
+.print-only,
+.print-only-flex {
+  display: none;
+}
+
 @media print {
   .no-print {
     display: none !important;
   }
   .print-only {
     display: block !important;
+  }
+  .print-only-flex {
+    display: flex !important;
   }
 
   /* Thermal Printer Receipt Styles */

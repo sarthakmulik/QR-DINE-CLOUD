@@ -9,10 +9,11 @@ interface UpiQrProps {
   hotelName: string;
   amount: number;
   tableNumber: number;
+  initialQrCodeUrl?: string;
 }
 
-export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrProps) {
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
+export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQrCodeUrl = "" }: UpiQrProps) {
+  const [qrCodeUrl, setQrCodeUrl] = useState(initialQrCodeUrl);
   const [copied, setCopied] = useState(false);
 
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
@@ -20,6 +21,10 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
   )}&am=${amount.toFixed(2)}&cu=INR&tn=Table%20${tableNumber}`;
 
   useEffect(() => {
+    if (initialQrCodeUrl) {
+      setQrCodeUrl(initialQrCodeUrl);
+      return;
+    }
     QRCode.toDataURL(upiLink, {
       width: 256,
       margin: 1,
@@ -30,7 +35,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
     })
       .then((url) => setQrCodeUrl(url))
       .catch((err) => console.error("Error generating UPI QR Code:", err));
-  }, [upiLink]);
+  }, [upiLink, initialQrCodeUrl]);
 
   const handleCopyLink = async () => {
     try {
@@ -44,7 +49,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
 
   return (
     <>
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 max-w-sm mx-auto shadow-sm print:hidden">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 max-w-sm mx-auto shadow-sm no-print">
         <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm tracking-wide uppercase">
           <QrIcon size={16} className="text-brand-600" />
           <span>Pay via UPI App</span>
@@ -86,10 +91,15 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
 
       {/* Print-only clean UPI QR Code */}
       {qrCodeUrl && (
-        <div className="hidden print:flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 pt-4">
+        <div className="print-only-flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 pt-4">
           <p className="text-[10px] uppercase font-bold tracking-wider mb-2">Scan to Pay via UPI</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrCodeUrl} alt="UPI Payment QR Code" className="h-32 w-32 object-contain" />
+          <img 
+            src={qrCodeUrl} 
+            alt="UPI Payment QR Code" 
+            className="h-32 w-32 object-contain mx-auto" 
+            style={{ width: "128px", height: "128px" }}
+          />
           <p className="text-[9px] text-gray-700 mt-2 font-bold font-mono">UPI ID: {upiId}</p>
         </div>
       )}
