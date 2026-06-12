@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mapMenuItem } from "@/lib/types";
 import type { MenuCategory, MenuItem } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const { hotelId } = await requireHotelAccess();

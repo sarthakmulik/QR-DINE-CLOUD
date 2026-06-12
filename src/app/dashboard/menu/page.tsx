@@ -47,7 +47,7 @@ export default function MenuPage() {
   const limitReached = typeof maxItems === "number" && totalItems >= maxItems;
 
   async function loadMenu() {
-    const res = await fetch("/api/hotel/menu/categories");
+    const res = await fetch("/api/hotel/menu/categories", { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       setCategories(data);

@@ -7,6 +7,8 @@ import { getTableStatus } from "@/lib/session-service";
 import type { RestaurantTable, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const { hotelId } = await requireHotelAccess();
