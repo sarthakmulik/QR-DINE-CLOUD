@@ -64,9 +64,7 @@ export default function FeedbackPage() {
     );
   }
 
-  if (loading) {
-    return <div className="text-gray-500">Loading reviews...</div>;
-  }
+  const isSkeletons = loading && reviews.length === 0;
 
   // Calculate rating distributions
   const totalReviews = reviews.length;
@@ -93,7 +91,41 @@ export default function FeedbackPage() {
         <p className="text-gray-500 text-sm">Analyze dining feedback and guest satisfaction metrics</p>
       </div>
 
-      {totalReviews > 0 ? (
+      {isSkeletons ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
+          {/* Summary Column Skeleton */}
+          <div className="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center h-64">
+            <div className="h-4 w-28 bg-gray-200 rounded mb-2" />
+            <div className="h-10 w-16 bg-gray-200 rounded mt-2" />
+            <div className="flex gap-1 mt-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="w-5 h-5 bg-gray-150 rounded" />
+              ))}
+            </div>
+            <div className="h-3 w-36 bg-gray-100 rounded mt-3" />
+          </div>
+
+          {/* List Column Skeleton */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="h-5 w-32 bg-gray-200 rounded" />
+            <div className="space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="bg-white border rounded-2xl p-5 shadow-sm space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, j) => (
+                        <div key={j} className="w-3.5 h-3.5 bg-gray-150 rounded" />
+                      ))}
+                    </div>
+                    <div className="h-4 w-24 bg-gray-150 rounded" />
+                  </div>
+                  <div className="h-12 bg-gray-100 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : totalReviews > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Summary Column */}
           <div className="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center h-fit">

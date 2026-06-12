@@ -165,9 +165,7 @@ export default function CouponsPage() {
     );
   }
 
-  if (loading) {
-    return <div className="text-gray-500">Loading coupons...</div>;
-  }
+  const isSkeletons = loading && coupons.length === 0;
 
   return (
     <div className="space-y-6">
@@ -187,67 +185,85 @@ export default function CouponsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {coupons.map((coupon) => (
-          <div
-            key={coupon.id}
-            className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
-              !coupon.is_active ? "opacity-60" : ""
-            }`}
-          >
-            {/* Coupon tag aesthetic */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-brand-500/10 rounded-bl-full flex items-center justify-center text-brand-600 font-extrabold pr-2 pt-2 select-none">
-              <Percent size={18} />
-            </div>
-
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 text-white rounded-lg font-black text-sm uppercase tracking-wider">
-                <Tag size={12} />
-                {coupon.code}
+        {isSkeletons ? (
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white border rounded-2xl p-5 shadow-sm h-48 animate-pulse flex flex-col justify-between">
+              <div>
+                <div className="h-6 w-24 bg-gray-200 rounded" />
+                <div className="mt-4 space-y-1.5">
+                  <div className="h-7 w-20 bg-gray-200 rounded" />
+                  <div className="h-4 w-32 bg-gray-100 rounded" />
+                </div>
               </div>
-
-              <div className="mt-4 space-y-1.5">
-                <p className="text-2xl font-black text-gray-900">
-                  {coupon.discount_percent}% OFF
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  On bills above {formatINR(coupon.min_bill)}
-                </p>
+              <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                <div className="h-6 w-16 bg-gray-150 rounded-full" />
+                <div className="h-6 w-12 bg-gray-150 rounded" />
               </div>
             </div>
+          ))
+        ) : (
+          coupons.map((coupon) => (
+            <div
+              key={coupon.id}
+              className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
+                !coupon.is_active ? "opacity-60" : ""
+              }`}
+            >
+              {/* Coupon tag aesthetic */}
+              <div className="absolute top-0 right-0 w-16 h-16 bg-brand-500/10 rounded-bl-full flex items-center justify-center text-brand-600 font-extrabold pr-2 pt-2 select-none">
+                <Percent size={18} />
+              </div>
 
-            <div className="mt-6 pt-4 border-t flex items-center justify-between">
-              <button
-                onClick={() => handleToggleStatus(coupon)}
-                className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
-                  coupon.is_active
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-slate-100 text-slate-500 border border-slate-200"
-                }`}
-              >
-                {coupon.is_active ? "Active" : "Inactive"}
-              </button>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 text-white rounded-lg font-black text-sm uppercase tracking-wider">
+                  <Tag size={12} />
+                  {coupon.code}
+                </div>
 
-              <div className="flex gap-2">
+                <div className="mt-4 space-y-1.5">
+                  <p className="text-2xl font-black text-gray-900">
+                    {coupon.discount_percent}% OFF
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    On bills above {formatINR(coupon.min_bill)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t flex items-center justify-between">
                 <button
-                  onClick={() => openEditModal(coupon)}
-                  className="p-1 text-gray-400 hover:text-gray-650 transition"
-                  title="Edit coupon"
+                  onClick={() => handleToggleStatus(coupon)}
+                  className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
+                    coupon.is_active
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-slate-100 text-slate-500 border border-slate-200"
+                  }`}
                 >
-                  <Pencil size={16} />
+                  {coupon.is_active ? "Active" : "Inactive"}
                 </button>
-                <button
-                  onClick={() => handleDelete(coupon.id)}
-                  className="p-1 text-red-400 hover:text-red-650 transition"
-                  title="Delete coupon"
-                >
-                  <Trash2 size={16} />
-                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEditModal(coupon)}
+                    className="p-1 text-gray-400 hover:text-gray-650 transition"
+                    title="Edit coupon"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(coupon.id)}
+                    className="p-1 text-red-400 hover:text-red-650 transition"
+                    title="Delete coupon"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
 
-        {coupons.length === 0 && (
+        {!isSkeletons && coupons.length === 0 && (
           <div className="col-span-full text-center py-12 bg-slate-50 border border-dashed rounded-2xl text-gray-400">
             No active coupon codes. Create your first promo code.
           </div>

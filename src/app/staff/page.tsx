@@ -108,6 +108,7 @@ export default function StaffPanelPage() {
         setPlan(data.plan);
         setTables(data.tables);
         setWaiterRequests(data.waiterRequests);
+        localStorage.setItem("staff_overview", JSON.stringify(data));
 
         // Sound alert for new waiter calls
         const currentCount = data.waiterRequests.length;
@@ -124,6 +125,19 @@ export default function StaffPanelPage() {
   }
 
   useEffect(() => {
+    const cached = localStorage.getItem("staff_overview");
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        setHotelName(data.hotelName);
+        setPlan(data.plan);
+        setTables(data.tables);
+        setWaiterRequests(data.waiterRequests);
+        setLoading(false);
+      } catch (e) {
+        console.error("Failed to parse cached staff overview:", e);
+      }
+    }
     loadData();
     const interval = setInterval(loadData, 6000);
     return () => clearInterval(interval);
@@ -188,14 +202,7 @@ export default function StaffPanelPage() {
     router.push("/staff/login");
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center font-sans">
-        <Loader2 size={32} className="animate-spin text-brand-500 mb-2" />
-        <p className="text-slate-400 text-sm font-semibold">Loading Staff Panel...</p>
-      </div>
-    );
-  }
+  const isSkeletons = loading && tables.length === 0;
 
   const pendingRequests = waiterRequests.filter((r) => r.status === "pending");
 
@@ -250,41 +257,56 @@ export default function StaffPanelPage() {
         <div className="space-y-3">
           <h2 className="text-xs font-black uppercase text-slate-500 tracking-wider">Restaurant Table Status</h2>
           <div className="grid grid-cols-2 gap-4">
-            {tables.map((table) => {
-              const statusColors = {
-                free: "border-slate-800 bg-slate-900/40 text-slate-500",
-                occupied: "border-orange-500/30 bg-orange-500/5 text-orange-400",
-                checkout: "border-red-500/30 bg-red-500/5 text-red-400 animate-pulse",
-              };
-
-              return (
+            {isSkeletons ? (
+              [...Array(4)].map((_, i) => (
                 <div
-                  key={table.id}
-                  onClick={() => table.status !== "free" && setSelectedTable(table)}
-                  className={`border rounded-2xl p-4 text-left flex flex-col justify-between h-28 cursor-pointer hover:shadow-lg transition-all ${
-                    statusColors[table.status]
-                  }`}
+                  key={i}
+                  className="border border-slate-800 bg-slate-900/40 rounded-2xl p-4 text-left flex flex-col justify-between h-28 animate-pulse"
                 >
                   <div>
-                    <h3 className="font-black text-lg text-white">Table {table.tableNumber}</h3>
-                    <span className="text-[10px] font-bold uppercase tracking-widest mt-1 block">
-                      {table.status === "free" ? "Vacant" : table.status}
-                    </span>
+                    <div className="h-5 bg-slate-800 rounded w-16 mb-2" />
+                    <div className="h-3.5 bg-slate-850 rounded w-10" />
                   </div>
+                  <div className="h-5 bg-slate-850 rounded w-20 mt-2" />
+                </div>
+              ))
+            ) : (
+              tables.map((table) => {
+                const statusColors = {
+                  free: "border-slate-800 bg-slate-900/40 text-slate-500",
+                  occupied: "border-orange-500/30 bg-orange-500/5 text-orange-400",
+                  checkout: "border-red-500/30 bg-red-500/5 text-red-400 animate-pulse",
+                };
 
-                  {table.currentSession && (
-                    <div className="flex justify-between items-center mt-2 border-t border-slate-800/60 pt-2">
-                      <span className="text-xs font-black text-slate-200">
-                        {formatINR(table.currentSession.total)}
-                      </span>
-                      <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 font-bold">
-                        {table.currentSession.items.length} items
+                return (
+                  <div
+                    key={table.id}
+                    onClick={() => table.status !== "free" && setSelectedTable(table)}
+                    className={`border rounded-2xl p-4 text-left flex flex-col justify-between h-28 cursor-pointer hover:shadow-lg transition-all ${
+                      statusColors[table.status]
+                    }`}
+                  >
+                    <div>
+                      <h3 className="font-black text-lg text-white">Table {table.tableNumber}</h3>
+                      <span className="text-[10px] font-bold uppercase tracking-widest mt-1 block">
+                        {table.status === "free" ? "Vacant" : table.status}
                       </span>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {table.currentSession && (
+                      <div className="flex justify-between items-center mt-2 border-t border-slate-800/60 pt-2">
+                        <span className="text-xs font-black text-slate-200">
+                          {formatINR(table.currentSession.total)}
+                        </span>
+                        <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 font-bold">
+                          {table.currentSession.items.length} items
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </main>

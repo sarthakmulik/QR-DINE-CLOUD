@@ -15,6 +15,7 @@ interface TableData {
 
 export default function TablesPage() {
   const [tables, setTables] = useState<TableData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
   const [label, setLabel] = useState("");
@@ -26,12 +27,33 @@ export default function TablesPage() {
   const totalTables = tables.length;
   const limitReached = typeof maxTables === "number" && totalTables >= maxTables;
 
+  const isSkeletons = loading && tables.length === 0;
+
   async function loadTables() {
-    const res = await fetch("/api/hotel/tables");
-    setTables(await res.json());
+    try {
+      const res = await fetch("/api/hotel/tables");
+      if (res.ok) {
+        const data = await res.json();
+        setTables(data);
+        sessionStorage.setItem("admin_tables_list", JSON.stringify(data));
+      }
+    } catch (e) {
+      console.error("Failed to load tables:", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
+    const cached = sessionStorage.getItem("admin_tables_list");
+    if (cached) {
+      try {
+        setTables(JSON.parse(cached));
+        setLoading(false);
+      } catch (e) {
+        console.error("Failed to parse cached tables list:", e);
+      }
+    }
     loadTables();
   }, []);
 
@@ -136,50 +158,64 @@ export default function TablesPage() {
 
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {tables.map((table) => (
-          <div
-            key={table.id}
-            className="bg-white rounded-xl border p-5 text-center"
-          >
-            <h3 className="font-semibold text-lg mb-3">{table.label}</h3>
-            {table.qrCodeUrl && (
-              <img
-                src={table.qrCodeUrl}
-                alt={`QR for ${table.label}`}
-                className="w-48 h-48 mx-auto"
-              />
-            )}
-            <p className="text-xs text-gray-500 mt-2">
-              Table #{table.tableNumber}
-            </p>
-            <div className="flex flex-col gap-2 mt-3">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => downloadQR(table)}
-                disabled={!table.qrCodeUrl}
-              >
-                <Download className="w-4 h-4 mr-1" /> Download QR
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => regenerateQR(table)}
-                disabled={regenerating === table.id}
-              >
-                <RefreshCw
-                  className={`w-4 h-4 mr-1 ${
-                    regenerating === table.id ? "animate-spin" : ""
-                  }`}
-                />
-                {regenerating === table.id ? "Regenerating..." : "Regenerate QR"}
-              </Button>
+        {isSkeletons ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border p-5 text-center animate-pulse flex flex-col justify-between h-80">
+              <div className="h-6 bg-slate-200 rounded w-24 mx-auto mb-3" />
+              <div className="w-40 h-40 bg-slate-100 rounded mx-auto mb-3" />
+              <div className="h-4 bg-slate-100 rounded w-16 mx-auto mb-3" />
+              <div className="space-y-2 mt-auto">
+                <div className="h-8 bg-slate-150 rounded w-full" />
+                <div className="h-8 bg-slate-150 rounded w-full" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          tables.map((table) => (
+            <div
+              key={table.id}
+              className="bg-white rounded-xl border p-5 text-center animate-fade-in"
+            >
+              <h3 className="font-semibold text-lg mb-3">{table.label}</h3>
+              {table.qrCodeUrl && (
+                <img
+                  src={table.qrCodeUrl}
+                  alt={`QR for ${table.label}`}
+                  className="w-48 h-48 mx-auto"
+                />
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                Table #{table.tableNumber}
+              </p>
+              <div className="flex flex-col gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => downloadQR(table)}
+                  disabled={!table.qrCodeUrl}
+                >
+                  <Download className="w-4 h-4 mr-1" /> Download QR
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => regenerateQR(table)}
+                  disabled={regenerating === table.id}
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 mr-1 ${
+                      regenerating === table.id ? "animate-spin" : ""
+                    }`}
+                  />
+                  {regenerating === table.id ? "Regenerating..." : "Regenerate QR"}
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {tables.length === 0 && (
+      {!isSkeletons && tables.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           Add your first table to generate QR codes
         </div>

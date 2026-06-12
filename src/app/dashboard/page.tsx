@@ -341,9 +341,7 @@ Thank you for dining with us!`;
   const hasFeedbackAccess = canAccess("customer_feedback");
   const hasKdsAccess = canAccess("kds_access");
 
-  if (loading) {
-    return <div className="text-gray-500">Loading tables...</div>;
-  }
+  const isSkeletons = loading && tables.length === 0;
 
   // Find max value in hourly distribution to normalize CSS bar heights
   const maxHourlyCount = Math.max(
@@ -393,7 +391,13 @@ Thank you for dining with us!`;
         <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today&apos;s Revenue</p>
-            <h3 className="text-xl font-extrabold text-gray-900 mt-1">{formatINR(stats.todayRevenue)}</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mt-1">
+              {isSkeletons ? (
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+              ) : (
+                formatINR(stats.todayRevenue)
+              )}
+            </h3>
           </div>
           <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
             <DollarSign size={18} />
@@ -403,7 +407,13 @@ Thank you for dining with us!`;
         <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Orders</p>
-            <h3 className="text-xl font-extrabold text-gray-900 mt-1">{stats.todayOrders}</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mt-1">
+              {isSkeletons ? (
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+              ) : (
+                stats.todayOrders
+              )}
+            </h3>
           </div>
           <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
             <ShoppingBag size={18} />
@@ -413,7 +423,13 @@ Thank you for dining with us!`;
         <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Tables</p>
-            <h3 className="text-xl font-extrabold text-gray-900 mt-1">{stats.activeSessions}</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mt-1">
+              {isSkeletons ? (
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+              ) : (
+                stats.activeSessions
+              )}
+            </h3>
           </div>
           <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100">
             <Activity size={18} />
@@ -425,7 +441,9 @@ Thank you for dining with us!`;
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Average Rating</p>
             {hasFeedbackAccess ? (
               <h3 className="text-xl font-extrabold text-gray-900 mt-1 flex items-center gap-1">
-                {stats.avgRating > 0 ? (
+                {isSkeletons ? (
+                  <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+                ) : stats.avgRating > 0 ? (
                   <>
                     {stats.avgRating} <span className="text-amber-500 text-base">★</span>
                   </>
@@ -457,30 +475,41 @@ Thank you for dining with us!`;
         </div>
 
         {hasFeedbackAccess ? (
-          <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-150">
-            {stats.hourlyDistribution?.map((h) => {
-              const hourName = h.hour % 12 || 12;
-              const ampm = h.hour >= 12 ? "pm" : "am";
-              const percentHeight = Math.max(4, (h.count / maxHourlyCount) * 100);
-
-              return (
-                <div key={h.hour} className="flex-1 flex flex-col items-center group">
-                  <div className="w-full bg-slate-100 group-hover:bg-slate-200 transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
-                    <div
-                      className="w-full bg-brand-500 group-hover:bg-brand-600 rounded-t-md transition-all"
-                      style={{ height: `${percentHeight}%` }}
-                    />
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
-                      {h.count} orders
-                    </div>
-                  </div>
-                  <span className="text-[8px] font-bold text-gray-400 mt-1.5 uppercase truncate max-w-[30px]">
-                    {hourName}{ampm}
-                  </span>
+          isSkeletons ? (
+            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-150 animate-pulse">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center">
+                  <div className="w-full bg-slate-100 rounded-t-md" style={{ height: "40px" }} />
+                  <div className="h-2 w-6 bg-gray-100 rounded mt-1.5" />
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-150">
+              {stats.hourlyDistribution?.map((h) => {
+                const hourName = h.hour % 12 || 12;
+                const ampm = h.hour >= 12 ? "pm" : "am";
+                const percentHeight = Math.max(4, (h.count / maxHourlyCount) * 100);
+
+                return (
+                  <div key={h.hour} className="flex-1 flex flex-col items-center group">
+                    <div className="w-full bg-slate-100 group-hover:bg-slate-200 transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
+                      <div
+                        className="w-full bg-brand-500 group-hover:bg-brand-600 rounded-t-md transition-all"
+                        style={{ height: `${percentHeight}%` }}
+                      />
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
+                        {h.count} orders
+                      </div>
+                    </div>
+                    <span className="text-[8px] font-bold text-gray-400 mt-1.5 uppercase truncate max-w-[30px]">
+                      {hourName}{ampm}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : (
           <div className="h-28 bg-slate-50 rounded-lg flex flex-col items-center justify-center border border-dashed text-slate-400">
             <Zap size={20} className="mb-1 text-brand-400" />
@@ -498,30 +527,42 @@ Thank you for dining with us!`;
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {tables.map((table) => (
-          <button
-            key={table.id}
-            onClick={() => table.status !== "free" && setSelected(table)}
-            className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md ${statusColors[table.status]} ${
-              table.status === "free" ? "cursor-default" : "cursor-pointer"
-            }`}
-          >
-            <div className="font-bold text-lg">{table.label}</div>
-            <Badge variant={table.status} className="mt-2">
-              {table.status === "free"
-                ? "Free"
-                : table.status === "occupied"
-                ? "Occupied"
-                : "Checkout"}
-            </Badge>
-            {table.currentSession && table.currentSession.items.length > 0 && (
-              <p className="text-sm mt-2 font-medium">
-                {formatINR(table.currentSession.total)}
-              </p>
-            )}
-          </button>
-        ))}
-        {tables.length === 0 && (
+        {isSkeletons ? (
+          [...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border-2 border-slate-100 p-4 text-left h-24 bg-white animate-pulse"
+            >
+              <div className="h-5 bg-slate-200 rounded w-16 mb-2" />
+              <div className="h-4 bg-slate-200 rounded w-10" />
+            </div>
+          ))
+        ) : (
+          tables.map((table) => (
+            <button
+              key={table.id}
+              onClick={() => table.status !== "free" && setSelected(table)}
+              className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md ${statusColors[table.status]} ${
+                table.status === "free" ? "cursor-default" : "cursor-pointer"
+              }`}
+            >
+              <div className="font-bold text-lg">{table.label}</div>
+              <Badge variant={table.status} className="mt-2">
+                {table.status === "free"
+                  ? "Free"
+                  : table.status === "occupied"
+                  ? "Occupied"
+                  : "Checkout"}
+              </Badge>
+              {table.currentSession && table.currentSession.items.length > 0 && (
+                <p className="text-sm mt-2 font-medium">
+                  {formatINR(table.currentSession.total)}
+                </p>
+              )}
+            </button>
+          ))
+        )}
+        {!isSkeletons && tables.length === 0 && (
           <div className="col-span-full text-center py-12 text-gray-500">
             No tables yet.{" "}
             <Link href="/dashboard/tables" className="text-brand-600 underline">

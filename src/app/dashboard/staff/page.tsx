@@ -142,9 +142,7 @@ export default function StaffPage() {
     );
   }
 
-  if (loading) {
-    return <div className="text-gray-500">Loading staff management...</div>;
-  }
+  const isSkeletons = loading && staffList.length === 0;
 
   return (
     <div className="space-y-6">
@@ -193,47 +191,67 @@ export default function StaffPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-150">
-              {staffList.map((staff) => (
-                <tr key={staff.id} className="hover:bg-gray-50/50">
-                  <td className="px-6 py-4 font-semibold text-gray-900 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs uppercase">
-                      {staff.name.substring(0, 2)}
-                    </div>
-                    {staff.name}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-                        staff.role === "admin"
-                          ? "bg-purple-100 text-purple-700 border border-purple-200"
-                          : staff.role === "kds"
-                          ? "bg-blue-100 text-blue-700 border border-blue-200"
-                          : "bg-amber-100 text-amber-700 border border-amber-200"
-                      }`}
-                    >
-                      {staff.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">{staff.email}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(staff)}
-                        className="p-1 text-gray-400 hover:text-gray-600 transition"
+              {isSkeletons ? (
+                [...Array(3)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-4 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gray-200" />
+                      <div className="h-4 bg-gray-200 rounded w-24" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-5 bg-gray-150 rounded w-16" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-150 rounded w-32" />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="h-6 w-12 bg-gray-250 rounded ml-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                staffList.map((staff) => (
+                  <tr key={staff.id} className="hover:bg-gray-50/50">
+                    <td className="px-6 py-4 font-semibold text-gray-900 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs uppercase">
+                        {staff.name.substring(0, 2)}
+                      </div>
+                      {staff.name}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
+                          staff.role === "admin"
+                            ? "bg-purple-100 text-purple-700 border border-purple-200"
+                            : staff.role === "kds"
+                            ? "bg-blue-100 text-blue-700 border border-blue-200"
+                            : "bg-amber-100 text-amber-700 border border-amber-200"
+                        }`}
                       >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(staff.id)}
-                        className="p-1 text-red-400 hover:text-red-650 transition"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {staffList.length === 0 && (
+                        {staff.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">{staff.email}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(staff)}
+                          className="p-1 text-gray-400 hover:text-gray-650 transition"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(staff.id)}
+                          className="p-1 text-red-400 hover:text-red-650 transition"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+              {!isSkeletons && staffList.length === 0 && (
                 <tr>
                   <td colSpan={4} className="text-center py-8 text-gray-400">
                     No staff accounts configured. Add a waiter or kitchen staff.
