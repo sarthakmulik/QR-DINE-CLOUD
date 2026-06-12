@@ -360,7 +360,7 @@ Thank you for dining with us!`;
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today's Revenue</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today&apos;s Revenue</p>
             <h3 className="text-xl font-extrabold text-gray-900 mt-1">{formatINR(stats.todayRevenue)}</h3>
           </div>
           <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
@@ -416,7 +416,7 @@ Thank you for dining with us!`;
       {/* HOURLY SALES CHART SECTION */}
       <div className="bg-white border rounded-xl p-5 shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Today's Hourly Orders</h2>
+          <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
           {!hasFeedbackAccess && (
             <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1">
               <Lock size={10} /> Requires Pro

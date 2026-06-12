@@ -169,7 +169,7 @@ export default function FeedbackPage() {
                   {review.comment ? (
                     <p className="text-sm text-slate-800 leading-relaxed font-medium bg-slate-50/50 rounded-xl p-3 border border-slate-100 flex gap-2">
                       <MessageSquare size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />
-                      "{review.comment}"
+                      {review.comment}
                     </p>
                   ) : (
                     <p className="text-xs text-gray-400 italic">No comment left by guest.</p>

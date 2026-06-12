@@ -137,7 +137,7 @@ export default function TablesPage() {
       <div className="bg-blue-50/50 border border-blue-200/60 rounded-xl p-4 text-sm text-blue-800">
         <p className="font-semibold mb-1">📱 Testing on mobile?</p>
         <p className="text-blue-700">
-          Click <strong>"Regenerate QR"</strong> on each table after changing your{" "}
+          Click <strong>Regenerate QR</strong> on each table after changing your{" "}
           <code className="bg-blue-100 px-1 rounded text-xs">APP_URL</code> in{" "}
           <code className="bg-blue-100 px-1 rounded text-xs">.env</code>. Then download
           the QR and scan it — or just open the URL directly on your phone browser.
