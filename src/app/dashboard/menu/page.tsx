@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/modal";
 import { formatINR } from "@/lib/utils";
 import { Plus, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
+import { compressImage } from "@/lib/image";
 
 interface MenuItem {
   id: string;
@@ -248,13 +249,13 @@ export default function MenuPage() {
     setShowItemModal(true);
   }
 
-  function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     setImageError("");
     if (!file) return;
 
-    // Section 11: Client-side image validation
-    const maxSizeMB = 2;
+    // Allow up to 5MB, since we compress on client side
+    const maxSizeMB = 5;
     if (file.size > maxSizeMB * 1024 * 1024) {
       setImageError(`Image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max allowed: ${maxSizeMB} MB.`);
       e.target.value = "";
@@ -267,11 +268,16 @@ export default function MenuPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setItemForm((prev) => ({ ...prev, imageUrl: ev.target?.result as string }));
-    };
-    reader.readAsDataURL(file);
+    setSaving(true);
+    try {
+      const compressed = await compressImage(file, 500, 500, 0.7);
+      setItemForm((prev) => ({ ...prev, imageUrl: compressed }));
+    } catch (err) {
+      console.error(err);
+      setImageError("Failed to compress and load image. Try another file.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

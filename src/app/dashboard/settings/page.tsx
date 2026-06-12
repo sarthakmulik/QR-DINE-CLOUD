@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { compressImage } from "@/lib/image";
 
 export default function SettingsPage() {
   const [form, setForm] = useState({
@@ -19,6 +20,77 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [logoError, setLogoError] = useState("");
+
+  async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setLogoError("");
+    if (!file) return;
+
+    // Allow up to 5MB, since we compress on client side
+    const maxSizeMB = 5;
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setLogoError(`Image too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max allowed: ${maxSizeMB} MB.`);
+      e.target.value = "";
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setLogoError("File must be an image (JPEG, PNG, WebP, etc.)");
+      e.target.value = "";
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Logos are usually small, so compress to max 300x300 at 0.7 quality
+      const compressed = await compressImage(file, 300, 300, 0.7);
+      setForm((prev) => ({ ...prev, logo: compressed }));
+    } catch (err) {
+      console.error(err);
+      setLogoError("Failed to compress and load image. Try another file.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleToggleStatus() {
+    const nextStatus = form.status === "active" ? "paused" : "active";
+    const prevStatus = form.status;
+
+    setForm((prev) => ({ ...prev, status: nextStatus }));
+    setSaveError("");
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/hotel/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setSaveError(d.error || "Failed to update status");
+        setForm((prev) => ({ ...prev, status: prevStatus }));
+        return;
+      }
+      const cached = sessionStorage.getItem("admin_profile");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          parsed.status = nextStatus;
+          sessionStorage.setItem("admin_profile", JSON.stringify(parsed));
+        } catch (e) {
+          console.error("Failed to update cached profile status:", e);
+        }
+      }
+    } catch {
+      setSaveError("Network error. Failed to update status.");
+      setForm((prev) => ({ ...prev, status: prevStatus }));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     const cached = sessionStorage.getItem("admin_profile");
@@ -126,8 +198,9 @@ export default function SettingsPage() {
           </div>
           <button
             type="button"
-            onClick={() => setForm({ ...form, status: form.status === "active" ? "paused" : "active" })}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            disabled={saving}
+            onClick={handleToggleStatus}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
               form.status === "active" ? "bg-brand-600" : "bg-gray-200"
             }`}
           >
@@ -142,7 +215,47 @@ export default function SettingsPage() {
         <Field label="Restaurant Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
         <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
         <Field label="GST Number" value={form.gstNumber} onChange={(v) => setForm({ ...form, gstNumber: v })} />
-        <Field label="Logo URL" value={form.logo} onChange={(v) => setForm({ ...form, logo: v })} />
+        <div>
+          <label className="block text-sm font-medium mb-1">Restaurant Logo</label>
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoFile}
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700"
+            />
+            {logoError && (
+              <p className="text-xs text-red-600">{logoError}</p>
+            )}
+            {!logoError && form.logo && (
+              <div className="flex items-center gap-3">
+                <div className="relative w-24 h-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.logo}
+                    alt="Logo preview"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setForm({ ...form, logo: "" })}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Remove Logo
+                </Button>
+              </div>
+            )}
+            <input
+              value={form.logo.startsWith("data:") ? "" : form.logo}
+              onChange={(e) => { setLogoError(""); setForm({ ...form, logo: e.target.value }); }}
+              placeholder="Or paste logo URL (optional)"
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
         
         <div>
           <label className="block text-sm font-medium mb-1">
