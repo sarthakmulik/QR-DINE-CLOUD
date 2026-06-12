@@ -3,6 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --brand-rgb: 234, 88, 12;
+    --brand-50: hsl(24, 96%, 97%);
+    --brand-100: hsl(24, 96%, 93%);
+    --brand-200: hsl(24, 96%, 85%);
+    --brand-300: hsl(24, 96%, 75%);
+    --brand-400: hsl(24, 96%, 65%);
+    --brand-500: hsl(24, 96%, 55%);
+    --brand-600: hsl(24, 96%, 45%);
+    --brand-700: hsl(24, 96%, 35%);
+    --brand-800: hsl(24, 96%, 25%);
+    --brand-900: hsl(24, 96%, 15%);
+  }
+
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
   }

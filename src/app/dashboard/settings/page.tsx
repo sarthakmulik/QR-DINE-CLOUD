@@ -27,7 +27,8 @@ export default function SettingsPage() {
       textColor: "#ffffff",
       fontFamily: "Inter",
       announcementText: "",
-      welcomeMessage: "Welcome to our Restaurant"
+      welcomeMessage: "Welcome to our Restaurant",
+      layout: "default"
     }
   });
   const [saved, setSaved] = useState(false);
@@ -122,14 +123,24 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
-          customizations: data.customizations || {
+          customizations: data.customizations ? {
+            theme: data.customizations.theme || "default",
+            primaryColor: data.customizations.primaryColor || "#ea580c",
+            secondaryColor: data.customizations.secondaryColor || "#ffedd5",
+            textColor: data.customizations.textColor || "#ffffff",
+            fontFamily: data.customizations.fontFamily || "Inter",
+            announcementText: data.customizations.announcementText || "",
+            welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
+            layout: data.customizations.layout || "default",
+          } : {
             theme: "default",
             primaryColor: "#ea580c",
             secondaryColor: "#ffedd5",
             textColor: "#ffffff",
             fontFamily: "Inter",
             announcementText: "",
-            welcomeMessage: "Welcome to our Restaurant"
+            welcomeMessage: "Welcome to our Restaurant",
+            layout: "default",
           }
         });
       } catch (e) {
@@ -152,14 +163,24 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
-          customizations: data.customizations || {
+          customizations: data.customizations ? {
+            theme: data.customizations.theme || "default",
+            primaryColor: data.customizations.primaryColor || "#ea580c",
+            secondaryColor: data.customizations.secondaryColor || "#ffedd5",
+            textColor: data.customizations.textColor || "#ffffff",
+            fontFamily: data.customizations.fontFamily || "Inter",
+            announcementText: data.customizations.announcementText || "",
+            welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
+            layout: data.customizations.layout || "default",
+          } : {
             theme: "default",
             primaryColor: "#ea580c",
             secondaryColor: "#ffedd5",
             textColor: "#ffffff",
             fontFamily: "Inter",
             announcementText: "",
-            welcomeMessage: "Welcome to our Restaurant"
+            welcomeMessage: "Welcome to our Restaurant",
+            layout: "default",
           }
         });
         sessionStorage.setItem("admin_profile", JSON.stringify(data));
@@ -207,6 +228,8 @@ export default function SettingsPage() {
   }
 
   const isElite = currentPlan.toLowerCase() === "elite";
+  const isPro = currentPlan.toLowerCase() === "pro";
+  const isBasic = !isElite && !isPro;
   const brandColors = form.customizations?.primaryColor ? generateBrandColors(form.customizations.primaryColor) : {};
 
   return (
@@ -367,6 +390,129 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-500 mt-1">
                 Default 5% (CGST 2.5% + SGST 2.5%)
               </p>
+            </div>
+
+            {/* Menu Layout Preset Selector */}
+            <div className="border-t border-gray-150 pt-4 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                  Menu Layout Preset
+                  {isBasic && (
+                    <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                      Basic Plan
+                    </span>
+                  )}
+                  {isPro && (
+                    <span className="text-[9px] bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full font-bold">
+                      Pro Plan
+                    </span>
+                  )}
+                  {isElite && (
+                    <span className="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
+                      Elite Plan
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Choose how your digital menu items are presented to customers.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  {
+                    id: "default",
+                    name: "Classic Grid",
+                    desc: "Category section with image-on-left grid cards. Best for general use.",
+                    badge: "Free",
+                    allowed: true,
+                  },
+                  {
+                    id: "compact",
+                    name: "Modern Bistro [Moderate]",
+                    desc: "High density row list with small thumbnails. Perfect for fast-casual and cafes.",
+                    badge: "Pro",
+                    allowed: isPro || isElite,
+                  },
+                  {
+                    id: "masonry",
+                    name: "Visual Masonry [Moderate]",
+                    desc: "Elegant 2-column masonry grids with top-aligned imagery. Great for premium dishes.",
+                    badge: "Pro",
+                    allowed: isPro || isElite,
+                  },
+                  {
+                    id: "dark_slider",
+                    name: "Midnight Lounge [Premium]",
+                    desc: "Luxurious black theme with brand neon highlights. Best for bars and lounges.",
+                    badge: "Elite",
+                    allowed: isElite,
+                  },
+                  {
+                    id: "fullscreen_story",
+                    name: "Gourmet Storyboard [Premium]",
+                    desc: "Featured recommendation tags, chef details, and immersive storyboard detail dialogs.",
+                    badge: "Elite",
+                    allowed: isElite,
+                  },
+                ].map((layout) => {
+                  const isSelected = (form.customizations?.layout || "default") === layout.id;
+                  return (
+                    <button
+                      key={layout.id}
+                      type="button"
+                      disabled={!layout.allowed}
+                      onClick={() => {
+                        setForm({
+                          ...form,
+                          customizations: {
+                            ...form.customizations,
+                            layout: layout.id,
+                          }
+                        });
+                      }}
+                      className={`relative flex items-start text-left p-4 rounded-2xl border transition-all ${
+                        isSelected
+                          ? "border-brand-600 bg-brand-50/10 shadow-sm"
+                          : layout.allowed
+                          ? "border-gray-200 bg-white hover:bg-slate-50/50 hover:border-gray-300"
+                          : "border-gray-150 bg-gray-50/30 opacity-60 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className="flex-1 pr-12">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-gray-900">{layout.name}</span>
+                          {!layout.allowed && (
+                            <span className="text-[8px] bg-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              Upgrade
+                            </span>
+                          )}
+                          {layout.allowed && (
+                            <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                              layout.badge === "Free" ? "bg-slate-150 text-slate-500" :
+                              layout.badge === "Pro" ? "bg-brand-50 text-brand-600" : "bg-indigo-50 text-indigo-650"
+                            }`}>
+                              {layout.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{layout.desc}</p>
+                      </div>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        {isSelected ? (
+                          <div className="w-5 h-5 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold">
+                            ✓
+                          </div>
+                        ) : layout.allowed ? (
+                          <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white" />
+                        ) : (
+                          <div className="text-xs">🔒</div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Elite Whitelabel Customization */}
@@ -658,7 +804,9 @@ export default function SettingsPage() {
 
             {/* Inner Phone Screen */}
             <div
-              className="flex-1 bg-gray-50 rounded-[32px] overflow-hidden flex flex-col relative text-gray-800 pt-3"
+              className={`flex-1 rounded-[32px] overflow-hidden flex flex-col relative pt-3 transition-colors duration-300 ${
+                form.customizations?.layout === "dark_slider" ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"
+              }`}
               style={{
                 ...brandColors,
                 fontFamily: form.customizations?.fontFamily ? `${form.customizations.fontFamily}, sans-serif` : "Inter, sans-serif"
@@ -681,7 +829,9 @@ export default function SettingsPage() {
               )}
 
               {/* Header */}
-              <div className="bg-white border-b border-gray-100 px-3 py-2 flex items-center justify-between mt-3">
+              <div className={`border-b px-3 py-2 flex items-center justify-between mt-3 transition-colors duration-300 ${
+                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white border-gray-100"
+              }`}>
                 <div className="flex items-center gap-1.5">
                   {form.logo ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -696,7 +846,9 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <div>
-                    <h5 className="font-extrabold text-[9px] text-gray-900 leading-tight">
+                    <h5 className={`font-extrabold text-[9px] leading-tight ${
+                      form.customizations?.layout === "dark_slider" ? "text-white" : "text-gray-900"
+                    }`}>
                       {form.name || "Restaurant Name"}
                     </h5>
                     <p className="text-[7px] text-gray-400 font-bold">Table 3</p>
@@ -710,8 +862,12 @@ export default function SettingsPage() {
               {/* Welcome Banner Card in preview */}
               {form.customizations?.welcomeMessage && (
                 <div className="px-3 pt-2">
-                  <div className="bg-gradient-to-br from-brand-600/10 to-brand-500/5 border border-brand-100 rounded-xl p-2 text-center">
-                    <h6 className="font-black text-[8px] text-gray-900 leading-normal">
+                  <div className={`border border-brand-100 rounded-xl p-2 text-center ${
+                    form.customizations?.layout === "dark_slider" ? "bg-white/[0.02] border-white/10" : "bg-gradient-to-br from-brand-600/10 to-brand-500/5"
+                  }`}>
+                    <h6 className={`font-black text-[8px] leading-normal ${
+                      form.customizations?.layout === "dark_slider" ? "text-white" : "text-gray-900"
+                    }`}>
                       {form.customizations.welcomeMessage}
                     </h6>
                   </div>
@@ -721,43 +877,116 @@ export default function SettingsPage() {
               {/* Body Menu Items Preview list */}
               <div className="flex-1 p-3 space-y-2 overflow-y-auto">
                 <div className="flex justify-between items-center">
-                  <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-widest">
+                  <span className={`text-[8px] font-extrabold uppercase tracking-widest ${
+                    form.customizations?.layout === "dark_slider" ? "text-slate-550" : "text-gray-400"
+                  }`}>
                     Popular Dishes
                   </span>
                 </div>
 
-                {/* Dummy Item Card */}
-                <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                  <div className="space-y-0.5">
-                    <h6 className="font-extrabold text-[9px] text-gray-950">
-                      Tandoori Paneer Tikka
-                    </h6>
-                    <p className="text-[8px] font-black text-brand-600">₹280</p>
+                {form.customizations?.layout === "compact" ? (
+                  <div className="bg-white rounded-xl border border-gray-150 divide-y divide-gray-100 overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <div className="p-2 flex items-center justify-between gap-2 bg-transparent">
+                      <div className="min-w-0 flex-1">
+                        <h6 className="font-extrabold text-[8px] text-gray-950 truncate">Paneer Tikka</h6>
+                        <p className="text-[7px] text-gray-400 font-medium truncate mt-0.5">Spiced cottage cheese</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="font-extrabold text-brand-600 text-[8px]">₹280</span>
+                        <div className="bg-brand-600 text-white px-2 py-0.5 rounded text-[7px] font-black">ADD</div>
+                      </div>
+                    </div>
+                    <div className="p-2 flex items-center justify-between gap-2 bg-transparent">
+                      <div className="min-w-0 flex-1">
+                        <h6 className="font-extrabold text-[8px] text-gray-955 truncate">Spring Rolls</h6>
+                        <p className="text-[7px] text-gray-400 font-medium truncate mt-0.5">Golden fried wraps</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="font-extrabold text-brand-600 text-[8px]">₹180</span>
+                        <div className="bg-brand-50 border border-brand-100 text-brand-600 px-1 py-0.5 rounded flex items-center gap-1 text-[7px] font-bold">
+                          <span>-</span><span>1</span><span>+</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-[8px] font-black shadow-sm shadow-brand-100 transition-all select-none">
-                    ADD
+                ) : form.customizations?.layout === "masonry" || form.customizations?.layout === "fullscreen_story" ? (
+                  <div className="grid grid-cols-2 gap-2 space-y-0">
+                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col shadow-sm">
+                      <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🧀</div>
+                      <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
+                        <h6 className="font-bold text-[8px] text-gray-900 line-clamp-1">Paneer Tikka</h6>
+                        {form.customizations?.layout === "fullscreen_story" && (
+                          <span className="text-[6px] text-emerald-600 bg-emerald-50 px-1 rounded self-start font-bold">Chef&apos;s Pick</span>
+                        )}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                          <span className="font-extrabold text-brand-600 text-[7px]">₹280</span>
+                          <span className="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[6px] font-black">ADD</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col shadow-sm">
+                      <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🌯</div>
+                      <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
+                        <h6 className="font-bold text-[8px] text-gray-900 line-clamp-1">Spring Rolls</h6>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                          <span className="font-extrabold text-brand-600 text-[7px]">₹180</span>
+                          <span className="bg-brand-50 border border-brand-100 text-brand-600 px-1 rounded flex items-center gap-0.5 text-[6px] font-bold">
+                            <span>-</span><span>1</span><span>+</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                {/* Dummy Item Card 2 */}
-                <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                  <div className="space-y-0.5">
-                    <h6 className="font-extrabold text-[9px] text-gray-950">
-                      Crispy Spring Rolls
-                    </h6>
-                    <p className="text-[8px] font-black text-brand-600">₹180</p>
+                ) : form.customizations?.layout === "dark_slider" ? (
+                  <div className="space-y-2">
+                    <div className="bg-slate-900 rounded-xl border border-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
+                      <div className="space-y-0.5">
+                        <h6 className="font-extrabold text-[9px] text-white">Tandoori Paneer Tikka</h6>
+                        <p className="text-[8px] font-black text-brand-400">₹280</p>
+                      </div>
+                      <div className="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-[8px] font-black shadow-sm">
+                        ADD
+                      </div>
+                    </div>
+                    <div className="bg-slate-900 rounded-xl border border-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
+                      <div className="space-y-0.5">
+                        <h6 className="font-extrabold text-[9px] text-white">Crispy Spring Rolls</h6>
+                        <p className="text-[8px] font-black text-brand-400">₹180</p>
+                      </div>
+                      <div className="bg-brand-50/10 border border-brand-500/25 text-brand-400 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
+                        <span>-</span><span className="text-white">1</span><span>+</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-lg flex items-center gap-1 select-none text-[8px] font-bold">
-                    <span>-</span>
-                    <span className="font-bold">1</span>
-                    <span>+</span>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-sm">
+                      <div className="space-y-0.5">
+                        <h6 className="font-extrabold text-[9px] text-gray-950">Tandoori Paneer Tikka</h6>
+                        <p className="text-[8px] font-black text-brand-600">₹280</p>
+                      </div>
+                      <div className="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-[8px] font-black shadow-sm shadow-brand-100">
+                        ADD
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-sm">
+                      <div className="space-y-0.5">
+                        <h6 className="font-extrabold text-[9px] text-gray-955">Crispy Spring Rolls</h6>
+                        <p className="text-[8px] font-black text-brand-600">₹180</p>
+                      </div>
+                      <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
+                        <span>-</span><span className="font-bold">1</span><span>+</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Footer View Cart Bar */}
-              <div className="bg-white border-t border-gray-100 p-2.5 flex items-center justify-between rounded-b-[28px] mt-auto">
-                <span className="text-[8px] text-gray-400 font-bold font-sans">1 item in cart</span>
+              <div className={`border-t p-2.5 flex items-center justify-between rounded-b-[28px] mt-auto transition-colors duration-300 ${
+                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white border-gray-100"
+              }`}>
+                <span className="text-[8px] text-gray-400 font-bold">1 item in cart</span>
                 <div className="bg-brand-600 text-white font-extrabold text-[8px] px-3 py-1.5 rounded-lg flex items-center gap-1">
                   View Order
                 </div>

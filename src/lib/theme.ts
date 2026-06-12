@@ -6,6 +6,7 @@ export interface CustomizationSettings {
   fontFamily: string;
   announcementText: string;
   welcomeMessage: string;
+  layout: string;
 }
 
 export const defaultCustomization: CustomizationSettings = {
@@ -15,7 +16,8 @@ export const defaultCustomization: CustomizationSettings = {
   textColor: "#ffffff",
   fontFamily: "Inter",
   announcementText: "",
-  welcomeMessage: "Welcome to our Restaurant"
+  welcomeMessage: "Welcome to our Restaurant",
+  layout: "default"
 };
 
 export const themePresets = [
@@ -83,8 +85,23 @@ export function hexToHsl(hex: string) {
   };
 }
 
+export function hexToRgb(hex: string) {
+  hex = hex.replace(/^#/, "");
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  if (hex.length !== 6) {
+    return { r: 234, g: 88, b: 12 }; // default orange
+  }
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return { r, g, b };
+}
+
 export function generateBrandColors(primaryHex: string): Record<string, string> {
   const { h, s, l } = hexToHsl(primaryHex);
+  const { r, g, b } = hexToRgb(primaryHex);
   
   return {
     "--brand-50": `hsl(${h}, ${s}%, 97%)`,
@@ -97,5 +114,6 @@ export function generateBrandColors(primaryHex: string): Record<string, string> 
     "--brand-700": `hsl(${h}, ${s}%, 35%)`,
     "--brand-800": `hsl(${h}, ${s}%, 25%)`,
     "--brand-900": `hsl(${h}, ${s}%, 15%)`,
+    "--brand-rgb": `${r}, ${g}, ${b}`,
   };
 }

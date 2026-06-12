@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest) {
     // Fetch current hotel details first
     const { data: currentHotel, error: getError } = await sb
       .from("hotels")
-      .select("status")
+      .select("status, plan")
       .eq("id", hotelId)
       .single<Hotel>();
 
@@ -160,7 +160,19 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (body.customizations !== undefined) {
-      updates.customizations = body.customizations;
+      const plan = (currentHotel?.plan || "basic").toLowerCase();
+      let layout = body.customizations?.layout || "default";
+      if (plan === "basic") {
+        layout = "default";
+      } else if (plan === "pro") {
+        if (layout !== "default" && layout !== "compact" && layout !== "masonry") {
+          layout = "default";
+        }
+      }
+      updates.customizations = {
+        ...body.customizations,
+        layout,
+      };
     }
 
     // Only apply update if updates object is not empty

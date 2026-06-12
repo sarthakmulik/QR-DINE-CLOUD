@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyTableSignature } from "@/lib/crypto";
 
 export async function POST(
   req: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
   try {
     const { hotelId } = await props.params;
     const body = await req.json();
-    const { tableNumber } = body;
+    const { tableNumber, signature } = body;
 
     const parsedTableNum = parseInt(tableNumber);
     if (isNaN(parsedTableNum) || parsedTableNum < 1) {
@@ -17,15 +18,20 @@ export async function POST(
 
     const sb = createAdminClient();
 
-    // 1. Verify plan access
+    // 1. Verify plan access and secure_qr configuration
     const { data: hotel } = await sb
       .from("hotels")
-      .select("plan")
+      .select("plan, secure_qr")
       .eq("id", hotelId)
       .single();
 
     if (!hotel) {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
+    }
+
+    // Cryptographic Anti-Tampering Check
+    if (hotel.secure_qr && !verifyTableSignature(hotelId, parsedTableNum, signature)) {
+      return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
     }
 
     const planLower = hotel.plan.toLowerCase();

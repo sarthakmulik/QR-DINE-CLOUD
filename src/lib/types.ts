@@ -41,6 +41,7 @@ export interface Hotel {
     fontFamily?: string;
     announcementText?: string;
     welcomeMessage?: string;
+    layout?: string;
   } | null;
 }
 
@@ -112,6 +113,23 @@ export interface AuthUser {
 
 /** Map DB snake_case hotel to API camelCase */
 export function mapHotel(h: Hotel) {
+  const plan = (h.plan || "basic").toLowerCase();
+  let customizations = h.customizations ?? null;
+  if (customizations) {
+    let layout = customizations.layout || "default";
+    if (plan === "basic") {
+      layout = "default";
+    } else if (plan === "pro") {
+      if (layout !== "default" && layout !== "compact" && layout !== "masonry") {
+        layout = "default";
+      }
+    }
+    customizations = {
+      ...customizations,
+      layout,
+    };
+  }
+
   return {
     id: h.id,
     name: h.name,
@@ -132,7 +150,7 @@ export function mapHotel(h: Hotel) {
     kitchenPin: h.kitchen_pin ?? null,
     upiId: h.upi_id ?? null,
     secureQr: !!h.secure_qr,
-    customizations: h.customizations ?? null,
+    customizations,
   };
 }
 
