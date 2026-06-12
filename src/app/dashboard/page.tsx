@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -55,6 +55,8 @@ export default function TablesDashboardPage() {
   const [whatsappNumbers, setWhatsappNumbers] = useState<Record<string, string>>({});
   const [couponInput, setCouponInput] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const checkoutPendingRef = useRef<Record<string, boolean>>({});
+  const paymentPendingRef = useRef<Record<string, boolean>>({});
 
   const { currentPlan, canAccess } = usePlan();
 
@@ -107,6 +109,43 @@ export default function TablesDashboardPage() {
     }
   }, []);
 
+  const adjustTablesData = useCallback((data: TableData[]): TableData[] => {
+    const adjusted = data.map((t: TableData) => {
+      if (t.currentSession) {
+        const sessionId = t.currentSession.id;
+        if (paymentPendingRef.current[sessionId]) {
+          return { ...t, status: "free" as const, currentSession: null };
+        }
+        if (checkoutPendingRef.current[sessionId]) {
+          if (t.currentSession.status === "open") {
+            return {
+              ...t,
+              status: "checkout" as const,
+              currentSession: {
+                ...t.currentSession,
+                status: "checkout_initiated"
+              }
+            };
+          } else {
+            delete checkoutPendingRef.current[sessionId];
+          }
+        }
+      }
+      return t;
+    });
+
+    const activeSessionIds = new Set(
+      adjusted.map((t) => t.currentSession?.id).filter(Boolean) as string[]
+    );
+    Object.keys(paymentPendingRef.current).forEach((id) => {
+      if (!activeSessionIds.has(id)) {
+        delete paymentPendingRef.current[id];
+      }
+    });
+
+    return adjusted;
+  }, []);
+
   const loadTables = useCallback(async () => {
     const [tablesRes, profileRes, menuRes, statsRes] = await Promise.all([
       fetch("/api/hotel/tables"),
@@ -114,7 +153,8 @@ export default function TablesDashboardPage() {
       fetch("/api/hotel/menu/categories"),
       fetch("/api/hotel/overview-stats"),
     ]);
-    const tablesData = await tablesRes.json();
+    const tablesRaw = await tablesRes.json();
+    const tablesData = adjustTablesData(tablesRaw);
     setTables(tablesData);
     sessionStorage.setItem("admin_tables", JSON.stringify(tablesData));
 
@@ -144,13 +184,14 @@ export default function TablesDashboardPage() {
       return tablesData.find((t: TableData) => t.id === sel.id) || sel;
     });
     setLoading(false);
-  }, []);
+  }, [adjustTablesData]);
 
   const pollTables = useCallback(async () => {
     try {
       const res = await fetch("/api/hotel/tables");
       if (res.ok) {
-        const tablesData = await res.json();
+        const tablesRaw = await res.json();
+        const tablesData = adjustTablesData(tablesRaw);
         setTables(tablesData);
         sessionStorage.setItem("admin_tables", JSON.stringify(tablesData));
         setSelected((sel) => {
@@ -161,7 +202,7 @@ export default function TablesDashboardPage() {
     } catch (e) {
       console.error("Error polling tables:", e);
     }
-  }, []);
+  }, [adjustTablesData]);
 
   useEffect(() => {
     loadTables();
@@ -262,9 +303,24 @@ export default function TablesDashboardPage() {
       setTables((prev) => prev.map((t) => t.currentSession?.id === sessionId ? { ...t, status: "checkout" as const, currentSession: { ...t.currentSession!, status } } : t));
     };
     updateStatus("checkout_initiated");
+    checkoutPendingRef.current[sessionId] = true;
 
     fetch(`/api/hotel/sessions/${sessionId}/checkout`, { method: "POST" })
-      .then(() => pollTables());
+      .then(async (res) => {
+        if (!res.ok) {
+          delete checkoutPendingRef.current[sessionId];
+          pollTables();
+          alert("Failed to initiate checkout");
+        } else {
+          pollTables();
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        delete checkoutPendingRef.current[sessionId];
+        pollTables();
+        alert("Failed to initiate checkout");
+      });
   }
 
   async function handlePrint() {
@@ -293,13 +349,29 @@ export default function TablesDashboardPage() {
       )
     );
     setSelected(null);
+    paymentPendingRef.current[sessionId] = true;
 
     // Fire pay request in background
     fetch(`/api/hotel/sessions/${sessionId}/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentMethod: method }),
-    }).then(() => pollTables());
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          delete paymentPendingRef.current[sessionId];
+          pollTables();
+          alert("Failed to record payment");
+        } else {
+          pollTables();
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        delete paymentPendingRef.current[sessionId];
+        pollTables();
+        alert("Failed to record payment");
+      });
 
     const cleanPhone = number.replace(/\D/g, "");
     if (cleanPhone.length === 10) {
