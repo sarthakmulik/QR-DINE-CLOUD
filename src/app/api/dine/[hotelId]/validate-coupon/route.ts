@@ -16,35 +16,25 @@ export async function POST(
 
     const sb = createAdminClient();
 
-    // 1. Verify plan access
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("plan")
-      .eq("id", hotelId)
-      .single();
+    // Parallel: validate hotel plan AND fetch coupon in one round-trip
+    const [hotelRes, couponRes] = await Promise.all([
+      sb.from("hotels").select("plan").eq("id", hotelId).single(),
+      sb.from("coupons").select("*").eq("hotel_id", hotelId).eq("code", String(code).trim().toUpperCase()).eq("is_active", true).maybeSingle(),
+    ]);
 
+    const hotel = hotelRes.data;
     if (!hotel) {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
-
     if (hotel.plan.toLowerCase() === "basic") {
       return NextResponse.json({ error: "Coupons are not enabled on this plan." }, { status: 403 });
     }
 
-    // 2. Fetch coupon details
-    const { data: coupon, error } = await sb
-      .from("coupons")
-      .select("*")
-      .eq("hotel_id", hotelId)
-      .eq("code", String(code).trim().toUpperCase())
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (error || !coupon) {
+    const coupon = couponRes.data;
+    if (couponRes.error || !coupon) {
       return NextResponse.json({ error: "Invalid coupon code." }, { status: 400 });
     }
 
-    // 3. Validate minimum bill amount
     const billAmt = parseFloat(subtotal || 0);
     if (billAmt < Number(coupon.min_bill)) {
       return NextResponse.json(

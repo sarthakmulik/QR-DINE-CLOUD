@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapHotel, mapMenuItem, mapTableSession } from "@/lib/types";
-import type { Hotel, MenuCategory, MenuItem, RestaurantTable, TableSession } from "@/lib/types";
+import type { Hotel, MenuCategory, MenuItem, RestaurantTable, SessionItem, TableSession } from "@/lib/types";
 
 export async function GET(
   _req: NextRequest,
@@ -19,122 +19,95 @@ export async function GET(
 
   const sb = createAdminClient();
 
-  const { data: hotel } = await sb
-    .from("hotels")
-    .select("*")
-    .eq("id", hotelId)
-    .maybeSingle<Hotel>();
+  // Parallel: hotel + table + (if !sessionOnly) menu in one batch
+  const baseQueries = [
+    sb.from("hotels").select("*").eq("id", hotelId).maybeSingle<Hotel>(),
+    sb.from("restaurant_tables").select("*").eq("hotel_id", hotelId).eq("table_number", tableNumber).maybeSingle<RestaurantTable>(),
+  ] as const;
 
-  if (!hotel) {
-    return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
-  }
-
-  // If hotel is paused or suspended, block scanning/viewing immediately
-  if (hotel.status === "paused" || hotel.status === "suspended") {
-    return NextResponse.json(
-      { error: "paused", hotel: mapHotel(hotel) },
-      { status: 403 }
-    );
-  }
-
-  let categoriesWithItems: any[] = [];
   if (!sessionOnly) {
-    const [categoriesRes, itemsRes] = await Promise.all([
-      sb
-        .from("menu_categories")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .order("sort_order", { ascending: true }),
-      sb
-        .from("menu_items")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .eq("is_available", true)
-        .order("name", { ascending: true }),
+    const [hotelRes, tableRes, categoriesRes, itemsRes] = await Promise.all([
+      ...baseQueries,
+      sb.from("menu_categories").select("*").eq("hotel_id", hotelId).order("sort_order", { ascending: true }),
+      sb.from("menu_items").select("*").eq("hotel_id", hotelId).eq("is_available", true).order("name", { ascending: true }),
     ]);
+
+    const hotel = hotelRes.data as Hotel | null;
+    if (!hotel) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    if (hotel.status === "paused" || hotel.status === "suspended") {
+      return NextResponse.json({ error: "paused", hotel: mapHotel(hotel) }, { status: 403 });
+    }
 
     const categories = (categoriesRes.data || []) as MenuCategory[];
     const items = (itemsRes.data || []) as MenuItem[];
-
     const itemsByCategoryId: Record<string, MenuItem[]> = {};
     for (const item of items) {
-      if (!itemsByCategoryId[item.category_id]) {
-        itemsByCategoryId[item.category_id] = [];
-      }
+      if (!itemsByCategoryId[item.category_id]) itemsByCategoryId[item.category_id] = [];
       itemsByCategoryId[item.category_id].push(item);
     }
-
-    categoriesWithItems = categories.map((cat) => ({
+    const categoriesWithItems = categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
       items: (itemsByCategoryId[cat.id] || []).map(mapMenuItem),
     }));
+
+    let table = tableRes.data as RestaurantTable | null;
+    if (!table) {
+      const { data: created, error } = await sb
+        .from("restaurant_tables")
+        .insert({ hotel_id: hotelId, table_number: tableNumber, label: `Table ${tableNumber}` })
+        .select("*").single<RestaurantTable>();
+      if (error || !created) return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
+      table = created;
+    }
+
+    let activeSession = null;
+    if (table.current_session_id) {
+      const { data: sessionWithItems } = await sb
+        .from("table_sessions").select("*, session_items(*)")
+        .eq("id", table.current_session_id).maybeSingle();
+      if (sessionWithItems && sessionWithItems.status !== "closed") {
+        activeSession = mapTableSession(sessionWithItems as TableSession, (sessionWithItems.session_items || []) as SessionItem[]);
+      }
+    }
+
+    if (activeSession) {
+      if (activeSession.status === "checkout_initiated" || activeSession.status === "bill_printed") {
+        return NextResponse.json({ error: "checkout", hotel: mapHotel(hotel), session: activeSession, categories: categoriesWithItems });
+      }
+      return NextResponse.json({ hotel: mapHotel(hotel), session: activeSession, categories: categoriesWithItems });
+    }
+    return NextResponse.json({ hotel: mapHotel(hotel), session: null, categories: categoriesWithItems });
   }
 
-  // Load or create table
-  let { data: table } = await sb
-    .from("restaurant_tables")
-    .select("*")
-    .eq("hotel_id", hotelId)
-    .eq("table_number", tableNumber)
-    .maybeSingle<RestaurantTable>();
+  // sessionOnly path — just hotel + table
+  const [hotelRes, tableRes] = await Promise.all(baseQueries);
+  const hotel = hotelRes.data as Hotel | null;
+  if (!hotel) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+  if (hotel.status === "paused" || hotel.status === "suspended") {
+    return NextResponse.json({ error: "paused", hotel: mapHotel(hotel) }, { status: 403 });
+  }
 
+  let table = tableRes.data as RestaurantTable | null;
   if (!table) {
-    const { data: created, error } = await sb
-      .from("restaurant_tables")
-      .insert({
-        hotel_id: hotelId,
-        table_number: tableNumber,
-        label: `Table ${tableNumber}`,
-      })
-      .select("*")
-      .single<RestaurantTable>();
-
-    if (error || !created) {
-      return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
-    }
-    table = created;
+    return NextResponse.json({ hotel: mapHotel(hotel), session: null, categories: [] });
   }
 
   let activeSession = null;
   if (table.current_session_id) {
-    const { data: session } = await sb
-      .from("table_sessions")
-      .select("*")
-      .eq("id", table.current_session_id)
-      .maybeSingle<TableSession>();
-
-    if (session && session.status !== "closed") {
-      const { data: dbItems } = await sb
-        .from("session_items")
-        .select("*")
-        .eq("session_id", session.id)
-        .order("added_at", { ascending: true });
-
-      activeSession = mapTableSession(session, dbItems || []);
+    const { data: sessionWithItems } = await sb
+      .from("table_sessions").select("*, session_items(*)")
+      .eq("id", table.current_session_id).maybeSingle();
+    if (sessionWithItems && sessionWithItems.status !== "closed") {
+      activeSession = mapTableSession(sessionWithItems as TableSession, (sessionWithItems.session_items || []) as SessionItem[]);
     }
   }
 
   if (activeSession) {
     if (activeSession.status === "checkout_initiated" || activeSession.status === "bill_printed") {
-      return NextResponse.json({
-        error: "checkout",
-        hotel: mapHotel(hotel),
-        session: activeSession,
-        categories: categoriesWithItems,
-      });
+      return NextResponse.json({ error: "checkout", hotel: mapHotel(hotel), session: activeSession, categories: [] });
     }
-
-    return NextResponse.json({
-      hotel: mapHotel(hotel),
-      session: activeSession,
-      categories: categoriesWithItems,
-    });
+    return NextResponse.json({ hotel: mapHotel(hotel), session: activeSession, categories: [] });
   }
-
-  return NextResponse.json({
-    hotel: mapHotel(hotel),
-    session: null,
-    categories: categoriesWithItems,
-  });
+  return NextResponse.json({ hotel: mapHotel(hotel), session: null, categories: [] });
 }

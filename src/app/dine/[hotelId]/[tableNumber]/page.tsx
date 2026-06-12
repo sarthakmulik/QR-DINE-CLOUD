@@ -297,7 +297,8 @@ export default function DinePage({
   useEffect(() => {
     if (state.type === "paused" || state.type === "thankyou") return;
     load();
-    const interval = setInterval(() => load(true), 10000);
+    // Poll every 5s to detect checkout/bill state quickly
+    const interval = setInterval(() => load(true), 5000);
     return () => clearInterval(interval);
   }, [load, state.type]);
 
@@ -327,35 +328,34 @@ export default function DinePage({
     setIsValidatingCoupon(true);
     setCouponError(null);
     try {
-      let subtotal = 0;
-      if (state.type === "checkout") {
-        subtotal = state.subtotal;
-      } else if (state.type === "menu") {
-        subtotal = cartTotal;
-      }
-      const res = await fetch(`/api/dine/${hotelId}/validate-coupon`, {
+      // Single call: apply-coupon validates AND applies atomically (no extra round-trip)
+      const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: couponCodeInput, subtotal }),
+        body: JSON.stringify({ code: couponCodeInput.trim() }),
       });
       const data = await res.json();
-      if (res.ok && data.valid) {
-        const applyRes = await fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: couponCodeInput }),
+      if (res.ok) {
+        // Optimistic: update coupon state immediately from response
+        const discountPct = data.discountPercent ?? 0;
+        setAppliedCoupon({ code: couponCodeInput.trim().toUpperCase(), percent: discountPct });
+        // Update running totals in state from response
+        setState((prev) => {
+          if (prev.type === "menu") {
+            return { ...prev, runningSubtotal: data.subtotal ?? prev.runningSubtotal };
+          }
+          if (prev.type === "checkout") {
+            return {
+              ...prev,
+              subtotal: data.subtotal ?? prev.subtotal,
+              discountAmount: data.discountAmount ?? prev.discountAmount,
+              taxAmount: data.taxAmount ?? prev.taxAmount,
+              total: data.total ?? prev.total,
+            };
+          }
+          return prev;
         });
-        if (applyRes.ok) {
-          setAppliedCoupon({
-            code: couponCodeInput.trim().toUpperCase(),
-            percent: data.discountPercent,
-          });
-          showToast(`Coupon applied: ${data.discountPercent}% off!`);
-          load(true);
-        } else {
-          const applyData = await applyRes.json();
-          setCouponError(applyData.error || "Failed to apply coupon to session.");
-        }
+        showToast(`Coupon applied: ${discountPct}% off!`);
       } else {
         setCouponError(data.error || "Invalid coupon code.");
       }
@@ -367,20 +367,15 @@ export default function DinePage({
   }
 
   async function handleRemoveCoupon() {
-    try {
-      const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: "" }),
-      });
-      if (res.ok) {
-        setAppliedCoupon(null);
-        setCouponCodeInput("");
-        load(true);
-      }
-    } catch (e) {
-      console.error("Failed to remove coupon:", e);
-    }
+    // Optimistic: remove coupon state immediately
+    setAppliedCoupon(null);
+    setCouponCodeInput("");
+    // Fire-and-forget server update
+    fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "" }),
+    }).catch((e) => console.error("Failed to remove coupon:", e));
   }
 
   async function handleSubmitFeedback() {
@@ -455,12 +450,19 @@ export default function DinePage({
     if (cart.length === 0) return;
     setOrdering(true);
 
+    // Optimistic UI: show confirmed immediately, clear cart
+    const cartSnapshot = [...cart];
+    const prevState = state;
+    setCart([]);
+    setShowCart(false);
+    setState({ type: "confirmed" });
+
     try {
       const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: cart.map((c) => ({
+          items: cartSnapshot.map((c) => ({
             menuItemId: c.menuItemId,
             quantity: c.quantity,
           })),
@@ -470,12 +472,13 @@ export default function DinePage({
       const data = await res.json();
 
       if (res.status === 423) {
+        // Checkout locked — restore state
         setState({
           type: "checkout",
-          hotelName: data.hotel?.name || "",
-          hotelLogo: data.hotel?.logo || null,
-          hotelPlan: data.hotel?.plan || "basic",
-          taxRate: data.hotel?.taxRate !== undefined && data.hotel?.taxRate !== null ? data.hotel?.taxRate : 5,
+          hotelName: data.hotel?.name || (prevState.type === "menu" ? prevState.hotelName : ""),
+          hotelLogo: data.hotel?.logo || (prevState.type === "menu" ? prevState.hotelLogo : null),
+          hotelPlan: data.hotel?.plan || (prevState.type === "menu" ? prevState.hotelPlan : "basic"),
+          taxRate: data.hotel?.taxRate ?? (prevState.type === "menu" ? prevState.taxRate : 5),
           sessionId: data.session?.id || "",
           items: data.session?.items || [],
           subtotal: data.session?.subtotal || 0,
@@ -487,14 +490,18 @@ export default function DinePage({
       }
 
       if (!res.ok) {
+        // Restore cart on failure
+        setCart(cartSnapshot);
+        setShowCart(true);
+        setState(prevState);
         showToast(data.error || "Failed to place order. Please try again.");
-        return;
       }
-
-      setCart([]);
-      setShowCart(false);
-      setState({ type: "confirmed" });
+      // On success — state already shows "confirmed" from optimistic update
     } catch {
+      // Restore cart on network error
+      setCart(cartSnapshot);
+      setShowCart(true);
+      setState(prevState);
       showToast("Network error. Please check your connection and try again.");
     } finally {
       setOrdering(false);

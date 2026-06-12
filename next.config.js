@@ -12,14 +12,20 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // Menu categories rarely change — cache for 60 seconds
+        // Hotel admin: Menu categories rarely change — cache for 60 seconds
         source: "/api/hotel/menu/:path*",
         headers: [{ key: "Cache-Control", value: "private, max-age=60, stale-while-revalidate=120" }],
       },
       {
-        // Profile rarely changes — cache for 60 seconds
+        // Hotel admin: Profile rarely changes — cache for 60 seconds
         source: "/api/hotel/profile",
         headers: [{ key: "Cache-Control", value: "private, max-age=60, stale-while-revalidate=300" }],
+      },
+      {
+        // Dine: menu (categories+items) is public, stable — aggressive cache
+        // sessionOnly=true queries are excluded by the CDN via Vary
+        source: "/api/dine/:hotelId/:tableNumber",
+        headers: [{ key: "Cache-Control", value: "no-store" }], // personalized (session data) — no cache
       },
     ];
   },
