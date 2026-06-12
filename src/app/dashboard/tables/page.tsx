@@ -31,7 +31,7 @@ export default function TablesPage() {
 
   async function loadTables() {
     try {
-      const res = await fetch("/api/hotel/tables");
+      const res = await fetch("/api/hotel/tables", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setTables(data);
@@ -90,10 +90,30 @@ export default function TablesPage() {
         method: "POST",
       });
       if (res.ok) {
-        loadTables();
+        const data = await res.json();
+        // Update state locally
+        setTables((prev) =>
+          prev.map((t) => (t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl } : t))
+        );
+        // Also sync the sessionStorage cache!
+        const cached = sessionStorage.getItem("admin_tables_list");
+        if (cached) {
+          try {
+            const list = JSON.parse(cached) as TableData[];
+            const updatedList = list.map((t) =>
+              t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl } : t
+            );
+            sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
+          } catch (e) {
+            console.error(e);
+          }
+        }
       } else {
-        alert("Failed to regenerate QR code.");
+        const data = await res.json().catch(() => ({}));
+        alert(`Failed to regenerate QR code: ${data.error || res.statusText}`);
       }
+    } catch (err) {
+      alert("Failed to regenerate QR code due to a network error.");
     } finally {
       setRegenerating(null);
     }

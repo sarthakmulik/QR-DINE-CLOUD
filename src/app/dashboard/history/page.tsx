@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { Download, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Session {
   id: string;
@@ -55,22 +56,22 @@ export default function HistoryPage() {
           <p className="text-gray-500 text-sm">Completed sessions and reports</p>
           <div className="mt-3 flex gap-2 items-center">
             {hasExportAccess ? (
-              <a
-                href="/api/hotel/history/export"
-                download
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-650 hover:bg-brand-700 text-white rounded-lg font-bold text-xs transition shadow-sm"
-              >
-                <Download size={14} />
-                Export CSV ({exportLimit === "unlimited" ? "All History" : `Last ${exportLimit} Days`})
+              <a href="/api/hotel/history/export" download className="block">
+                <Button variant="primary" size="sm" className="gap-1.5 font-bold text-xs">
+                  <Download size={14} />
+                  Export CSV ({exportLimit === "unlimited" ? "All History" : `Last ${exportLimit} Days`})
+                </Button>
               </a>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 opacity-60 cursor-not-allowed font-bold text-xs"
                 onClick={() => alert("CSV Export is available on Pro and Elite plans. Upgrade to unlock.")}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-150 text-gray-500 border border-gray-200 rounded-lg font-bold text-xs transition cursor-not-allowed"
               >
                 <Lock size={12} className="text-gray-400" />
                 Export CSV (Locked)
-              </button>
+              </Button>
             )}
           </div>
         </div>
