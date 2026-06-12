@@ -32,6 +32,15 @@ export interface Hotel {
   created_at: string;
   kitchen_pin: string | null;
   upi_id: string | null;
+  customizations?: {
+    theme?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    textColor?: string;
+    fontFamily?: string;
+    announcementText?: string;
+    welcomeMessage?: string;
+  } | null;
 }
 
 export interface RestaurantTable {
@@ -121,6 +130,7 @@ export function mapHotel(h: Hotel) {
     createdAt: h.created_at,
     kitchenPin: h.kitchen_pin ?? null,
     upiId: h.upi_id ?? null,
+    customizations: h.customizations ?? null,
   };
 }
 

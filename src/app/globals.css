@@ -49,7 +49,56 @@
   .print-only {
     display: block !important;
   }
-  body {
-    background: white;
+
+  /* Thermal Printer Receipt Styles */
+  .receipt-print-layout {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    padding: 2mm !important;
+    margin: 0 auto !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    color: #000 !important;
+    background: #fff !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif !important;
   }
+
+  .receipt-print-layout h1 {
+    font-size: 15px !important;
+  }
+
+  .receipt-print-layout h2,
+  .receipt-print-layout h3 {
+    font-size: 12px !important;
+  }
+
+  .receipt-print-layout p,
+  .receipt-print-layout table,
+  .receipt-print-layout div {
+    font-size: 11px !important;
+  }
+
+  /* Force standard margins to 0 for thermal printer page size compatibility */
+  @page {
+    size: auto;
+    margin: 0 !important;
+  }
+
+  html, body {
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 20s linear infinite;
 }

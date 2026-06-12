@@ -155,6 +155,10 @@ export async function PATCH(req: NextRequest) {
       updates.status = status;
     }
 
+    if (body.customizations !== undefined) {
+      updates.customizations = body.customizations;
+    }
+
     // Only apply update if updates object is not empty
     if (Object.keys(updates).length > 0) {
       const { data: hotel, error } = await sb
@@ -164,7 +168,15 @@ export async function PATCH(req: NextRequest) {
         .select("*")
         .single<Hotel>();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Profile update DB error:", error);
+        if (error.message?.includes("customizations") || error.code === "42703") {
+          return NextResponse.json({
+            error: "Failed to update customizations. Please make sure you have executed the SQL migration script (supabase/migrations/20260612_elite_customization.sql) in your Supabase SQL Editor."
+          }, { status: 400 });
+        }
+        throw error;
+      }
       return NextResponse.json(mapHotel(hotel));
     }
 

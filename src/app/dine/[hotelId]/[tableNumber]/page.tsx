@@ -3,6 +3,7 @@
 import { useEffect, useState, use, useCallback } from "react";
 import { formatINR, formatMenuPrice } from "@/lib/utils";
 import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search } from "lucide-react";
+import { generateBrandColors } from "@/lib/theme";
 
 interface MenuItem {
   id: string;
@@ -96,6 +97,7 @@ export default function DinePage({
   const [ordering, setOrdering] = useState(false);
   const [bounceId, setBounceId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [customizations, setCustomizations] = useState<any>(null);
 
   // Gated features state
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
@@ -178,6 +180,7 @@ export default function DinePage({
         sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
       }
       if (data.hotel) {
+        setCustomizations(data.hotel.customizations || null);
         sessionStorage.setItem(`hotel_name_${hotelId}`, data.hotel.name);
         sessionStorage.setItem(`hotel_logo_${hotelId}`, data.hotel.logo || "");
         sessionStorage.setItem(`hotel_plan_${hotelId}`, data.hotel.plan);
@@ -246,6 +249,7 @@ export default function DinePage({
     }
 
     if (data.hotel) {
+      setCustomizations(data.hotel.customizations || null);
       sessionStorage.setItem(`hotel_name_${hotelId}`, data.hotel.name);
       sessionStorage.setItem(`hotel_logo_${hotelId}`, data.hotel.logo || "");
       sessionStorage.setItem(`hotel_plan_${hotelId}`, data.hotel.plan);
@@ -642,8 +646,9 @@ export default function DinePage({
     }
   }
 
-  if (state.type === "loading") {
-    return (
+  function renderContent() {
+    if (state.type === "loading") {
+      return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50/50">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative flex items-center justify-center">
@@ -1099,6 +1104,15 @@ export default function DinePage({
       {/* Toast notification */}
       {renderToast()}
 
+      {/* Announcement Ticker */}
+      {customizations?.announcementText && (
+        <div className="bg-brand-600 text-white py-1.5 px-4 overflow-hidden relative select-none">
+          <div className="whitespace-nowrap inline-block animate-marquee font-bold text-[10px] uppercase tracking-wider">
+            {customizations.announcementText}
+          </div>
+        </div>
+      )}
+
       {/* Glassmorphic Header */}
       <header className="bg-white/95 backdrop-blur-md border-b border-gray-100/80 sticky top-0 z-30 px-4 py-3.5 flex items-center justify-between transition-all">
         <div className="flex items-center gap-3">
@@ -1159,6 +1173,20 @@ export default function DinePage({
           )}
         </div>
       </div>
+
+      {/* Custom Welcome Banner */}
+      {customizations?.welcomeMessage && !searchQuery && (
+        <div className="px-4 pt-3">
+          <div className="bg-gradient-to-br from-brand-600/10 to-brand-500/5 border border-brand-100 rounded-3xl p-4 max-w-md mx-auto text-center space-y-1">
+            <h2 className="font-extrabold text-sm text-gray-900 tracking-tight">
+              {customizations.welcomeMessage}
+            </h2>
+            <p className="text-[10px] text-gray-450 font-semibold uppercase tracking-wider">
+              {state.hotelName} — Table {tableNumber}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Category Navigation Bar (only if search query is empty) */}
       {!searchQuery && (
@@ -1426,6 +1454,26 @@ export default function DinePage({
           </div>
         </div>
       )}
+    </div>
+    );
+  }
+
+  const content = renderContent();
+  const brandVariables = customizations?.primaryColor ? generateBrandColors(customizations.primaryColor) : {};
+  const customStyles = {
+    ...brandVariables,
+    fontFamily: customizations?.fontFamily ? `${customizations.fontFamily}, sans-serif` : "inherit"
+  } as React.CSSProperties;
+
+  return (
+    <div style={customStyles}>
+      {customizations?.fontFamily && (
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${customizations.fontFamily.replace(/\s+/g, "+")}:wght@400;500;600;700;800;900&display=swap`}
+        />
+      )}
+      {content}
     </div>
   );
 }

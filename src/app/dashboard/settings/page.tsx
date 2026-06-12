@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { compressImage } from "@/lib/image";
+import { usePlan } from "@/lib/contexts/plan-context";
+import { themePresets, generateBrandColors } from "@/lib/theme";
 
 export default function SettingsPage() {
-  const [form, setForm] = useState({
+  const { currentPlan } = usePlan();
+  const [form, setForm] = useState<any>({
     name: "",
     address: "",
     gstNumber: "",
@@ -16,6 +19,15 @@ export default function SettingsPage() {
     email: "",
     password: "",
     status: "active",
+    customizations: {
+      theme: "default",
+      primaryColor: "#ea580c",
+      secondaryColor: "#ffedd5",
+      textColor: "#ffffff",
+      fontFamily: "Inter",
+      announcementText: "",
+      welcomeMessage: "Welcome to our Restaurant"
+    }
   });
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -45,7 +57,7 @@ export default function SettingsPage() {
     try {
       // Logos are usually small, so compress to max 300x300 at 0.7 quality
       const compressed = await compressImage(file, 300, 300, 0.7);
-      setForm((prev) => ({ ...prev, logo: compressed }));
+      setForm((prev: any) => ({ ...prev, logo: compressed }));
     } catch (err) {
       console.error(err);
       setLogoError("Failed to compress and load image. Try another file.");
@@ -58,7 +70,7 @@ export default function SettingsPage() {
     const nextStatus = form.status === "active" ? "paused" : "active";
     const prevStatus = form.status;
 
-    setForm((prev) => ({ ...prev, status: nextStatus }));
+    setForm((prev: any) => ({ ...prev, status: nextStatus }));
     setSaveError("");
     setSaving(true);
 
@@ -71,7 +83,7 @@ export default function SettingsPage() {
       if (!res.ok) {
         const d = await res.json();
         setSaveError(d.error || "Failed to update status");
-        setForm((prev) => ({ ...prev, status: prevStatus }));
+        setForm((prev: any) => ({ ...prev, status: prevStatus }));
         return;
       }
       const cached = sessionStorage.getItem("admin_profile");
@@ -86,7 +98,7 @@ export default function SettingsPage() {
       }
     } catch {
       setSaveError("Network error. Failed to update status.");
-      setForm((prev) => ({ ...prev, status: prevStatus }));
+      setForm((prev: any) => ({ ...prev, status: prevStatus }));
     } finally {
       setSaving(false);
     }
@@ -108,6 +120,15 @@ export default function SettingsPage() {
           email: data.ownerEmail || data.loginEmail || "",
           password: "",
           status: data.status || "active",
+          customizations: data.customizations || {
+            theme: "default",
+            primaryColor: "#ea580c",
+            secondaryColor: "#ffedd5",
+            textColor: "#ffffff",
+            fontFamily: "Inter",
+            announcementText: "",
+            welcomeMessage: "Welcome to our Restaurant"
+          }
         });
       } catch (e) {
         console.error("Failed to parse cached profile:", e);
@@ -128,6 +149,15 @@ export default function SettingsPage() {
           email: data.ownerEmail || data.loginEmail || "",
           password: "",
           status: data.status || "active",
+          customizations: data.customizations || {
+            theme: "default",
+            primaryColor: "#ea580c",
+            secondaryColor: "#ffedd5",
+            textColor: "#ffffff",
+            fontFamily: "Inter",
+            announcementText: "",
+            welcomeMessage: "Welcome to our Restaurant"
+          }
         });
         sessionStorage.setItem("admin_profile", JSON.stringify(data));
       });
@@ -149,7 +179,7 @@ export default function SettingsPage() {
         setSaveError(d.error || "Failed to save settings");
         return;
       }
-      setForm((prev) => ({ ...prev, password: "" }));
+      setForm((prev: any) => ({ ...prev, password: "" }));
       setSaved(true);
       const updatedProfile = {
         name: form.name,
@@ -161,6 +191,7 @@ export default function SettingsPage() {
         upiId: form.upiId,
         ownerEmail: form.email,
         status: form.status,
+        customizations: form.customizations,
       };
       sessionStorage.setItem("admin_profile", JSON.stringify(updatedProfile));
       setTimeout(() => setSaved(false), 3000);
@@ -171,187 +202,545 @@ export default function SettingsPage() {
     }
   }
 
+  const isElite = currentPlan.toLowerCase() === "elite";
+  const brandColors = form.customizations?.primaryColor ? generateBrandColors(form.customizations.primaryColor) : {};
+
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Restaurant Settings</h1>
-        <p className="text-gray-500 text-sm">Profile and tax configuration</p>
+        <p className="text-gray-500 text-sm">Profile and whitelabel configuration</p>
       </div>
 
-      <form onSubmit={handleSave} className="bg-white rounded-xl border p-6 space-y-4">
-        {/* Store Status Toggle */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-150">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900">Accepting Orders</span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                form.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800 animate-pulse"
-              }`}>
-                {form.status === "active" ? "Open" : "Closed"}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500">
-              {form.status === "active" 
-                ? "Customers can scan QR codes, view menu, and place orders." 
-                : "Scanning QR codes will show a closed message. No fake orders."}
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={handleToggleStatus}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-              form.status === "active" ? "bg-brand-600" : "bg-gray-200"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                form.status === "active" ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-
-        <Field label="Restaurant Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-        <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
-        <Field label="GST Number" value={form.gstNumber} onChange={(v) => setForm({ ...form, gstNumber: v })} />
-        <div>
-          <label className="block text-sm font-medium mb-1">Restaurant Logo</label>
-          <div className="space-y-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoFile}
-              className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700"
-            />
-            {logoError && (
-              <p className="text-xs text-red-600">{logoError}</p>
-            )}
-            {!logoError && form.logo && (
-              <div className="flex items-center gap-3">
-                <div className="relative w-24 h-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={form.logo}
-                    alt="Logo preview"
-                    className="max-w-full max-h-full object-contain"
-                  />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Form Column */}
+        <div className="lg:col-span-7 space-y-6">
+          <form onSubmit={handleSave} className="bg-white rounded-xl border p-6 space-y-4">
+            {/* Store Status Toggle */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-150">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-900">Accepting Orders</span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    form.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800 animate-pulse"
+                  }`}>
+                    {form.status === "active" ? "Open" : "Closed"}
+                  </span>
                 </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setForm({ ...form, logo: "" })}
-                  className="text-xs text-red-600 hover:text-red-700"
-                >
-                  Remove Logo
-                </Button>
+                <p className="text-xs text-gray-500">
+                  {form.status === "active" 
+                    ? "Customers can scan QR codes, view menu, and place orders." 
+                    : "Scanning QR codes will show a closed message. No fake orders."}
+                </p>
               </div>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleToggleStatus}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                  form.status === "active" ? "bg-brand-600" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    form.status === "active" ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <Field label="Restaurant Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+            <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
+            <Field label="GST Number" value={form.gstNumber} onChange={(v) => setForm({ ...form, gstNumber: v })} />
+            <div>
+              <label className="block text-sm font-medium mb-1">Restaurant Logo</label>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoFile}
+                  className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700"
+                />
+                {logoError && (
+                  <p className="text-xs text-red-600">{logoError}</p>
+                )}
+                {!logoError && form.logo && (
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-24 h-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.logo}
+                        alt="Logo preview"
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setForm({ ...form, logo: "" })}
+                      className="text-xs text-red-600 hover:text-red-700"
+                    >
+                      Remove Logo
+                    </Button>
+                  </div>
+                )}
+                <input
+                  value={form.logo.startsWith("data:") ? "" : form.logo}
+                  onChange={(e) => { setLogoError(""); setForm({ ...form, logo: e.target.value }); }}
+                  placeholder="Or paste logo URL (optional)"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Kitchen KDS PIN (4 digits)
+              </label>
+              <input
+                type="text"
+                pattern="[0-9]{4}"
+                maxLength={4}
+                value={form.kitchenPin}
+                onChange={(e) => setForm({ ...form, kitchenPin: e.target.value.replace(/\D/g, "") })}
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="e.g. 1234"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                4-digit numeric code required to log into the kitchen KDS screen.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                UPI ID for Payments
+              </label>
+              <input
+                type="text"
+                value={form.upiId}
+                onChange={(e) => setForm({ ...form, upiId: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="e.g. restaurant@okaxis"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Used to dynamically generate payment QR codes on digital bills.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Tax Rate (%) — CGST + SGST combined
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={form.taxRate}
+                onChange={(e) => setForm({ ...form, taxRate: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Default 5% (CGST 2.5% + SGST 2.5%)
+              </p>
+            </div>
+
+            {/* Elite Whitelabel Customization */}
+            <div className="border-t border-gray-150 pt-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                  Elite Whitelabel Customization
+                </h3>
+                {!isElite && (
+                  <span className="text-[9px] bg-brand-500 text-white px-2 py-0.5 rounded-full font-black tracking-normal uppercase animate-pulse">
+                    Elite Feature
+                  </span>
+                )}
+              </div>
+
+              {!isElite ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-3">
+                  <div className="text-3xl">✨</div>
+                  <h4 className="font-extrabold text-sm text-gray-950">Unlock Custom Branding</h4>
+                  <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                    Choose custom brand colors, custom typography fonts, and add scrolling header announcements on your customer-facing menus.
+                  </p>
+                  <div className="pt-2">
+                    <span className="inline-block bg-brand-600 text-white text-xs font-extrabold px-4 py-2 rounded-xl border shadow-md shadow-brand-100 uppercase tracking-wider select-none">
+                      Upgrade to Elite
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Theme Presets */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      Theme Preset
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {themePresets.map((preset) => {
+                        const isSelected = form.customizations?.theme === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              setForm({
+                                ...form,
+                                customizations: {
+                                  ...form.customizations,
+                                  theme: preset.id,
+                                  primaryColor: preset.primaryColor,
+                                  secondaryColor: preset.secondaryColor,
+                                }
+                              });
+                            }}
+                            className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                              isSelected
+                                ? "border-brand-600 bg-brand-50/20 shadow-sm"
+                                : "border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            <p className="font-bold text-gray-900">{preset.name}</p>
+                            <div className="flex gap-1.5 mt-1.5">
+                              <span className="w-3.5 h-3.5 rounded-full border border-black/5" style={{ backgroundColor: preset.primaryColor }} />
+                              <span className="w-3.5 h-3.5 rounded-full border border-black/5" style={{ backgroundColor: preset.secondaryColor }} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Colors */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                        Primary Color
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={form.customizations?.primaryColor || "#ea580c"}
+                          onChange={(e) => {
+                            setForm({
+                              ...form,
+                              customizations: {
+                                ...form.customizations,
+                                theme: "custom",
+                                primaryColor: e.target.value
+                              }
+                            });
+                          }}
+                          className="w-10 h-10 border rounded-lg cursor-pointer p-0.5 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={form.customizations?.primaryColor || "#ea580c"}
+                          onChange={(e) => {
+                            setForm({
+                              ...form,
+                              customizations: {
+                                ...form.customizations,
+                                theme: "custom",
+                                primaryColor: e.target.value
+                              }
+                            });
+                          }}
+                          className="w-full border rounded-lg px-2.5 text-xs font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                        Secondary Color
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={form.customizations?.secondaryColor || "#ffedd5"}
+                          onChange={(e) => {
+                            setForm({
+                              ...form,
+                              customizations: {
+                                ...form.customizations,
+                                theme: "custom",
+                                secondaryColor: e.target.value
+                              }
+                            });
+                          }}
+                          className="w-10 h-10 border rounded-lg cursor-pointer p-0.5 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={form.customizations?.secondaryColor || "#ffedd5"}
+                          onChange={(e) => {
+                            setForm({
+                              ...form,
+                              customizations: {
+                                ...form.customizations,
+                                theme: "custom",
+                                secondaryColor: e.target.value
+                              }
+                            });
+                          }}
+                          className="w-full border rounded-lg px-2.5 text-xs font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Font Family */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      Font Typography
+                    </label>
+                    <select
+                      value={form.customizations?.fontFamily || "Inter"}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          customizations: {
+                            ...form.customizations,
+                            fontFamily: e.target.value
+                          }
+                        });
+                      }}
+                      className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                    >
+                      <option value="Inter">Inter (Classic Sans)</option>
+                      <option value="Poppins">Poppins (Modern Geometric)</option>
+                      <option value="Outfit">Outfit (Clean Geometric)</option>
+                      <option value="Lora">Lora (Elegant Serif)</option>
+                      <option value="Playfair Display">Playfair Display (Luxury Editorial)</option>
+                    </select>
+                  </div>
+
+                  {/* Custom Welcome Message */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      Welcome Message Banner
+                    </label>
+                    <input
+                      type="text"
+                      value={form.customizations?.welcomeMessage || ""}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          customizations: {
+                            ...form.customizations,
+                            welcomeMessage: e.target.value
+                          }
+                        });
+                      }}
+                      placeholder="e.g. Welcome to Gourmet Bistro!"
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  {/* Announcement Text */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      Scrolling Announcement Ticker
+                    </label>
+                    <input
+                      type="text"
+                      value={form.customizations?.announcementText || ""}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          customizations: {
+                            ...form.customizations,
+                            announcementText: e.target.value
+                          }
+                        });
+                      }}
+                      placeholder="e.g. Live Music tonight at 8 PM! | Get 15% off all beverages!"
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-150 pt-4 space-y-4">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Owner Email / Gmail
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                  placeholder="e.g. owner@gmail.com"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Used to log in to the Restaurant Dashboard. Changing this updates your login identity.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Change Password
+                </label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                  placeholder="••••••••"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Leave blank to keep your current password. Minimum 6 characters.
+                </p>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
+            {saved && (
+              <p className="text-green-600 text-sm">Settings saved successfully!</p>
             )}
-            <input
-              value={form.logo.startsWith("data:") ? "" : form.logo}
-              onChange={(e) => { setLogoError(""); setForm({ ...form, logo: e.target.value }); }}
-              placeholder="Or paste logo URL (optional)"
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Kitchen KDS PIN (4 digits)
-          </label>
-          <input
-            type="text"
-            pattern="[0-9]{4}"
-            maxLength={4}
-            value={form.kitchenPin}
-            onChange={(e) => setForm({ ...form, kitchenPin: e.target.value.replace(/\D/g, "") })}
-            className="w-full border rounded-lg px-3 py-2"
-            placeholder="e.g. 1234"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            4-digit numeric code required to log into the kitchen KDS screen.
-          </p>
+            {saveError && (
+              <p className="text-red-600 text-sm">{saveError}</p>
+            )}
+          </form>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            UPI ID for Payments
-          </label>
-          <input
-            type="text"
-            value={form.upiId}
-            onChange={(e) => setForm({ ...form, upiId: e.target.value })}
-            className="w-full border rounded-lg px-3 py-2"
-            placeholder="e.g. restaurant@okaxis"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Used to dynamically generate payment QR codes on digital bills.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Tax Rate (%) — CGST + SGST combined
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            value={form.taxRate}
-            onChange={(e) => setForm({ ...form, taxRate: e.target.value })}
-            className="w-full border rounded-lg px-3 py-2"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Default 5% (CGST 2.5% + SGST 2.5%)
-          </p>
-        </div>
-
-        <div className="border-t border-gray-150 pt-4 space-y-4">
-          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Owner Email / Gmail
-            </label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
-              placeholder="e.g. owner@gmail.com"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Used to log in to the Restaurant Dashboard. Changing this updates your login identity.
-            </p>
+        {/* Live Preview Column */}
+        <div className="lg:col-span-5 sticky top-6 space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Live Mobile Menu Preview
+            </span>
+            {isElite && (
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase tracking-wider">
+                Live Rendering
+              </span>
+            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Change Password
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
-              placeholder="••••••••"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Leave blank to keep your current password. Minimum 6 characters.
-            </p>
+          <div className="bg-slate-900 rounded-[40px] p-3 shadow-2xl border-4 border-slate-950 aspect-[9/19] max-w-[280px] mx-auto flex flex-col overflow-hidden relative select-none">
+            {/* Phone Speaker & Notch */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-950 rounded-full z-10 flex items-center justify-center">
+              <span className="w-1.5 h-1.5 bg-slate-800 rounded-full mr-2" />
+              <span className="w-6 h-0.5 bg-slate-800 rounded-full" />
+            </div>
+
+            {/* Inner Phone Screen */}
+            <div
+              className="flex-1 bg-gray-50 rounded-[32px] overflow-hidden flex flex-col relative text-gray-800 pt-3"
+              style={{
+                ...brandColors,
+                fontFamily: form.customizations?.fontFamily ? `${form.customizations.fontFamily}, sans-serif` : "Inter, sans-serif"
+              }}
+            >
+              {form.customizations?.fontFamily && (
+                <link
+                  rel="stylesheet"
+                  href={`https://fonts.googleapis.com/css2?family=${form.customizations.fontFamily.replace(/\s+/g, "+")}:wght@400;500;600;700;800;900&display=swap`}
+                />
+              )}
+
+              {/* Scrolling Announcement Marquee in preview */}
+              {form.customizations?.announcementText && (
+                <div className="bg-brand-600 text-white py-1 px-3 overflow-hidden relative text-center">
+                  <div className="whitespace-nowrap inline-block animate-marquee font-bold text-[8px] uppercase tracking-wider">
+                    {form.customizations.announcementText}
+                  </div>
+                </div>
+              )}
+
+              {/* Header */}
+              <div className="bg-white border-b border-gray-100 px-3 py-2 flex items-center justify-between mt-3">
+                <div className="flex items-center gap-1.5">
+                  {form.logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.logo}
+                      alt=""
+                      className="w-6 h-6 rounded-full object-cover border border-gray-100 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-xs shadow-inner">
+                      🍽️
+                    </div>
+                  )}
+                  <div>
+                    <h5 className="font-extrabold text-[9px] text-gray-900 leading-tight">
+                      {form.name || "Restaurant Name"}
+                    </h5>
+                    <p className="text-[7px] text-gray-400 font-bold">Table 3</p>
+                  </div>
+                </div>
+                <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-full text-[7px] font-bold">
+                  Call Waiter
+                </div>
+              </div>
+
+              {/* Welcome Banner Card in preview */}
+              {form.customizations?.welcomeMessage && (
+                <div className="px-3 pt-2">
+                  <div className="bg-gradient-to-br from-brand-600/10 to-brand-500/5 border border-brand-100 rounded-xl p-2 text-center">
+                    <h6 className="font-black text-[8px] text-gray-900 leading-normal">
+                      {form.customizations.welcomeMessage}
+                    </h6>
+                  </div>
+                </div>
+              )}
+
+              {/* Body Menu Items Preview list */}
+              <div className="flex-1 p-3 space-y-2 overflow-y-auto">
+                <div className="flex justify-between items-center">
+                  <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-widest">
+                    Popular Dishes
+                  </span>
+                </div>
+
+                {/* Dummy Item Card */}
+                <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="space-y-0.5">
+                    <h6 className="font-extrabold text-[9px] text-gray-950">
+                      Tandoori Paneer Tikka
+                    </h6>
+                    <p className="text-[8px] font-black text-brand-600">₹280</p>
+                  </div>
+                  <div className="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-[8px] font-black shadow-sm shadow-brand-100 transition-all select-none">
+                    ADD
+                  </div>
+                </div>
+
+                {/* Dummy Item Card 2 */}
+                <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="space-y-0.5">
+                    <h6 className="font-extrabold text-[9px] text-gray-950">
+                      Crispy Spring Rolls
+                    </h6>
+                    <p className="text-[8px] font-black text-brand-600">₹180</p>
+                  </div>
+                  <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-lg flex items-center gap-1 select-none text-[8px] font-bold">
+                    <span>-</span>
+                    <span className="font-bold">1</span>
+                    <span>+</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer View Cart Bar */}
+              <div className="bg-white border-t border-gray-100 p-2.5 flex items-center justify-between rounded-b-[28px] mt-auto">
+                <span className="text-[8px] text-gray-400 font-bold font-sans">1 item in cart</span>
+                <div className="bg-brand-600 text-white font-extrabold text-[8px] px-3 py-1.5 rounded-lg flex items-center gap-1">
+                  View Order
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
-        {saved && (
-          <p className="text-green-600 text-sm">Settings saved successfully!</p>
-        )}
-        {saveError && (
-          <p className="text-red-600 text-sm">{saveError}</p>
-        )}
-      </form>
+      </div>
     </div>
   );
 }

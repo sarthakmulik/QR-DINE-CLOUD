@@ -325,14 +325,36 @@ export default function TablesDashboardPage() {
 
   async function handlePrint() {
     if (!selected?.currentSession) return;
-    const res = await fetch(
-      `/api/hotel/sessions/${selected.currentSession.id}/print`,
-      { method: "POST" }
-    );
-    const session = await res.json();
-    window.open(`/bill/${session.id}`, "_blank");
-    // Background sync — no blocking loadTables()
-    pollTables();
+    try {
+      const res = await fetch(
+        `/api/hotel/sessions/${selected.currentSession.id}/print`,
+        { method: "POST" }
+      );
+      if (!res.ok) throw new Error("Failed to register print");
+      const session = await res.json();
+      
+      // Programmatic hidden iframe printing
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.width = "0px";
+      iframe.style.height = "0px";
+      iframe.style.border = "none";
+      iframe.src = `/bill/${session.id}`;
+      document.body.appendChild(iframe);
+      
+      iframe.onload = () => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      };
+      
+      pollTables();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to print bill");
+    }
   }
 
   async function handlePay(method: string) {
