@@ -15,7 +15,7 @@ interface MenuItem {
   price: number;
   imageUrl: string | null;
   isAvailable: boolean;
-  spicyLevel?: number;
+  spicyLevel?: number | null;
   prepTime?: number;
   isVegetarian?: boolean;
   containsNuts?: boolean;
@@ -43,7 +43,7 @@ export default function MenuPage() {
     description: "",
     price: "",
     imageUrl: "",
-    spicyLevel: 0,
+    spicyLevel: null as number | null,
     prepTime: 15,
     isVegetarian: false,
     containsNuts: false,
@@ -223,7 +223,7 @@ export default function MenuPage() {
         description: "",
         price: "",
         imageUrl: "",
-        spicyLevel: 0,
+        spicyLevel: null,
         prepTime: 15,
         isVegetarian: false,
         containsNuts: false,
@@ -262,7 +262,7 @@ export default function MenuPage() {
       description: "",
       price: "",
       imageUrl: "",
-      spicyLevel: 0,
+      spicyLevel: null,
       prepTime: 15,
       isVegetarian: false,
       containsNuts: false,
@@ -281,7 +281,7 @@ export default function MenuPage() {
       description: item.description || "",
       price: String(item.price),
       imageUrl: item.imageUrl || "",
-      spicyLevel: item.spicyLevel ?? 0,
+      spicyLevel: item.spicyLevel !== undefined && item.spicyLevel !== null ? item.spicyLevel : null,
       prepTime: item.prepTime ?? 15,
       isVegetarian: !!item.isVegetarian,
       containsNuts: !!item.containsNuts,
@@ -537,17 +537,18 @@ export default function MenuPage() {
           {/* Spice Level */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Spice Intensity</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {[
+                { level: null, label: "None 🚫" },
                 { level: 0, label: "Mild 🌶️" },
-                { level: 1, label: "Medium 🌶️🌶️" },
-                { level: 2, label: "Spicy 🌶️🌶️🌶️" }
+                { level: 1, label: "Med 🌶️🌶️" },
+                { level: 2, label: "Hot 🌶️🌶️🌶️" }
               ].map((opt) => (
                 <button
-                  key={opt.level}
+                  key={opt.level ?? "none"}
                   type="button"
                   onClick={() => setItemForm({ ...itemForm, spicyLevel: opt.level })}
-                  className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all ${
+                  className={`py-2 px-1 text-[10px] text-center font-bold rounded-xl border transition-all ${
                     itemForm.spicyLevel === opt.level
                       ? "bg-brand-50 border-brand-500 text-brand-700 shadow-sm"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"

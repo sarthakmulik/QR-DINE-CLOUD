@@ -1900,35 +1900,38 @@ export default function DinePage({
               )}
                             {/* Story elements */}
               <div className="grid grid-cols-2 gap-4">
-                <div className={`p-4 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-150/60 shadow-sm"}`}>
-                  <h5 className="text-[9px] font-black uppercase tracking-widest text-brand-500 mb-2">Spice Intensity</h5>
-                  <div className="flex gap-1.5 items-center font-bold">
-                    {Array.from({ length: 3 }).map((_, idx) => {
-                      const spicyLevel = selectedItem.spicyLevel ?? 0;
-                      const isActive = spicyLevel >= idx;
-                      return (
-                        <span 
-                          key={idx} 
-                          className={`text-base transition-opacity ${isActive ? "opacity-100" : "opacity-15"}`}
-                        >
-                          🌶️
-                        </span>
-                      );
-                    })}
-                    <span className={`text-[10px] font-extrabold ml-1 uppercase tracking-wider ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                      {(selectedItem.spicyLevel ?? 0) === 0 ? "Mild" : (selectedItem.spicyLevel ?? 0) === 1 ? "Medium" : "Spicy"}
-                    </span>
+                {selectedItem.spicyLevel !== null && selectedItem.spicyLevel !== undefined && (
+                  <div className={`p-4 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-150/60 shadow-sm"}`}>
+                    <h5 className="text-[9px] font-black uppercase tracking-widest text-brand-500 mb-2">Spice Intensity</h5>
+                    <div className="flex gap-1.5 items-center font-bold">
+                      {Array.from({ length: 3 }).map((_, idx) => {
+                        const spicyLevel = selectedItem.spicyLevel ?? 0;
+                        const isActive = spicyLevel >= idx;
+                        return (
+                          <span 
+                            key={idx} 
+                            className={`text-base transition-opacity ${isActive ? "opacity-100" : "opacity-15"}`}
+                          >
+                            🌶️
+                          </span>
+                        );
+                      })}
+                      <span className={`text-[10px] font-extrabold ml-1 uppercase tracking-wider ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                        {selectedItem.spicyLevel === 0 ? "Mild" : selectedItem.spicyLevel === 1 ? "Medium" : "Spicy"}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
                 
-                <div className={`p-4 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-150/60 shadow-sm"}`}>
+                <div className={`p-4 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-150/60 shadow-sm"} ${
+                  (selectedItem.spicyLevel === null || selectedItem.spicyLevel === undefined) ? "col-span-2" : "col-span-1"
+                }`}>
                   <h5 className="text-[9px] font-black uppercase tracking-widest text-brand-500 mb-2">Preparation Time</h5>
                   <p className={`text-xs font-extrabold ${isDark ? "text-slate-200" : "text-gray-800"}`}>
                     ⏱️ {selectedItem.prepTime ?? 15} mins
                   </p>
                 </div>
               </div>
-              
               {/* Premium Ingredients Tagging */}
               {(selectedItem.isVegetarian || selectedItem.containsNuts || selectedItem.isGlutenFree) && (
                 <div className="space-y-3.5">

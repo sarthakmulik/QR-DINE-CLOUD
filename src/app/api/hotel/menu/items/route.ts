@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         price,
         image_url: body.imageUrl || null,
         is_available: body.isAvailable ?? true,
-        spicy_level: body.spicyLevel !== undefined ? parseInt(body.spicyLevel) || 0 : 0,
+        spicy_level: body.spicyLevel !== undefined && body.spicyLevel !== null ? parseInt(body.spicyLevel) : null,
         prep_time: body.prepTime !== undefined ? parseInt(body.prepTime) || 15 : 15,
         is_vegetarian: !!body.isVegetarian,
         contains_nuts: !!body.containsNuts,

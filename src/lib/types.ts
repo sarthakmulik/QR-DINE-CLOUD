@@ -218,7 +218,7 @@ export function mapMenuItem(i: MenuItem) {
     price: Number(i.price),
     imageUrl: i.image_url,
     isAvailable: i.is_available,
-    spicyLevel: Number(i.spicy_level ?? 0),
+    spicyLevel: i.spicy_level !== null && i.spicy_level !== undefined ? Number(i.spicy_level) : null,
     prepTime: Number(i.prep_time ?? 15),
     isVegetarian: !!i.is_vegetarian,
     containsNuts: !!i.contains_nuts,

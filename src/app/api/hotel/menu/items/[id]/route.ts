@@ -38,7 +38,7 @@ export async function PATCH(
     if (body.imageUrl !== undefined) updates.image_url = body.imageUrl || null;
     if (body.isAvailable !== undefined) updates.is_available = body.isAvailable;
     if (body.categoryId !== undefined) updates.category_id = body.categoryId;
-    if (body.spicyLevel !== undefined) updates.spicy_level = parseInt(body.spicyLevel) || 0;
+    if (body.spicyLevel !== undefined) updates.spicy_level = body.spicyLevel !== null ? (parseInt(body.spicyLevel) ?? 0) : null;
     if (body.prepTime !== undefined) updates.prep_time = parseInt(body.prepTime) || 15;
     if (body.isVegetarian !== undefined) updates.is_vegetarian = Boolean(body.isVegetarian);
     if (body.containsNuts !== undefined) updates.contains_nuts = Boolean(body.containsNuts);
