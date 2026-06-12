@@ -115,7 +115,6 @@ export default function DinePage({
 
   const closeWindow = useCallback(() => {
     try {
-      window.open('', '_self', '');
       window.close();
     } catch (e) {
       console.error("Failed to close window:", e);
@@ -194,6 +193,31 @@ export default function DinePage({
     const saved = loadCart(hotelId, tableNumber);
     setCartRaw(saved);
     setCartLoaded(true);
+
+    // Check if the session was recently closed BEFORE loading cached menu
+    const lastSessionId = sessionStorage.getItem(`last_session_id_${hotelId}_${tableNumber}`);
+    const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
+    
+    if (lastSessionId) {
+      let isRecentlyClosed = true;
+      if (closedAt) {
+        const diff = Date.now() - parseInt(closedAt);
+        if (diff > 30 * 60 * 1000) { // 30 minutes
+          isRecentlyClosed = false;
+        }
+      }
+      
+      if (isRecentlyClosed) {
+        setState({
+          type: "thankyou",
+          hotelName: sessionStorage.getItem(`hotel_name_${hotelId}`) || "",
+          hotelLogo: sessionStorage.getItem(`hotel_logo_${hotelId}`) || null,
+          hotelPlan: sessionStorage.getItem(`hotel_plan_${hotelId}`) || "basic",
+          sessionId: lastSessionId,
+        });
+        return;
+      }
+    }
 
     try {
       const cached = sessionStorage.getItem(`menu_${hotelId}`);
