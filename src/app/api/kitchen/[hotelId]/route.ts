@@ -26,7 +26,7 @@ export async function GET(
 
     return NextResponse.json({
       name: hotel.name,
-      kitchenPin: hotel.kitchen_pin,
+      hasPin: !!hotel.kitchen_pin,
       plan: hotel.plan,
     });
   } catch (err) {
