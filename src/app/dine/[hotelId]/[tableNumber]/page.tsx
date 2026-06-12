@@ -94,7 +94,7 @@ export default function DinePage({
   const [showCart, setShowCart] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const [bounceId, setBounceId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // Gated features state
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
@@ -224,10 +224,32 @@ export default function DinePage({
     });
   }
 
-  function showToast(msg: string, duration = 3500) {
-    setToast(msg);
+  const showToast = useCallback((msg: string, type: "success" | "error" | "info" = "info", duration = 3500) => {
+    setToast({ message: msg, type });
     setTimeout(() => setToast(null), duration);
-  }
+  }, []);
+
+  const renderToast = useCallback(() => {
+    if (!toast) return null;
+    
+    let bgClass = "bg-brand-600"; 
+    let Icon = AlertCircle;
+    
+    if (toast.type === "success") {
+      bgClass = "bg-emerald-600";
+      Icon = CheckCircle;
+    } else if (toast.type === "error") {
+      bgClass = "bg-rose-600";
+      Icon = AlertCircle;
+    }
+
+    return (
+      <div className={`fixed top-4 left-4 right-4 z-[100] ${bgClass} text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 max-w-md mx-auto border border-white/10 backdrop-blur-md animate-fade-in`}>
+        <Icon className="w-5 h-5 flex-shrink-0 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]" />
+        <span className="text-xs font-bold tracking-wide leading-tight">{toast.message}</span>
+      </div>
+    );
+  }, [toast]);
 
   const load = useCallback(async (sessionOnly = false) => {
     const res = await fetch(`/api/dine/${hotelId}/${tableNumber}${sessionOnly ? "?sessionOnly=true" : ""}`);
@@ -344,7 +366,7 @@ export default function DinePage({
   }, [hotelId, tableNumber]);
 
   useEffect(() => {
-    if (state.type === "paused" || state.type === "thankyou") return;
+    if (state.type === "paused" || state.type === "thankyou" || state.type === "confirmed") return;
     load();
     // Poll every 5s to detect checkout/bill state quickly
     const interval = setInterval(() => load(true), 5000);
@@ -361,14 +383,14 @@ export default function DinePage({
       });
       const data = await res.json();
       if (res.ok) {
-        showToast("Waiter notified! Assistance is on the way.");
+        showToast("Waiter notified! Assistance is on the way.", "success");
         setWaiterCallCooldown(true);
         setTimeout(() => setWaiterCallCooldown(false), 30000); // 30s cooldown
       } else {
-        showToast(data.error || "Failed to notify waiter.");
+        showToast(data.error || "Failed to notify waiter.", "error");
       }
     } catch {
-      showToast("Failed to connect to the server.");
+      showToast("Failed to connect to the server.", "error");
     }
   }
 
@@ -404,7 +426,7 @@ export default function DinePage({
           }
           return prev;
         });
-        showToast(`Coupon applied: ${discountPct}% off!`);
+        showToast(`Coupon applied: ${discountPct}% off!`, "success");
       } else {
         setCouponError(data.error || "Invalid coupon code.");
       }
@@ -429,7 +451,7 @@ export default function DinePage({
 
   async function handleSubmitFeedback() {
     if (feedbackRating < 1 || feedbackRating > 5) {
-      showToast("Please select a rating.");
+      showToast("Please select a rating.", "info");
       return;
     }
     setSubmittingFeedback(true);
@@ -447,12 +469,12 @@ export default function DinePage({
       const data = await res.json();
       if (res.ok) {
         setFeedbackSubmitted(true);
-        showToast("Thank you for your feedback!");
+        showToast("Thank you for your feedback!", "success");
       } else {
-        showToast(data.error || "Failed to submit review.");
+        showToast(data.error || "Failed to submit review.", "error");
       }
     } catch {
-      showToast("Server error. Please try again.");
+      showToast("Server error. Please try again.", "error");
     } finally {
       setSubmittingFeedback(false);
     }
@@ -543,7 +565,7 @@ export default function DinePage({
         setCart(cartSnapshot);
         setShowCart(true);
         setState(prevState);
-        showToast(data.error || "Failed to place order. Please try again.");
+        showToast(data.error || "Failed to place order. Please try again.", "error");
       }
       // On success — state already shows "confirmed" from optimistic update
     } catch {
@@ -551,7 +573,7 @@ export default function DinePage({
       setCart(cartSnapshot);
       setShowCart(true);
       setState(prevState);
-      showToast("Network error. Please check your connection and try again.");
+      showToast("Network error. Please check your connection and try again.", "error");
     } finally {
       setOrdering(false);
     }
@@ -761,12 +783,7 @@ export default function DinePage({
 
     return (
       <div className="min-h-screen bg-gray-50 pb-12">
-        {toast && (
-          <div className="fixed top-4 left-4 right-4 z-[100] bg-brand-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-start gap-2 animate-fade-in">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span className="text-sm font-medium">{toast}</span>
-          </div>
-        )}
+        {renderToast()}
 
         {/* Glassmorphic Header */}
         <header className="bg-white/95 backdrop-blur-md border-b border-gray-100/80 sticky top-0 z-30 px-4 py-3.5 flex items-center justify-between transition-all">
@@ -983,12 +1000,7 @@ export default function DinePage({
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
       {/* Toast notification */}
-      {toast && (
-        <div className="fixed top-4 left-4 right-4 z-[100] bg-brand-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-start gap-2 animate-fade-in">
-          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <span className="text-sm font-medium">{toast}</span>
-        </div>
-      )}
+      {renderToast()}
 
       {/* Glassmorphic Header */}
       <header className="bg-white/95 backdrop-blur-md border-b border-gray-100/80 sticky top-0 z-30 px-4 py-3.5 flex items-center justify-between transition-all">
