@@ -24,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const updated = await markAsPaid(id, body.paymentMethod);
+    const updated = await markAsPaid(id, body.paymentMethod, session);
     return NextResponse.json(updated);
   } catch (e) {
     return NextResponse.json(

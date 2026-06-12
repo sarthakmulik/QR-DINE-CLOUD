@@ -83,7 +83,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, hotelPlan } = await requireHotelAccess();
     const body = await req.json();
     const tableNumber = parseInt(body.tableNumber);
     const label = body.label || `Table ${tableNumber}`;
@@ -96,18 +96,12 @@ export async function POST(req: NextRequest) {
 
     const sb = createAdminClient();
 
-    // Enforce plan limits
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("plan")
-      .eq("id", hotelId)
-      .single();
-
-    if (!hotel) {
+    // Enforce plan limits (no extra DB query needed)
+    if (!hotelPlan) {
       return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
     }
 
-    const plan = hotel.plan.toLowerCase();
+    const plan = hotelPlan.toLowerCase();
     const maxTables = plan === "basic" ? 5 : plan === "pro" ? 20 : Infinity;
 
     if (maxTables !== Infinity) {
@@ -120,7 +114,7 @@ export async function POST(req: NextRequest) {
 
       if ((count || 0) >= maxTables) {
         return NextResponse.json(
-          { error: `Table limit reached. You can only create up to ${maxTables} tables on the ${hotel.plan} plan.` },
+          { error: `Table limit reached. You can only create up to ${maxTables} tables on the ${hotelPlan} plan.` },
           { status: 403 }
         );
       }

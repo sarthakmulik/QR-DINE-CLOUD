@@ -23,7 +23,7 @@ export async function POST(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const updated = await initiateCheckout(id);
+    const updated = await initiateCheckout(id, session);
     return NextResponse.json(updated);
   } catch (e) {
     return NextResponse.json(

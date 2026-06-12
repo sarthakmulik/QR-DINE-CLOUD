@@ -4,17 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, hotelPlan } = await requireHotelAccess();
     const sb = createAdminClient();
 
-    // Verify plan access
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("plan")
-      .eq("id", hotelId)
-      .single();
-
-    if (!hotel || hotel.plan.toLowerCase() === "basic") {
+    // Verify plan access (no extra DB query needed)
+    if (!hotelPlan || hotelPlan.toLowerCase() === "basic") {
       return NextResponse.json({ error: "Coupons are locked under Basic plan." }, { status: 403 });
     }
 
@@ -34,7 +28,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, hotelPlan } = await requireHotelAccess();
     const body = await req.json();
 
     const { code, discountPercent, minBill, isActive } = body;
@@ -44,14 +38,8 @@ export async function POST(req: NextRequest) {
 
     const sb = createAdminClient();
 
-    // Verify plan access
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("plan")
-      .eq("id", hotelId)
-      .single();
-
-    if (!hotel || hotel.plan.toLowerCase() === "basic") {
+    // Verify plan access (no extra DB query needed)
+    if (!hotelPlan || hotelPlan.toLowerCase() === "basic") {
       return NextResponse.json({ error: "Coupons are locked under Basic plan." }, { status: 403 });
     }
 

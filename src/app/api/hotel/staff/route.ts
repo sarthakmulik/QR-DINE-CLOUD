@@ -9,17 +9,11 @@ function hashPassword(password: string): string {
 
 export async function GET() {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, hotelPlan } = await requireHotelAccess();
     const sb = createAdminClient();
 
-    // Check staff access from plan
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("plan")
-      .eq("id", hotelId)
-      .single();
-
-    if (!hotel || hotel.plan.toLowerCase() === "basic") {
+    // Check staff access from plan (no extra DB query needed)
+    if (!hotelPlan || hotelPlan.toLowerCase() === "basic") {
       return NextResponse.json({ error: "Feature locked under Basic plan." }, { status: 403 });
     }
 
@@ -39,7 +33,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, hotelPlan } = await requireHotelAccess();
     const body = await req.json();
 
     const { name, role, email, password } = body;
@@ -53,18 +47,12 @@ export async function POST(req: NextRequest) {
 
     const sb = createAdminClient();
 
-    // Enforce plan limits
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("plan")
-      .eq("id", hotelId)
-      .single();
-
-    if (!hotel) {
+    // Enforce plan limits (no extra DB query needed)
+    if (!hotelPlan) {
       return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
     }
 
-    const plan = hotel.plan.toLowerCase();
+    const plan = hotelPlan.toLowerCase();
     if (plan === "basic") {
       return NextResponse.json({ error: "Staff management is not available on Basic plan." }, { status: 403 });
     }

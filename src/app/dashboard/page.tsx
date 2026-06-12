@@ -173,19 +173,36 @@ export default function TablesDashboardPage() {
     if (!selected?.currentSession || !manualItemId) return;
     const item = menuItems.find((m) => m.id === manualItemId);
     if (!item) return;
-    await fetch(`/api/hotel/sessions/${selected.currentSession.id}/items`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        menuItemId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: parseInt(manualQty) || 1,
-      }),
+    const qty = parseInt(manualQty) || 1;
+
+    // Optimistic UI: add item to local state immediately
+    const optimisticItem = {
+      id: `tmp-${Date.now()}`,
+      name: item.name,
+      price: item.price,
+      quantity: qty,
+      addedAt: new Date().toISOString(),
+    };
+    setSelected((sel) => {
+      if (!sel?.currentSession) return sel;
+      return {
+        ...sel,
+        currentSession: {
+          ...sel.currentSession,
+          items: [...sel.currentSession.items, optimisticItem],
+        },
+      };
     });
+
     setManualItemId("");
     setManualQty("1");
-    loadTables();
+
+    // Fire request then sync in background
+    fetch(`/api/hotel/sessions/${selected.currentSession.id}/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ menuItemId: item.id, name: item.name, price: item.price, quantity: qty }),
+    }).then(() => pollTables());
   }
 
   async function handleApplyAdminCoupon() {
@@ -201,7 +218,7 @@ export default function TablesDashboardPage() {
         const data = await res.json();
         alert(data.error || "Failed to apply coupon");
       } else {
-        await loadTables();
+        pollTables();
       }
     } catch (err) {
       console.error(err);
@@ -225,7 +242,7 @@ export default function TablesDashboardPage() {
         alert(data.error || "Failed to remove coupon");
       } else {
         setCouponInput("");
-        await loadTables();
+        pollTables();
       }
     } catch (err) {
       console.error(err);
@@ -237,10 +254,17 @@ export default function TablesDashboardPage() {
 
   async function handleCheckout() {
     if (!selected?.currentSession) return;
-    await fetch(`/api/hotel/sessions/${selected.currentSession.id}/checkout`, {
-      method: "POST",
-    });
-    loadTables();
+    const sessionId = selected.currentSession.id;
+
+    // Optimistic UI: update session status immediately
+    const updateStatus = (status: string) => {
+      setSelected((sel) => sel?.currentSession ? { ...sel, status: "checkout" as const, currentSession: { ...sel.currentSession, status } } : sel);
+      setTables((prev) => prev.map((t) => t.currentSession?.id === sessionId ? { ...t, status: "checkout" as const, currentSession: { ...t.currentSession!, status } } : t));
+    };
+    updateStatus("checkout_initiated");
+
+    fetch(`/api/hotel/sessions/${sessionId}/checkout`, { method: "POST" })
+      .then(() => pollTables());
   }
 
   async function handlePrint() {
@@ -251,7 +275,8 @@ export default function TablesDashboardPage() {
     );
     const session = await res.json();
     window.open(`/bill/${session.id}`, "_blank");
-    loadTables();
+    // Background sync — no blocking loadTables()
+    pollTables();
   }
 
   async function handlePay(method: string) {
@@ -259,11 +284,22 @@ export default function TablesDashboardPage() {
     const sessionId = selected.currentSession.id;
     const number = whatsappNumbers[sessionId] || "";
 
-    await fetch(`/api/hotel/sessions/${sessionId}/pay`, {
+    // Optimistic UI: remove table session immediately
+    setTables((prev) =>
+      prev.map((t) =>
+        t.currentSession?.id === sessionId
+          ? { ...t, status: "free" as const, currentSession: null }
+          : t
+      )
+    );
+    setSelected(null);
+
+    // Fire pay request in background
+    fetch(`/api/hotel/sessions/${sessionId}/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentMethod: method }),
-    });
+    }).then(() => pollTables());
 
     const cleanPhone = number.replace(/\D/g, "");
     if (cleanPhone.length === 10) {
@@ -285,7 +321,6 @@ SGST (${sgstRate}%): ₹${(selected.currentSession.taxAmount / 2).toFixed(2)}
 Thank you for dining with us!`;
 
       const formattedPhone = `91${cleanPhone}`;
-
       const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
       window.open(url, "_blank");
     }
@@ -295,9 +330,6 @@ Thank you for dining with us!`;
       delete copy[sessionId];
       return copy;
     });
-
-    setSelected(null);
-    loadTables();
   }
 
   const statusColors = {

@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       name: staff.name,
       role: staff.role,
       hotelId: staff.hotel_id,
+      hotelPlan: hotel.plan,
     };
 
     const cookieStore = await cookies();

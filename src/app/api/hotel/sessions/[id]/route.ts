@@ -13,42 +13,29 @@ export async function GET(
     const { id } = await params;
     const sb = createAdminClient();
 
+    // Single join: session + items + hotel + table in one query
     const { data: session } = await sb
       .from("table_sessions")
-      .select("*")
+      .select(`
+        *,
+        session_items (*),
+        hotels (*),
+        restaurant_tables!table_sessions_table_id_fkey (*)
+      `)
       .eq("id", id)
       .eq("hotel_id", hotelId)
-      .maybeSingle<TableSession>();
+      .maybeSingle();
 
     if (!session) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const { data: items } = await sb
-      .from("session_items")
-      .select("*")
-      .eq("session_id", id)
-      .order("added_at", { ascending: true });
-
-    const { data: hotel } = await sb
-      .from("hotels")
-      .select("*")
-      .eq("id", hotelId)
-      .single<Hotel>();
-
-    const { data: table } = await sb
-      .from("restaurant_tables")
-      .select("*")
-      .eq("id", session.table_id)
-      .single<RestaurantTable>();
+    const items = (session.session_items || []) as SessionItem[];
+    const hotel = session.hotels as Hotel | null;
+    const table = session.restaurant_tables as RestaurantTable | null;
 
     return NextResponse.json(
-      mapTableSession(
-        session,
-        (items || []) as SessionItem[],
-        hotel || undefined,
-        table || undefined
-      )
+      mapTableSession(session as TableSession, items, hotel || undefined, table || undefined)
     );
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

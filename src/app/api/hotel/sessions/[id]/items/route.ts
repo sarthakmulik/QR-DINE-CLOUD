@@ -29,7 +29,7 @@ export async function POST(
       name: body.name,
       price: parseFloat(body.price),
       quantity: parseInt(body.quantity) || 1,
-    });
+    }, session);
 
     return NextResponse.json(updated);
   } catch (e) {
