@@ -54,7 +54,8 @@ type PageState =
     }
   | { type: "confirmed" }
   | { type: "error"; message: string }
-  | { type: "thankyou"; hotelName: string; hotelLogo: string | null; hotelPlan: string; sessionId: string };
+  | { type: "thankyou"; hotelName: string; hotelLogo: string | null; hotelPlan: string; sessionId: string }
+  | { type: "closed" };
 
 function getCartKey(hotelId: string, tableNumber: string) {
   return `cart_${hotelId}_${tableNumber}`;
@@ -121,133 +122,6 @@ export default function DinePage({
     }
   }, []);
 
-  useEffect(() => {
-    if (state.type === "thankyou") {
-      const isBasic = state.hotelPlan.toLowerCase() === "basic";
-      if (isBasic || feedbackSubmitted) {
-        setStartCountdown(true);
-      }
-    }
-  }, [state, feedbackSubmitted]);
-
-  useEffect(() => {
-    if (!startCountdown) return;
-    
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          closeWindow();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [startCountdown, closeWindow]);
-
-  useEffect(() => {
-    if (state.type !== "menu" || searchQuery) return;
-    const categories = state.categories;
-
-    const handleScroll = () => {
-      const headerOffset = 210; 
-      const scrollPosition = window.scrollY + headerOffset;
-
-      let currentActive: string | null = null;
-      for (const cat of categories) {
-        const el = document.getElementById(`cat-${cat.id}`);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPosition >= top && scrollPosition < top + height) {
-            currentActive = cat.id;
-            break;
-          }
-        }
-      }
-
-      if (!currentActive && categories.length > 0) {
-        if (window.scrollY < 100) {
-          currentActive = categories[0].id;
-        }
-      }
-
-      if (currentActive && currentActive !== activeCategory) {
-        setActiveCategory(currentActive);
-        const btn = document.getElementById(`cat-btn-${currentActive}`);
-        if (btn) {
-          btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [state, searchQuery, activeCategory]);
-
-  // Load cart and cached menu from sessionStorage on mount
-  useEffect(() => {
-    const saved = loadCart(hotelId, tableNumber);
-    setCartRaw(saved);
-    setCartLoaded(true);
-
-    // Check if the session was recently closed BEFORE loading cached menu
-    const lastSessionId = sessionStorage.getItem(`last_session_id_${hotelId}_${tableNumber}`);
-    const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
-    
-    if (lastSessionId) {
-      let isRecentlyClosed = true;
-      if (closedAt) {
-        const diff = Date.now() - parseInt(closedAt);
-        if (diff > 30 * 60 * 1000) { // 30 minutes
-          isRecentlyClosed = false;
-        }
-      }
-      
-      if (isRecentlyClosed) {
-        setState({
-          type: "thankyou",
-          hotelName: sessionStorage.getItem(`hotel_name_${hotelId}`) || "",
-          hotelLogo: sessionStorage.getItem(`hotel_logo_${hotelId}`) || null,
-          hotelPlan: sessionStorage.getItem(`hotel_plan_${hotelId}`) || "basic",
-          sessionId: lastSessionId,
-        });
-        return;
-      }
-    }
-
-    try {
-      const cached = sessionStorage.getItem(`menu_${hotelId}`);
-      if (cached) {
-        const categories = JSON.parse(cached);
-        setState({
-          type: "menu",
-          hotelName: sessionStorage.getItem(`hotel_name_${hotelId}`) || "",
-          hotelLogo: sessionStorage.getItem(`hotel_logo_${hotelId}`) || null,
-          hotelPlan: sessionStorage.getItem(`hotel_plan_${hotelId}`) || "basic",
-          taxRate: Number(sessionStorage.getItem(`hotel_tax_rate_${hotelId}`) || 5),
-          sessionId: null,
-          categories,
-          runningItems: [],
-          runningSubtotal: 0,
-        });
-      }
-    } catch (e) {
-      console.error("Failed to load cached menu:", e);
-    }
-  }, [hotelId, tableNumber]);
-
-  function setCart(updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) {
-    setCartRaw((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveCart(hotelId, tableNumber, next);
-      return next;
-    });
-  }
-
   const showToast = useCallback((msg: string, type: "success" | "error" | "info" = "info", duration = 3500) => {
     setToast({ message: msg, type });
     setTimeout(() => setToast(null), duration);
@@ -284,6 +158,9 @@ export default function DinePage({
       return;
     }
     if (data.session) {
+      try {
+        sessionStorage.removeItem(`session_terminated_${hotelId}_${tableNumber}`);
+      } catch {}
       if (data.session.couponCode) {
         setAppliedCoupon({
           code: data.session.couponCode,
@@ -332,6 +209,11 @@ export default function DinePage({
       sessionStorage.setItem(`last_session_id_${hotelId}_${tableNumber}`, data.session.id);
       sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
     } else {
+      const isTerminated = sessionStorage.getItem(`session_terminated_${hotelId}_${tableNumber}`);
+      if (isTerminated === "true") {
+        setState({ type: "closed" });
+        return;
+      }
       const lastSessionId = sessionStorage.getItem(`last_session_id_${hotelId}_${tableNumber}`);
       const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
       
@@ -390,7 +272,164 @@ export default function DinePage({
   }, [hotelId, tableNumber]);
 
   useEffect(() => {
-    if (state.type === "paused" || state.type === "thankyou" || state.type === "confirmed") return;
+    if (state.type === "thankyou") {
+      const isBasic = state.hotelPlan.toLowerCase() === "basic";
+      if (isBasic || feedbackSubmitted) {
+        setStartCountdown(true);
+      }
+    }
+  }, [state, feedbackSubmitted]);
+
+  useEffect(() => {
+    if (!startCountdown) return;
+    
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          try {
+            sessionStorage.setItem(`session_terminated_${hotelId}_${tableNumber}`, "true");
+            sessionStorage.removeItem(`cart_${hotelId}_${tableNumber}`);
+            sessionStorage.removeItem(`last_session_id_${hotelId}_${tableNumber}`);
+            sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
+          } catch (e) {
+            console.error("Failed to clear session storage:", e);
+          }
+          setState({ type: "closed" });
+          closeWindow();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startCountdown, closeWindow, hotelId, tableNumber]);
+
+  useEffect(() => {
+    if (state.type === "closed") {
+      window.history.pushState(null, "", window.location.href);
+      const preventBack = () => {
+        window.history.pushState(null, "", window.location.href);
+      };
+      window.addEventListener("popstate", preventBack);
+      return () => {
+        window.removeEventListener("popstate", preventBack);
+      };
+    }
+  }, [state.type]);
+
+  useEffect(() => {
+    if (state.type !== "menu" || searchQuery) return;
+    const categories = state.categories;
+
+    const handleScroll = () => {
+      const headerOffset = 210; 
+      const scrollPosition = window.scrollY + headerOffset;
+
+      let currentActive: string | null = null;
+      for (const cat of categories) {
+        const el = document.getElementById(`cat-${cat.id}`);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            currentActive = cat.id;
+            break;
+          }
+        }
+      }
+
+      if (!currentActive && categories.length > 0) {
+        if (window.scrollY < 100) {
+          currentActive = categories[0].id;
+        }
+      }
+
+      if (currentActive && currentActive !== activeCategory) {
+        setActiveCategory(currentActive);
+        const btn = document.getElementById(`cat-btn-${currentActive}`);
+        if (btn) {
+          btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [state, searchQuery, activeCategory]);
+
+  // Load cart and cached menu from sessionStorage on mount
+  useEffect(() => {
+    const saved = loadCart(hotelId, tableNumber);
+    setCartRaw(saved);
+    setCartLoaded(true);
+
+    const isTerminated = sessionStorage.getItem(`session_terminated_${hotelId}_${tableNumber}`);
+    if (isTerminated === "true") {
+      setState({ type: "closed" });
+      load();
+      return;
+    }
+
+    // Check if the session was recently closed BEFORE loading cached menu
+    const lastSessionId = sessionStorage.getItem(`last_session_id_${hotelId}_${tableNumber}`);
+    const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
+    
+    if (lastSessionId) {
+      let isRecentlyClosed = true;
+      if (closedAt) {
+        const diff = Date.now() - parseInt(closedAt);
+        if (diff > 30 * 60 * 1000) { // 30 minutes
+          isRecentlyClosed = false;
+        }
+      }
+      
+      if (isRecentlyClosed) {
+        setState({
+          type: "thankyou",
+          hotelName: sessionStorage.getItem(`hotel_name_${hotelId}`) || "",
+          hotelLogo: sessionStorage.getItem(`hotel_logo_${hotelId}`) || null,
+          hotelPlan: sessionStorage.getItem(`hotel_plan_${hotelId}`) || "basic",
+          sessionId: lastSessionId,
+        });
+        return;
+      }
+    }
+
+    try {
+      const cached = sessionStorage.getItem(`menu_${hotelId}`);
+      if (cached) {
+        const categories = JSON.parse(cached);
+        setState({
+          type: "menu",
+          hotelName: sessionStorage.getItem(`hotel_name_${hotelId}`) || "",
+          hotelLogo: sessionStorage.getItem(`hotel_logo_${hotelId}`) || null,
+          hotelPlan: sessionStorage.getItem(`hotel_plan_${hotelId}`) || "basic",
+          taxRate: Number(sessionStorage.getItem(`hotel_tax_rate_${hotelId}`) || 5),
+          sessionId: null,
+          categories,
+          runningItems: [],
+          runningSubtotal: 0,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load cached menu:", e);
+    }
+  }, [hotelId, tableNumber, load]);
+
+  function setCart(updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) {
+    setCartRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveCart(hotelId, tableNumber, next);
+      return next;
+    });
+  }
+
+
+  useEffect(() => {
+    if (state.type === "paused" || state.type === "thankyou" || state.type === "confirmed" || state.type === "closed") return;
     load();
     // Poll every 5s to detect checkout/bill state quickly
     const interval = setInterval(() => load(true), 5000);
@@ -1005,6 +1044,37 @@ export default function DinePage({
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <p className="text-red-600">{state.message}</p>
+      </div>
+    );
+  }
+
+  if (state.type === "closed") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-950 to-black px-4 relative overflow-hidden">
+        {/* Glowing background highlights */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="bg-white/[0.03] backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl max-w-sm w-full text-center space-y-6 relative z-10">
+          <div className="mx-auto w-20 h-20 bg-emerald-950/40 border border-emerald-500/30 rounded-full flex items-center justify-center text-3xl shadow-[0_0_50px_rgba(16,185,129,0.1)] text-emerald-400 animate-pulse">
+            ✓
+          </div>
+          
+          <div className="space-y-2.5">
+            <h1 className="text-xl font-black text-white tracking-tight">
+              Session Terminated
+            </h1>
+            <p className="text-xs text-gray-400 font-medium leading-relaxed">
+              Your dining session has been safely closed. All temporary carts and payment state details have been securely cleared from this device.
+            </p>
+          </div>
+
+          <div className="border-t border-white/5 pt-4">
+            <p className="text-[10px] text-gray-500 font-semibold leading-normal">
+              You can now safely close this browser tab. To start a new order, scan the table QR code again.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
