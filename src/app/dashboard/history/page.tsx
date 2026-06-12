@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { formatINR, formatDateTime } from "@/lib/utils";
+import { usePlan } from "@/lib/contexts/plan-context";
+import { Download, Lock } from "lucide-react";
 
 interface Session {
   id: string;
@@ -16,6 +18,10 @@ interface Session {
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
+
+  const { canAccess, planLimit } = usePlan();
+  const hasExportAccess = canAccess("csv_export");
+  const exportLimit = planLimit("csv_export_limit");
 
   useEffect(() => {
     const cached = sessionStorage.getItem("admin_history");
@@ -43,10 +49,30 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
         <div>
           <h1 className="text-2xl font-bold">Order History</h1>
           <p className="text-gray-500 text-sm">Completed sessions and reports</p>
+          <div className="mt-3 flex gap-2 items-center">
+            {hasExportAccess ? (
+              <a
+                href="/api/hotel/history/export"
+                download
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-650 hover:bg-brand-700 text-white rounded-lg font-bold text-xs transition shadow-sm"
+              >
+                <Download size={14} />
+                Export CSV ({exportLimit === "unlimited" ? "All History" : `Last ${exportLimit} Days`})
+              </a>
+            ) : (
+              <button
+                onClick={() => alert("CSV Export is available on Pro and Elite plans. Upgrade to unlock.")}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-150 text-gray-500 border border-gray-200 rounded-lg font-bold text-xs transition cursor-not-allowed"
+              >
+                <Lock size={12} className="text-gray-400" />
+                Export CSV (Locked)
+              </button>
+            )}
+          </div>
         </div>
         <div className="bg-white rounded-xl border px-5 py-3 text-right">
           <p className="text-sm text-gray-500">Total Revenue (shown)</p>

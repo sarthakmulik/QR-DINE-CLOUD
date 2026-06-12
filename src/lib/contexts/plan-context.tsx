@@ -84,6 +84,7 @@ export function PlanProvider({
       case "staff_management":
       case "discount_coupons":
       case "customer_feedback":
+      case "csv_export":
         return p === "pro" || p === "elite";
       case "advanced_analytics":
         return p === "elite";
@@ -106,6 +107,10 @@ export function PlanProvider({
       case "max_staff":
         if (p === "basic") return 0;
         if (p === "pro") return 5;
+        return "unlimited";
+      case "csv_export_limit":
+        if (p === "basic") return 0;
+        if (p === "pro") return 30; // 30 days
         return "unlimited";
       default:
         return 0;
