@@ -100,6 +100,12 @@ export interface MenuItem {
   price: number;
   image_url: string | null;
   is_available: boolean;
+  spicy_level?: number | null;
+  prep_time?: number | null;
+  is_vegetarian?: boolean | null;
+  contains_nuts?: boolean | null;
+  is_gluten_free?: boolean | null;
+  is_recommended?: boolean | null;
 }
 
 export interface AuthUser {
@@ -212,5 +218,11 @@ export function mapMenuItem(i: MenuItem) {
     price: Number(i.price),
     imageUrl: i.image_url,
     isAvailable: i.is_available,
+    spicyLevel: Number(i.spicy_level ?? 0),
+    prepTime: Number(i.prep_time ?? 15),
+    isVegetarian: !!i.is_vegetarian,
+    containsNuts: !!i.contains_nuts,
+    isGlutenFree: !!i.is_gluten_free,
+    isRecommended: !!i.is_recommended,
   };
 }

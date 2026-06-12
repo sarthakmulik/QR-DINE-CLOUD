@@ -168,16 +168,22 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id          String       @id @default(cuid())
-  hotelId     String
-  hotel       Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  categoryId  String
-  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  price       Float
-  imageUrl    String?
-  isAvailable Boolean      @default(true)
+  id            String       @id @default(cuid())
+  hotelId       String
+  hotel         Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  price         Float
+  imageUrl      String?
+  isAvailable   Boolean      @default(true)
+  spicyLevel    Int          @default(0)
+  prepTime      Int          @default(15)
+  isVegetarian  Boolean      @default(false)
+  containsNuts  Boolean      @default(false)
+  isGlutenFree  Boolean      @default(false)
+  isRecommended Boolean      @default(false)
 
   @@index([hotelId])
   @@index([categoryId])

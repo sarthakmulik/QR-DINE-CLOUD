@@ -11,6 +11,12 @@ interface MenuItem {
   description: string | null;
   price: number;
   imageUrl: string | null;
+  spicyLevel?: number;
+  prepTime?: number;
+  isVegetarian?: boolean;
+  containsNuts?: boolean;
+  isGlutenFree?: boolean;
+  isRecommended?: boolean;
 }
 
 interface Category {
@@ -1453,9 +1459,9 @@ export default function DinePage({
                     const qty = cartItem ? cartItem.quantity : 0;
                     const isStory = layout === "fullscreen_story";
                     
-                    // Recommendations/tags for Story layout (deterministic demo mapping)
-                    const isChefsSpecial = isStory && item.id.charCodeAt(0) % 2 === 0;
-                    const isPopular = isStory && item.id.charCodeAt(0) % 3 === 0;
+                    // Recommendations/tags for Story layout
+                    const isChefsSpecial = isStory && !!item.isRecommended;
+                    const isPopular = isStory && !item.isRecommended && (item.id.charCodeAt(0) % 4 === 0);
                     
                     return (
                       <div
@@ -1469,16 +1475,16 @@ export default function DinePage({
                             setSelectedItem(item);
                           }
                         }}
-                        className={`flex flex-col rounded-[2.5rem] border overflow-hidden h-full relative transition-all duration-500 group ${
+                        className={`flex flex-col rounded-[2.5rem] border overflow-hidden h-full relative transition-[transform,border-color,box-shadow] duration-300 will-change-transform group ${
                           isStory ? "cursor-pointer" : ""
                         } ${
                           isDark 
                             ? "bg-gradient-to-b from-slate-900/95 to-slate-950/85 border-white/[0.06] shadow-[0_12px_40px_rgba(0,0,0,0.55)] hover:border-brand-500/20" 
-                            : "bg-white/90 backdrop-blur-md border-gray-150/65 shadow-[0_8px_32px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)] hover:border-brand-500/25"
+                            : "bg-white border-gray-150/65 shadow-[0_8px_32px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)] hover:border-brand-500/25"
                         } hover:-translate-y-1`}
                       >
                         {isStory && (isChefsSpecial || isPopular) && (
-                          <span className={`absolute top-3.5 left-3.5 text-[7px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-10 shadow-md backdrop-blur-md border animate-pulse ${
+                          <span className={`absolute top-3.5 left-3.5 text-[7px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-10 shadow-md border animate-pulse ${
                             isChefsSpecial 
                               ? "bg-gradient-to-r from-emerald-500/90 via-teal-500/90 to-emerald-600/90 text-white border-emerald-400/20 shadow-emerald-950/10" 
                               : "bg-gradient-to-r from-amber-500/90 via-orange-500/90 to-yellow-500/90 text-white border-amber-400/20 shadow-amber-950/10"
@@ -1492,7 +1498,7 @@ export default function DinePage({
                             <img
                               src={item.imageUrl}
                               alt={item.name}
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              className="w-full h-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-105"
                             />
                           ) : (
                             <div className={`w-full h-full flex items-center justify-center text-3xl ${
@@ -1810,14 +1816,16 @@ export default function DinePage({
               
               {/* Headline inside Image */}
               <div className="relative z-10 w-full space-y-2.5">
-                <div className="flex gap-2 flex-wrap animate-fade-in">
-                  <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-md border border-amber-400/20 backdrop-blur-md">
-                    Chef&apos;s Recommendation
-                  </span>
-                  <span className="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-md border border-brand-400/20 backdrop-blur-md">
-                    Signature
-                  </span>
-                </div>
+                {selectedItem.isRecommended && (
+                  <div className="flex gap-2 flex-wrap animate-fade-in">
+                    <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-md border border-amber-400/20 backdrop-blur-md">
+                      Chef&apos;s Special
+                    </span>
+                    <span className="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-md border border-brand-400/20 backdrop-blur-md">
+                      Signature Dish
+                    </span>
+                  </div>
+                )}
                 <h2 className="text-2xl font-black tracking-tight leading-tight text-white filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                   {selectedItem.name}
                 </h2>
@@ -1890,14 +1898,14 @@ export default function DinePage({
                   </p>
                 </div>
               )}
-              
-              {/* Story elements */}
+                            {/* Story elements */}
               <div className="grid grid-cols-2 gap-4">
                 <div className={`p-4 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-150/60 shadow-sm"}`}>
                   <h5 className="text-[9px] font-black uppercase tracking-widest text-brand-500 mb-2">Spice Intensity</h5>
                   <div className="flex gap-1.5 items-center font-bold">
                     {Array.from({ length: 3 }).map((_, idx) => {
-                      const isActive = (selectedItem.id.charCodeAt(0) % 3) >= idx;
+                      const spicyLevel = selectedItem.spicyLevel ?? 0;
+                      const isActive = spicyLevel >= idx;
                       return (
                         <span 
                           key={idx} 
@@ -1908,7 +1916,7 @@ export default function DinePage({
                       );
                     })}
                     <span className={`text-[10px] font-extrabold ml-1 uppercase tracking-wider ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                      {(selectedItem.id.charCodeAt(0) % 3) === 0 ? "Mild" : (selectedItem.id.charCodeAt(0) % 3) === 1 ? "Medium" : "Spicy"}
+                      {(selectedItem.spicyLevel ?? 0) === 0 ? "Mild" : (selectedItem.spicyLevel ?? 0) === 1 ? "Medium" : "Spicy"}
                     </span>
                   </div>
                 </div>
@@ -1916,34 +1924,42 @@ export default function DinePage({
                 <div className={`p-4 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-150/60 shadow-sm"}`}>
                   <h5 className="text-[9px] font-black uppercase tracking-widest text-brand-500 mb-2">Preparation Time</h5>
                   <p className={`text-xs font-extrabold ${isDark ? "text-slate-200" : "text-gray-800"}`}>
-                    ⏱️ {10 + (selectedItem.id.charCodeAt(0) % 15)} mins
+                    ⏱️ {selectedItem.prepTime ?? 15} mins
                   </p>
                 </div>
               </div>
               
               {/* Premium Ingredients Tagging */}
-              <div className="space-y-3.5">
-                <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-gray-400"}`}>
-                  Dietary & Allergens
-                </h4>
-                <div className="flex flex-wrap gap-2.5">
-                  <span className={`text-[10px] px-3.5 py-2 rounded-2xl font-black uppercase tracking-wider border ${
-                    isDark ? "bg-emerald-950/20 border-emerald-900/30 text-emerald-400" : "bg-emerald-50 border-emerald-100 text-emerald-700"
-                  }`}>
-                    🍀 Vegetarian
-                  </span>
-                  <span className={`text-[10px] px-3.5 py-2 rounded-2xl font-black uppercase tracking-wider border ${
-                    isDark ? "bg-amber-955/20 border-amber-900/30 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-700"
-                  }`}>
-                    🥜 Contains Nuts
-                  </span>
-                  <span className={`text-[10px] px-3.5 py-2 rounded-2xl font-black uppercase tracking-wider border ${
-                    isDark ? "bg-indigo-950/20 border-indigo-900/30 text-indigo-400" : "bg-indigo-50 border-indigo-100 text-indigo-700"
-                  }`}>
-                    🌾 Gluten Free
-                  </span>
+              {(selectedItem.isVegetarian || selectedItem.containsNuts || selectedItem.isGlutenFree) && (
+                <div className="space-y-3.5">
+                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                    Dietary & Allergens
+                  </h4>
+                  <div className="flex flex-wrap gap-2.5">
+                    {selectedItem.isVegetarian && (
+                      <span className={`text-[10px] px-3.5 py-2 rounded-2xl font-black uppercase tracking-wider border ${
+                        isDark ? "bg-emerald-950/20 border-emerald-900/30 text-emerald-450" : "bg-emerald-50 border-emerald-100 text-emerald-700"
+                      }`}>
+                        🍀 Vegetarian
+                      </span>
+                    )}
+                    {selectedItem.containsNuts && (
+                      <span className={`text-[10px] px-3.5 py-2 rounded-2xl font-black uppercase tracking-wider border ${
+                        isDark ? "bg-amber-955/20 border-amber-900/30 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-700"
+                      }`}>
+                        🥜 Contains Nuts
+                      </span>
+                    )}
+                    {selectedItem.isGlutenFree && (
+                      <span className={`text-[10px] px-3.5 py-2 rounded-2xl font-black uppercase tracking-wider border ${
+                        isDark ? "bg-indigo-950/20 border-indigo-900/30 text-indigo-400" : "bg-indigo-50 border-indigo-100 text-indigo-700"
+                      }`}>
+                        🌾 Gluten Free
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

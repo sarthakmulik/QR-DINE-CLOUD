@@ -1,0 +1,7 @@
+-- Migration: Add custom menu item attributes for the Gourmet Storyboard layout
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS spicy_level INTEGER DEFAULT 0;
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS prep_time INTEGER DEFAULT 15;
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_vegetarian BOOLEAN DEFAULT FALSE;
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS contains_nuts BOOLEAN DEFAULT FALSE;
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_gluten_free BOOLEAN DEFAULT FALSE;
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_recommended BOOLEAN DEFAULT FALSE;

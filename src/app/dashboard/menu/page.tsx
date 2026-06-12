@@ -15,6 +15,12 @@ interface MenuItem {
   price: number;
   imageUrl: string | null;
   isAvailable: boolean;
+  spicyLevel?: number;
+  prepTime?: number;
+  isVegetarian?: boolean;
+  containsNuts?: boolean;
+  isGlutenFree?: boolean;
+  isRecommended?: boolean;
 }
 
 interface Category {
@@ -37,6 +43,12 @@ export default function MenuPage() {
     description: "",
     price: "",
     imageUrl: "",
+    spicyLevel: 0,
+    prepTime: 15,
+    isVegetarian: false,
+    containsNuts: false,
+    isGlutenFree: false,
+    isRecommended: false,
   });
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [imageError, setImageError] = useState("");
@@ -205,7 +217,19 @@ export default function MenuPage() {
       }
       setShowItemModal(false);
       setEditingItem(null);
-      setItemForm({ categoryId: "", name: "", description: "", price: "", imageUrl: "" });
+      setItemForm({
+        categoryId: "",
+        name: "",
+        description: "",
+        price: "",
+        imageUrl: "",
+        spicyLevel: 0,
+        prepTime: 15,
+        isVegetarian: false,
+        containsNuts: false,
+        isGlutenFree: false,
+        isRecommended: false,
+      });
       setImageError("");
       loadMenu();
     } finally {
@@ -232,7 +256,19 @@ export default function MenuPage() {
     if (limitReached) return;
     setEditingItem(null);
     setImageError("");
-    setItemForm({ categoryId, name: "", description: "", price: "", imageUrl: "" });
+    setItemForm({
+      categoryId,
+      name: "",
+      description: "",
+      price: "",
+      imageUrl: "",
+      spicyLevel: 0,
+      prepTime: 15,
+      isVegetarian: false,
+      containsNuts: false,
+      isGlutenFree: false,
+      isRecommended: false,
+    });
     setShowItemModal(true);
   }
 
@@ -245,6 +281,12 @@ export default function MenuPage() {
       description: item.description || "",
       price: String(item.price),
       imageUrl: item.imageUrl || "",
+      spicyLevel: item.spicyLevel ?? 0,
+      prepTime: item.prepTime ?? 15,
+      isVegetarian: !!item.isVegetarian,
+      containsNuts: !!item.containsNuts,
+      isGlutenFree: !!item.isGlutenFree,
+      isRecommended: !!item.isRecommended,
     });
     setShowItemModal(true);
   }
@@ -477,6 +519,92 @@ export default function MenuPage() {
             className="w-full border rounded-lg px-3 py-2"
             required
           />
+
+          {/* Chef's Recommendation */}
+          <div className="flex items-center gap-2 py-1">
+            <input
+              type="checkbox"
+              id="isRecommended"
+              checked={itemForm.isRecommended}
+              onChange={(e) => setItemForm({ ...itemForm, isRecommended: e.target.checked })}
+              className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500 cursor-pointer"
+            />
+            <label htmlFor="isRecommended" className="text-sm font-semibold text-gray-700 cursor-pointer flex items-center gap-1 select-none">
+              ⭐ Chef&apos;s Recommendation / Signature Dish
+            </label>
+          </div>
+
+          {/* Spice Level */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Spice Intensity</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { level: 0, label: "Mild 🌶️" },
+                { level: 1, label: "Medium 🌶️🌶️" },
+                { level: 2, label: "Spicy 🌶️🌶️🌶️" }
+              ].map((opt) => (
+                <button
+                  key={opt.level}
+                  type="button"
+                  onClick={() => setItemForm({ ...itemForm, spicyLevel: opt.level })}
+                  className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all ${
+                    itemForm.spicyLevel === opt.level
+                      ? "bg-brand-50 border-brand-500 text-brand-700 shadow-sm"
+                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Preparation Time */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <span>Preparation Time</span>
+              <span className="text-brand-655 font-black">{itemForm.prepTime} mins</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="5"
+                max="60"
+                step="5"
+                value={itemForm.prepTime}
+                onChange={(e) => setItemForm({ ...itemForm, prepTime: parseInt(e.target.value) })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+              />
+            </div>
+          </div>
+
+          {/* Dietary Indicators */}
+          <div className="space-y-1.5 pb-2">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Dietary & Allergens</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "isVegetarian", label: "Vegetarian 🍀", colorActive: "bg-emerald-50 border-emerald-500 text-emerald-700" },
+                { key: "containsNuts", label: "Contains Nuts 🥜", colorActive: "bg-amber-50 border-amber-500 text-amber-700" },
+                { key: "isGlutenFree", label: "Gluten Free 🌾", colorActive: "bg-indigo-50 border-indigo-500 text-indigo-750" }
+              ].map((diet) => {
+                const isAct = !!(itemForm as any)[diet.key];
+                return (
+                  <button
+                    key={diet.key}
+                    type="button"
+                    onClick={() => setItemForm({ ...itemForm, [diet.key]: !isAct })}
+                    className={`py-1.5 px-3 text-xs font-bold rounded-full border transition-all ${
+                      isAct
+                        ? diet.colorActive
+                        : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {diet.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700">Image</label>
             <input
