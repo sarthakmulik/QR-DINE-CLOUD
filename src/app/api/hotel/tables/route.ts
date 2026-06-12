@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDineUrl } from "@/lib/utils";
+import { getTableSignature } from "@/lib/crypto";
 import { getTableStatus } from "@/lib/session-service";
 import type { RestaurantTable, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
@@ -90,7 +91,9 @@ export async function POST(req: NextRequest) {
     const tableNumber = parseInt(body.tableNumber);
     const label = body.label || `Table ${tableNumber}`;
 
-    const dineUrl = getDineUrl(hotelId, tableNumber);
+    const baseDineUrl = getDineUrl(hotelId, tableNumber);
+    const signature = getTableSignature(hotelId, tableNumber);
+    const dineUrl = `${baseDineUrl}?sign=${signature}`;
     const qrCodeDataUrl = await QRCode.toDataURL(dineUrl, {
       width: 300,
       margin: 2,

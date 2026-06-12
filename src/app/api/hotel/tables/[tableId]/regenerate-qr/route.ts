@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDineUrl } from "@/lib/utils";
+import { getTableSignature } from "@/lib/crypto";
 import type { RestaurantTable } from "@/lib/types";
 
 export async function POST(
@@ -26,7 +27,9 @@ export async function POST(
     }
 
     // Generate a fresh QR code using the current APP_URL from env
-    const dineUrl = getDineUrl(hotelId, table.table_number);
+    const baseDineUrl = getDineUrl(hotelId, table.table_number);
+    const signature = getTableSignature(hotelId, table.table_number);
+    const dineUrl = `${baseDineUrl}?sign=${signature}`;
     const qrCodeDataUrl = await QRCode.toDataURL(dineUrl, {
       width: 400,
       margin: 2,

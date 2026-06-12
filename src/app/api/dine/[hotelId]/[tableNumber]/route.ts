@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapHotel, mapMenuItem, mapTableSession } from "@/lib/types";
 import type { Hotel, MenuCategory, MenuItem, RestaurantTable, SessionItem, TableSession } from "@/lib/types";
+import { verifyTableSignature } from "@/lib/crypto";
 
 export async function GET(
   _req: NextRequest,
@@ -16,6 +17,7 @@ export async function GET(
 
   const { searchParams } = new URL(_req.url);
   const sessionOnly = searchParams.get("sessionOnly") === "true";
+  const signature = searchParams.get("sign");
 
   const sb = createAdminClient();
 
@@ -34,6 +36,12 @@ export async function GET(
 
     const hotel = hotelRes.data as Hotel | null;
     if (!hotel) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+
+    // Cryptographic Anti-Tampering Check
+    if (hotel.secure_qr && !verifyTableSignature(hotelId, tableNumber, signature)) {
+      return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
+    }
+
     if (hotel.status === "paused" || hotel.status === "suspended") {
       return NextResponse.json({ error: "paused", hotel: mapHotel(hotel) }, { status: 403 });
     }
@@ -84,6 +92,12 @@ export async function GET(
   const [hotelRes, tableRes] = await Promise.all(baseQueries);
   const hotel = hotelRes.data as Hotel | null;
   if (!hotel) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+
+  // Cryptographic Anti-Tampering Check
+  if (hotel.secure_qr && !verifyTableSignature(hotelId, tableNumber, signature)) {
+    return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
+  }
+
   if (hotel.status === "paused" || hotel.status === "suspended") {
     return NextResponse.json({ error: "paused", hotel: mapHotel(hotel) }, { status: 403 });
   }

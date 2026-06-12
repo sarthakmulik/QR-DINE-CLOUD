@@ -19,6 +19,7 @@ export default function SettingsPage() {
     email: "",
     password: "",
     status: "active",
+    secureQr: false,
     customizations: {
       theme: "default",
       primaryColor: "#ea580c",
@@ -120,6 +121,7 @@ export default function SettingsPage() {
           email: data.ownerEmail || data.loginEmail || "",
           password: "",
           status: data.status || "active",
+          secureQr: !!data.secureQr,
           customizations: data.customizations || {
             theme: "default",
             primaryColor: "#ea580c",
@@ -149,6 +151,7 @@ export default function SettingsPage() {
           email: data.ownerEmail || data.loginEmail || "",
           password: "",
           status: data.status || "active",
+          secureQr: !!data.secureQr,
           customizations: data.customizations || {
             theme: "default",
             primaryColor: "#ea580c",
@@ -191,6 +194,7 @@ export default function SettingsPage() {
         upiId: form.upiId,
         ownerEmail: form.email,
         status: form.status,
+        secureQr: form.secureQr,
         customizations: form.customizations,
       };
       sessionStorage.setItem("admin_profile", JSON.stringify(updatedProfile));
@@ -310,6 +314,27 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-500 mt-1">
                 4-digit numeric code required to log into the kitchen KDS screen.
               </p>
+            </div>
+
+            <div className="flex items-start gap-3 bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4">
+              <input
+                type="checkbox"
+                id="secureQr"
+                checked={form.secureQr || false}
+                onChange={(e) => setForm({ ...form, secureQr: e.target.checked })}
+                className="mt-1.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+              />
+              <div className="space-y-1">
+                <label htmlFor="secureQr" className="block text-sm font-bold text-gray-800 cursor-pointer">
+                  Strict QR Verification (Anti-Tampering)
+                </label>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Cryptographically signs dine-in URLs to prevent customers from manually changing table numbers to place fake orders.
+                </p>
+                <span className="text-[10px] text-amber-800 font-semibold block bg-amber-100/50 px-2 py-1 rounded-lg">
+                  ⚠️ Note: Activating this immediately invalidates legacy QR scans. You will need to regenerate and reprint your table QRs.
+                </span>
+              </div>
             </div>
 
             <div>

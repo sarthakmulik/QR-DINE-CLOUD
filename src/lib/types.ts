@@ -32,6 +32,7 @@ export interface Hotel {
   created_at: string;
   kitchen_pin: string | null;
   upi_id: string | null;
+  secure_qr?: boolean | null;
   customizations?: {
     theme?: string;
     primaryColor?: string;
@@ -130,6 +131,7 @@ export function mapHotel(h: Hotel) {
     createdAt: h.created_at,
     kitchenPin: h.kitchen_pin ?? null,
     upiId: h.upi_id ?? null,
+    secureQr: !!h.secure_qr,
     customizations: h.customizations ?? null,
   };
 }

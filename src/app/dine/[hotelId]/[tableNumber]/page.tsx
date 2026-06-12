@@ -152,7 +152,15 @@ export default function DinePage({
   }, [toast]);
 
   const load = useCallback(async (sessionOnly = false) => {
-    const res = await fetch(`/api/dine/${hotelId}/${tableNumber}${sessionOnly ? "?sessionOnly=true" : ""}`);
+    let sign = "";
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      sign = params.get("sign") || "";
+    }
+    const query = new URLSearchParams();
+    if (sessionOnly) query.set("sessionOnly", "true");
+    if (sign) query.set("sign", sign);
+    const res = await fetch(`/api/dine/${hotelId}/${tableNumber}?${query.toString()}`);
     const data = await res.json();
 
     if (data.error === "paused") {
@@ -204,7 +212,10 @@ export default function DinePage({
       return;
     }
     if (!res.ok) {
-      setState({ type: "error", message: data.error || "Something went wrong" });
+      const errMsg = data.error === "invalid_qr"
+        ? "Security Check Failed: Please scan the physical QR code printed on your table. Direct or manual link entry is restricted."
+        : data.error || "Something went wrong";
+      setState({ type: "error", message: errMsg });
       return;
     }
 
@@ -466,8 +477,13 @@ export default function DinePage({
     setIsValidatingCoupon(true);
     setCouponError(null);
     try {
+      let sign = "";
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        sign = params.get("sign") || "";
+      }
       // Single call: apply-coupon validates AND applies atomically (no extra round-trip)
-      const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon`, {
+      const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon?sign=${sign}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: couponCodeInput.trim() }),
@@ -508,8 +524,14 @@ export default function DinePage({
     // Optimistic: remove coupon state immediately
     setAppliedCoupon(null);
     setCouponCodeInput("");
+
+    let sign = "";
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      sign = params.get("sign") || "";
+    }
     // Fire-and-forget server update
-    fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon`, {
+    fetch(`/api/dine/${hotelId}/${tableNumber}/apply-coupon?sign=${sign}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: "" }),
@@ -596,7 +618,12 @@ export default function DinePage({
     setState({ type: "confirmed" });
 
     try {
-      const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/order`, {
+      let sign = "";
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        sign = params.get("sign") || "";
+      }
+      const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/order?sign=${sign}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1050,8 +1077,31 @@ export default function DinePage({
 
   if (state.type === "error") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <p className="text-red-600">{state.message}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-black px-4 relative overflow-hidden text-center">
+        {/* Glow Effects */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-brand-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="bg-white/[0.02] backdrop-blur-2xl rounded-3xl border border-white/10 p-8 shadow-2xl max-w-md w-full space-y-6 relative z-10 animate-fade-in">
+          <div className="mx-auto w-16 h-16 bg-red-950/40 border border-red-500/30 rounded-full flex items-center justify-center text-3xl shadow-[0_0_50px_rgba(239,68,68,0.1)] text-red-400">
+            ⚠️
+          </div>
+          
+          <div className="space-y-2.5">
+            <h1 className="text-xl font-black text-white tracking-tight">
+              Access Restricted
+            </h1>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed px-2">
+              {state.message}
+            </p>
+          </div>
+
+          <div className="border-t border-white/5 pt-5">
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+              QR Dine Security Protocol
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

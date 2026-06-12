@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDineUrl } from "@/lib/utils";
+import { getTableSignature } from "@/lib/crypto";
 import type { RestaurantTable } from "@/lib/types";
 
 export async function PATCH(
@@ -51,7 +52,9 @@ export async function PATCH(
       updates.table_number = tableNumber;
 
       // Regenerate QR code for the new table number
-      const dineUrl = getDineUrl(hotelId, tableNumber);
+      const baseDineUrl = getDineUrl(hotelId, tableNumber);
+      const signature = getTableSignature(hotelId, tableNumber);
+      const dineUrl = `${baseDineUrl}?sign=${signature}`;
       const qrCodeDataUrl = await QRCode.toDataURL(dineUrl, {
         width: 300,
         margin: 2,

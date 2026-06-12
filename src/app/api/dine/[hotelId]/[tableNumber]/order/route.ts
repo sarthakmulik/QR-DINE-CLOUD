@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateOpenSession, addItemToSession } from "@/lib/session-service";
 import type { Hotel, MenuItem, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
+import { verifyTableSignature } from "@/lib/crypto";
 
 export async function POST(
   req: NextRequest,
@@ -45,13 +46,21 @@ export async function POST(
         .in("id", menuItemIds)
         .eq("hotel_id", hotelId)
         .eq("is_available", true),
-      sb.from("hotels").select("status, plan").eq("id", hotelId).maybeSingle(),
+      sb.from("hotels").select("status, plan, secure_qr").eq("id", hotelId).maybeSingle(),
     ]);
+
+    const { searchParams } = new URL(req.url);
+    const signature = searchParams.get("sign");
 
     const hotel = hotelRes.data;
     if (!hotel) {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
     }
+
+    if (hotel.secure_qr && !verifyTableSignature(hotelId, tableNumber, signature)) {
+      return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
+    }
+
     if (hotel.status === "paused" || hotel.status === "suspended") {
       return NextResponse.json({ error: "This restaurant is currently not accepting orders." }, { status: 403 });
     }

@@ -155,6 +155,10 @@ export async function PATCH(req: NextRequest) {
       updates.status = status;
     }
 
+    if (body.secureQr !== undefined) {
+      updates.secure_qr = Boolean(body.secureQr);
+    }
+
     if (body.customizations !== undefined) {
       updates.customizations = body.customizations;
     }
@@ -170,9 +174,9 @@ export async function PATCH(req: NextRequest) {
 
       if (error) {
         console.error("Profile update DB error:", error);
-        if (error.message?.includes("customizations") || error.code === "42703") {
+        if (error.message?.includes("customizations") || error.message?.includes("secure_qr") || error.code === "42703") {
           return NextResponse.json({
-            error: "Failed to update customizations. Please make sure you have executed the SQL migration script (supabase/migrations/20260612_elite_customization.sql) in your Supabase SQL Editor."
+            error: "Failed to update settings. Please make sure you have executed the database migration scripts (specifically adding customizations and secure_qr columns) in your Supabase SQL Editor."
           }, { status: 400 });
         }
         throw error;

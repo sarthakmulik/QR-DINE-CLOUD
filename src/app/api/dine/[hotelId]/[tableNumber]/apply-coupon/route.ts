@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recalculateSessionTotals } from "@/lib/session-service";
+import { verifyTableSignature } from "@/lib/crypto";
 
 export async function POST(
   req: NextRequest,
@@ -16,27 +17,36 @@ export async function POST(
       return NextResponse.json({ error: "Invalid table" }, { status: 400 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const signature = searchParams.get("sign");
+
     const sb = createAdminClient();
 
-    // Fetch table to get session ID
-    const { data: table } = await sb
-      .from("restaurant_tables")
-      .select("current_session_id")
-      .eq("hotel_id", hotelId)
-      .eq("table_number", tableNumber)
-      .maybeSingle();
+    // Fetch table + hotel in parallel
+    const [tableRes, hotelRes] = await Promise.all([
+      sb.from("restaurant_tables").select("current_session_id").eq("hotel_id", hotelId).eq("table_number", tableNumber).maybeSingle(),
+      sb.from("hotels").select("plan, secure_qr").eq("id", hotelId).maybeSingle(),
+    ]);
 
+    const hotel = hotelRes.data;
+    if (!hotel) {
+      return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    }
+
+    if (hotel.secure_qr && !verifyTableSignature(hotelId, tableNumber, signature)) {
+      return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
+    }
+
+    const table = tableRes.data;
     if (!table || !table.current_session_id) {
       return NextResponse.json({ error: "No active session on this table" }, { status: 400 });
     }
 
     const sessionId = table.current_session_id;
 
-    // Parallel: session + (if code) hotel plan + coupon
     if (code) {
-      const [sessionRes, hotelRes, couponRes] = await Promise.all([
+      const [sessionRes, couponRes] = await Promise.all([
         sb.from("table_sessions").select("*").eq("id", sessionId).maybeSingle(),
-        sb.from("hotels").select("plan").eq("id", hotelId).single(),
         sb.from("coupons").select("*").eq("hotel_id", hotelId).eq("code", String(code).trim().toUpperCase()).eq("is_active", true).maybeSingle(),
       ]);
 
@@ -44,8 +54,7 @@ export async function POST(
       if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
       if (session.status === "closed") return NextResponse.json({ error: "Session is already closed" }, { status: 400 });
 
-      const hotel = hotelRes.data;
-      if (!hotel || hotel.plan.toLowerCase() === "basic") {
+      if (hotel.plan.toLowerCase() === "basic") {
         return NextResponse.json({ error: "Coupons are not enabled on this plan." }, { status: 403 });
       }
 
