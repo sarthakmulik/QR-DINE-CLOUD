@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 import { Star, MessageSquare } from "lucide-react";
@@ -23,7 +23,7 @@ export default function FeedbackPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function loadFeedback() {
+  const loadFeedback = useCallback(async () => {
     if (!hasAccess) return;
     try {
       const res = await fetch("/api/hotel/feedback");
@@ -37,7 +37,7 @@ export default function FeedbackPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [hasAccess]);
 
   useEffect(() => {
     if (hasAccess) {
@@ -52,7 +52,7 @@ export default function FeedbackPage() {
       }
       loadFeedback();
     }
-  }, [hasAccess]);
+  }, [hasAccess, loadFeedback]);
 
   if (!hasAccess) {
     return (

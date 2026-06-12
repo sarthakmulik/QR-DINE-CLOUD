@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePlan } from "@/lib/contexts/plan-context";
@@ -33,7 +33,7 @@ export default function CouponsPage() {
     isActive: true,
   });
 
-  async function loadCoupons() {
+  const loadCoupons = useCallback(async () => {
     if (!hasAccess) return;
     try {
       const res = await fetch("/api/hotel/coupons");
@@ -47,7 +47,7 @@ export default function CouponsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [hasAccess]);
 
   useEffect(() => {
     if (hasAccess) {
@@ -62,7 +62,7 @@ export default function CouponsPage() {
       }
       loadCoupons();
     }
-  }, [hasAccess]);
+  }, [hasAccess, loadCoupons]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

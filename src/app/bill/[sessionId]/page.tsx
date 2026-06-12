@@ -52,11 +52,14 @@ export default async function BillPage({
 
       <div className="text-center border-b pb-4 mb-4">
         {hotel?.logo && (
-          <img
-            src={hotel.logo}
-            alt=""
-            className="w-16 h-16 mx-auto rounded-full object-cover mb-2"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={hotel.logo}
+              alt=""
+              className="w-16 h-16 mx-auto rounded-full object-cover mb-2"
+            />
+          </>
         )}
         <h1 className="text-xl font-bold">{hotel?.name}</h1>
         {hotel?.address && (

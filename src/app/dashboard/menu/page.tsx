@@ -25,8 +25,11 @@ interface Category {
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showCatModal, setShowCatModal] = useState(false);
+  const [showEditCatModal, setShowEditCatModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [catName, setCatName] = useState("");
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCatName, setEditCatName] = useState("");
   const [itemForm, setItemForm] = useState({
     categoryId: "",
     name: "",
@@ -66,14 +69,97 @@ export default function MenuPage() {
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
-    await fetch("/api/hotel/menu/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: catName }),
-    });
-    setCatName("");
-    setShowCatModal(false);
-    loadMenu();
+    const nameVal = catName.trim();
+    if (!nameVal) {
+      alert("Please enter a category name.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/hotel/menu/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nameVal }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error || "Failed to add category");
+        return;
+      }
+      setCatName("");
+      setShowCatModal(false);
+      loadMenu();
+    } catch {
+      alert("Failed to add category. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openEditCategory(cat: Category) {
+    setEditingCategory(cat);
+    setEditCatName(cat.name);
+    setShowEditCatModal(true);
+  }
+
+  async function updateCategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCategory) return;
+    const nameVal = editCatName.trim();
+    if (!nameVal) {
+      alert("Please enter a category name.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/hotel/menu/categories/${editingCategory.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nameVal }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error || "Failed to update category");
+        return;
+      }
+      setShowEditCatModal(false);
+      setEditingCategory(null);
+      setEditCatName("");
+      loadMenu();
+    } catch {
+      alert("Failed to update category. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteCategory(id: string, name: string) {
+    if (
+      !confirm(
+        `Are you sure you want to delete the category "${name}"?\n\nWARNING: This will permanently delete ALL menu items inside this category. This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/hotel/menu/categories/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error || "Failed to delete category");
+        return;
+      }
+      loadMenu();
+    } catch {
+      alert("Failed to delete category. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function saveItem(e: React.FormEvent) {
@@ -226,7 +312,25 @@ export default function MenuPage() {
       {categories.map((cat) => (
         <div key={cat.id} className="bg-white rounded-xl border p-5">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">{cat.name}</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">{cat.name}</h2>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => openEditCategory(cat)}
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition"
+                  title="Rename Category"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => deleteCategory(cat.id, cat.name)}
+                  className="p-1.5 hover:bg-red-50 rounded text-red-400 hover:text-red-600 transition"
+                  title="Delete Category"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               {limitReached && (
                 <span className="text-xs text-amber-600 font-semibold hidden md:inline">Limit reached</span>
@@ -250,11 +354,14 @@ export default function MenuPage() {
                 }`}
               >
                 {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                  </>
                 ) : (
                   <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-2xl">
                     🍽️
@@ -313,7 +420,24 @@ export default function MenuPage() {
             className="w-full border rounded-lg px-3 py-2"
             required
           />
-          <Button type="submit" className="w-full">Add Category</Button>
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? "Saving..." : "Add Category"}
+          </Button>
+        </form>
+      </Modal>
+
+      <Modal open={showEditCatModal} onClose={() => { setShowEditCatModal(false); setEditingCategory(null); }} title="Edit Category">
+        <form onSubmit={updateCategory} className="space-y-4">
+          <input
+            value={editCatName}
+            onChange={(e) => setEditCatName(e.target.value)}
+            placeholder="Category name (e.g. Starters)"
+            className="w-full border rounded-lg px-3 py-2"
+            required
+          />
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? "Saving..." : "Update Category"}
+          </Button>
         </form>
       </Modal>
 
@@ -359,11 +483,14 @@ export default function MenuPage() {
               <p className="text-xs text-red-600">{imageError}</p>
             )}
             {!imageError && itemForm.imageUrl && (
-              <img
-                src={itemForm.imageUrl}
-                alt="preview"
-                className="w-24 h-24 rounded-lg object-cover border mt-1"
-              />
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={itemForm.imageUrl}
+                  alt="preview"
+                  className="w-24 h-24 rounded-lg object-cover border mt-1"
+                />
+              </>
             )}
             <input
               value={itemForm.imageUrl.startsWith("data:") ? "" : itemForm.imageUrl}

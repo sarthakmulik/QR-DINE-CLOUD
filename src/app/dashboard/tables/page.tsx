@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Plus, Download, RefreshCw, Copy, Check, ShieldAlert } from "lucide-react";
+import { Plus, Download, RefreshCw, Copy, Check, ShieldAlert, Pencil, Trash2 } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 
 interface TableData {
@@ -17,8 +17,12 @@ export default function TablesPage() {
   const [tables, setTables] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTable, setEditingTable] = useState<TableData | null>(null);
   const [tableNumber, setTableNumber] = useState("");
   const [label, setLabel] = useState("");
+  const [editTableNumber, setEditTableNumber] = useState("");
+  const [editLabel, setEditLabel] = useState("");
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -127,6 +131,97 @@ export default function TablesPage() {
     link.click();
   }
 
+  function openEditTable(table: TableData) {
+    setEditingTable(table);
+    setEditTableNumber(String(table.tableNumber));
+    setEditLabel(table.label);
+    setShowEditModal(true);
+  }
+
+  async function updateTable(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingTable) return;
+
+    const numVal = parseInt(editTableNumber);
+    if (isNaN(numVal) || numVal <= 0) {
+      alert("Please enter a valid table number.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/hotel/tables/${editingTable.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableNumber: numVal,
+          label: editLabel,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        // Update local state
+        setTables((prev) =>
+          prev.map((t) => (t.id === editingTable.id ? updated : t))
+        );
+        // Sync cache
+        const cached = sessionStorage.getItem("admin_tables_list");
+        if (cached) {
+          try {
+            const list = JSON.parse(cached) as TableData[];
+            const updatedList = list.map((t) => (t.id === editingTable.id ? updated : t));
+            sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setShowEditModal(false);
+        setEditingTable(null);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update table.");
+      }
+    } catch {
+      alert("Something went wrong while updating table.");
+    }
+  }
+
+  async function deleteTable(id: string, label: string) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${label}"?\n\nWARNING: This will permanently delete all active sessions, checkout history, and order logs for this table. This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/hotel/tables/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // Update state and cache
+        setTables((prev) => prev.filter((t) => t.id !== id));
+        const cached = sessionStorage.getItem("admin_tables_list");
+        if (cached) {
+          try {
+            const list = JSON.parse(cached) as TableData[];
+            const updatedList = list.filter((t) => t.id !== id);
+            sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to delete table.");
+      }
+    } catch {
+      alert("Something went wrong while deleting table.");
+    }
+  }
+
   async function copyUrl(url: string, id: string) {
     await navigator.clipboard.writeText(url);
     setCopied(id);
@@ -194,15 +289,34 @@ export default function TablesPage() {
           tables.map((table) => (
             <div
               key={table.id}
-              className="bg-white rounded-xl border p-5 text-center animate-fade-in"
+              className="bg-white rounded-xl border p-5 text-center animate-fade-in relative group"
             >
-              <h3 className="font-semibold text-lg mb-3">{table.label}</h3>
+              <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => openEditTable(table)}
+                  className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition"
+                  title="Edit Table"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => deleteTable(table.id, table.label || `Table ${table.tableNumber}`)}
+                  className="p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-600 transition"
+                  title="Delete Table"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <h3 className="font-semibold text-lg mb-3 pr-8 truncate" title={table.label}>{table.label}</h3>
               {table.qrCodeUrl && (
-                <img
-                  src={table.qrCodeUrl}
-                  alt={`QR for ${table.label}`}
-                  className="w-48 h-48 mx-auto"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={table.qrCodeUrl}
+                    alt={`QR for ${table.label}`}
+                    className="w-48 h-48 mx-auto"
+                  />
+                </>
               )}
               <p className="text-xs text-gray-500 mt-2">
                 Table #{table.tableNumber}
@@ -266,6 +380,33 @@ export default function TablesPage() {
             />
           </div>
           <Button type="submit" className="w-full">Create Table & QR</Button>
+        </form>
+      </Modal>
+
+      <Modal open={showEditModal} onClose={() => { setShowEditModal(false); setEditingTable(null); }} title="Edit Table">
+        <form onSubmit={updateTable} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Table Number</label>
+            <input
+              type="number"
+              value={editTableNumber}
+              onChange={(e) => setEditTableNumber(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+              min={1}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Label</label>
+            <input
+              value={editLabel}
+              onChange={(e) => setEditLabel(e.target.value)}
+              placeholder={`Table ${editTableNumber || "?"}`}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full">Update Table</Button>
         </form>
       </Modal>
     </div>

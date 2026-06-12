@@ -49,10 +49,14 @@ export async function POST(
       dineUrl, // Return the URL so it's visible in the response
     });
   } catch (e) {
-    console.error("[Regenerate QR]", e);
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to regenerate QR" },
-      { status: 500 }
-    );
+    console.error("[Regenerate QR Error]:", e);
+    const msg = e instanceof Error ? e.message : "Failed to regenerate QR";
+    if (msg === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (msg === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

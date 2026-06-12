@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -94,7 +94,7 @@ export default function StaffPanelPage() {
     }
   };
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const res = await fetch("/api/staff/overview");
       if (res.status === 401 || res.status === 403) {
@@ -122,7 +122,7 @@ export default function StaffPanelPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
 
   useEffect(() => {
     const cached = localStorage.getItem("staff_overview");
@@ -141,7 +141,7 @@ export default function StaffPanelPage() {
     loadData();
     const interval = setInterval(loadData, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadData]);
 
   async function handleCompleteRequest(id: string) {
     try {

@@ -51,11 +51,35 @@ export async function POST(req: NextRequest) {
     const { hotelId } = await requireHotelAccess();
     const body = await req.json();
 
-    const { data: category, error } = await createAdminClient()
+    const name = String(body.name || "").trim();
+    if (!name) {
+      return NextResponse.json({ error: "Category name is required" }, { status: 400 });
+    }
+
+    const sb = createAdminClient();
+
+    // Check if category name already exists (case-insensitive) for this hotel
+    const { data: existingCats } = await sb
+      .from("menu_categories")
+      .select("name")
+      .eq("hotel_id", hotelId);
+
+    const hasDuplicate = existingCats?.some(
+      (cat) => cat.name.trim().toLowerCase() === name.toLowerCase()
+    );
+
+    if (hasDuplicate) {
+      return NextResponse.json(
+        { error: "A category with this name already exists" },
+        { status: 400 }
+      );
+    }
+
+    const { data: category, error } = await sb
       .from("menu_categories")
       .insert({
         hotel_id: hotelId,
-        name: body.name,
+        name: name,
         sort_order: body.sortOrder ?? 0,
       })
       .select("*")
@@ -68,7 +92,10 @@ export async function POST(req: NextRequest) {
       name: category!.name,
       sortOrder: category!.sort_order,
     });
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message !== "Unauthorized") {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

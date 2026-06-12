@@ -852,11 +852,14 @@ export default function DinePage({
         <header className="bg-white/95 backdrop-blur-md border-b border-gray-100/80 sticky top-0 z-30 px-4 py-3.5 flex items-center justify-between transition-all">
           <div className="flex items-center gap-3">
             {state.hotelLogo ? (
-              <img
-                src={state.hotelLogo}
-                alt=""
-                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
-              />
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={state.hotelLogo}
+                  alt=""
+                  className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                />
+              </>
             ) : (
               <div className="w-10 h-10 bg-brand-50 border border-brand-100 text-brand-600 rounded-full flex items-center justify-center text-lg shadow-sm">
                 🍽️
@@ -1101,6 +1104,7 @@ export default function DinePage({
         <div className="flex items-center gap-3">
           {state.hotelLogo ? (
             <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={state.hotelLogo}
                 alt=""
@@ -1248,11 +1252,14 @@ export default function DinePage({
                       className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] p-3.5 flex gap-3.5 transition-all duration-300 hover:shadow-[0_6px_24px_-4px_rgba(0,0,0,0.07)]"
                     >
                       {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-sm"
-                        />
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-sm"
+                          />
+                        </>
                       ) : (
                         <div className="w-20 h-20 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
                           🍽️

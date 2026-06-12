@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Script from "next/script";
 import { formatINR } from "@/lib/utils";
 import { TrendingUp, ShoppingBag, DollarSign, Award, Calendar } from "lucide-react";
@@ -45,7 +45,7 @@ export default function AnalyticsPage() {
   const hourlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // 1. Fetch analytics data on date range changes
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     if (!hasAccess) return;
     let fromStr = "";
     let toStr = "";
@@ -105,11 +105,11 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hasAccess, range, customFrom, customTo]);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [range, customFrom, customTo]);
+  }, [fetchAnalytics]);
 
   // 2. Render/Update charts when data or library loads
   useEffect(() => {

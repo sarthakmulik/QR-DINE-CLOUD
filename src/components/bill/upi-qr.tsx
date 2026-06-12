@@ -51,6 +51,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
 
       {qrCodeUrl ? (
         <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-inner">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qrCodeUrl} alt="UPI Payment QR Code" className="h-44 w-44 object-contain" />
         </div>
       ) : (
