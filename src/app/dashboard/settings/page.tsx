@@ -233,7 +233,7 @@ export default function SettingsPage() {
   const brandColors = form.customizations?.primaryColor ? generateBrandColors(form.customizations.primaryColor) : {};
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 animate-page-entrance">
       <div>
         <h1 className="text-2xl font-bold">Restaurant Settings</h1>
         <p className="text-gray-500 text-sm">Profile and whitelabel configuration</p>

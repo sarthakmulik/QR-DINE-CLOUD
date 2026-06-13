@@ -80,7 +80,7 @@ export default function FeedbackPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-page-entrance">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           Customer Reviews

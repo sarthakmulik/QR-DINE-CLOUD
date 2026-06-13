@@ -275,7 +275,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 animate-page-entrance">
       {/* Load Chart.js CDN */}
       <Script
         src="https://cdn.jsdelivr.net/npm/chart.js"

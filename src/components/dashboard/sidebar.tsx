@@ -76,10 +76,10 @@ export function DashboardSidebar({
               href={link.href}
               target={link.target}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                 active
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-950"
               )}
             >
               <link.icon className="w-4 h-4" />
@@ -92,7 +92,7 @@ export function DashboardSidebar({
       <div className="p-3 border-t">
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 w-full active:scale-[0.98] transition duration-150 ease-in-out"
         >
           <LogOut className="w-4 h-4" />
           Sign out

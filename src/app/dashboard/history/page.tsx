@@ -49,7 +49,7 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
         <div>
           <h1 className="text-2xl font-bold">Order History</h1>

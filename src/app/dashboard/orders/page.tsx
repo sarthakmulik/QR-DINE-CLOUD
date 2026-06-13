@@ -42,7 +42,7 @@ export default function LiveOrdersPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-entrance">
       <div>
         <h1 className="text-2xl font-bold">Live Orders</h1>
         <p className="text-gray-500 text-sm">All active table sessions</p>

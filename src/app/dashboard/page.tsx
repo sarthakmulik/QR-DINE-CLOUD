@@ -474,7 +474,7 @@ Thank you for dining with us!`;
   );
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 animate-page-entrance">
       {/* HEADER SECTION */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>

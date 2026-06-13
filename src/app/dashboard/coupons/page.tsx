@@ -168,7 +168,7 @@ export default function CouponsPage() {
   const isSkeletons = loading && coupons.length === 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
