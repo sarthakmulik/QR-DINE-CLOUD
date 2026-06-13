@@ -341,46 +341,39 @@ export default function DinePage({
     }
   }, [state.type]);
 
+  const categories = state.type === "menu" ? state.categories : [];
+
   useEffect(() => {
-    if (state.type !== "menu" || searchQuery) return;
-    const categories = state.categories;
+    if (state.type !== "menu" || searchQuery || categories.length === 0) return;
 
-    const handleScroll = () => {
-      const headerOffset = 210; 
-      const scrollPosition = window.scrollY + headerOffset;
-
-      let currentActive: string | null = null;
-      for (const cat of categories) {
-        const el = document.getElementById(`cat-${cat.id}`);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPosition >= top && scrollPosition < top + height) {
-            currentActive = cat.id;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the category that is most visible
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const catId = entry.target.id.replace("cat-", "");
+            setActiveCategory(catId);
+            const btn = document.getElementById(`cat-btn-${catId}`);
+            if (btn) {
+              btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+            }
             break;
           }
         }
+      },
+      {
+        rootMargin: "-210px 0px -50% 0px",
+        threshold: 0.1,
       }
+    );
 
-      if (!currentActive && categories.length > 0) {
-        if (window.scrollY < 100) {
-          currentActive = categories[0].id;
-        }
-      }
+    categories.forEach((cat) => {
+      const el = document.getElementById(`cat-${cat.id}`);
+      if (el) observer.observe(el);
+    });
 
-      if (currentActive && currentActive !== activeCategory) {
-        setActiveCategory(currentActive);
-        const btn = document.getElementById(`cat-btn-${currentActive}`);
-        if (btn) {
-          btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [state, searchQuery, activeCategory]);
+    return () => observer.disconnect();
+  }, [state.type, searchQuery, categories]);
 
   // Load cart and cached menu from sessionStorage on mount
   useEffect(() => {
@@ -453,8 +446,8 @@ export default function DinePage({
   useEffect(() => {
     if (state.type === "paused" || state.type === "thankyou" || state.type === "confirmed" || state.type === "closed") return;
     load();
-    // Poll every 5s to detect checkout/bill state quickly
-    const interval = setInterval(() => load(true), 5000);
+    // Poll every 15s to detect checkout/bill state, optimizing for heavy traffic
+    const interval = setInterval(() => load(true), 15000);
     return () => clearInterval(interval);
   }, [load, state.type]);
 
@@ -1277,10 +1270,10 @@ export default function DinePage({
 
       {/* Category Navigation Bar (only if search query is empty) */}
       {!searchQuery && (
-        <div className={`sticky top-[141px] z-20 border-b pb-2.5 pt-1.5 no-print transition-colors duration-300 ${
-          isDark ? "bg-slate-950/95 border-white/5" : "bg-gray-50/95 border-gray-200/40"
+        <div className={`sticky top-[141px] z-20 border-b pb-3 pt-2 no-print transition-colors duration-300 backdrop-blur-2xl ${
+          isDark ? "bg-slate-950/80 border-white/5" : "bg-white/80 border-gray-150/50"
         }`}>
-          <div className="flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none snap-x snap-mandatory max-w-md mx-auto">
+          <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory max-w-md mx-auto items-center">
             {state.categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
@@ -1300,12 +1293,12 @@ export default function DinePage({
                       });
                     }
                   }}
-                  className={`snap-start scroll-mx-4 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-305 ${
+                  className={`snap-center scroll-mx-4 px-5 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap transition-all duration-300 transform ${
                     isActive
-                      ? "bg-brand-600 text-white shadow-md shadow-brand-200 scale-105"
+                      ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_6px_20px_-4px_rgba(var(--brand-rgb),0.5)] scale-105 border border-transparent"
                       : isDark
-                        ? "bg-slate-900 text-slate-400 border border-white/5 hover:bg-slate-850 active:scale-95"
-                        : "bg-white text-gray-500 border border-gray-200/60 hover:bg-gray-50 active:scale-95"
+                        ? "bg-slate-900 text-slate-400 border border-white/[0.08] hover:bg-slate-800 hover:text-slate-300 active:scale-95"
+                        : "bg-white text-gray-550 border border-gray-200/80 hover:bg-gray-50 hover:text-gray-900 active:scale-95 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.02)]"
                   }`}
                 >
                   {cat.name}
@@ -1376,62 +1369,80 @@ export default function DinePage({
               }`}>{cat.name}</h2>
               
               {layout === "compact" ? (
-                <div className={`rounded-3xl border overflow-hidden divide-y shadow-sm ${
-                  isDark ? "bg-slate-900 border-white/5 divide-white/5" : "bg-white border-gray-100 divide-gray-100"
+                <div className={`rounded-[2rem] border overflow-hidden shadow-sm backdrop-blur-md ${
+                  isDark ? "bg-slate-900/90 border-white/5 divide-y divide-white/5" : "bg-white/90 border-gray-200/50 divide-y divide-gray-100"
                 }`}>
                   {cat.items.map((item) => {
                     const cartItem = cart.find((c) => c.menuItemId === item.id);
                     const qty = cartItem ? cartItem.quantity : 0;
                     
                     return (
-                      <div key={item.id} className="p-3 flex items-center justify-between gap-3 bg-transparent">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div key={item.id} className={`p-4 flex items-center justify-between gap-4 transition-colors duration-300 ${isDark ? "hover:bg-white/[0.02]" : "hover:bg-gray-50/50"}`}>
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
                           {item.imageUrl ? (
-                            <img
-                              src={item.imageUrl}
-                              alt={item.name}
-                              className="w-12 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm"
-                            />
+                            <div className="relative">
+                              <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className="w-14 h-14 rounded-2xl object-cover flex-shrink-0 shadow-[0_2px_10px_rgba(0,0,0,0.06)] border border-black/5"
+                              />
+                              {item.isRecommended && (
+                                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border border-white">
+                                  <Star className="w-2.5 h-2.5 text-white fill-white" />
+                                </div>
+                              )}
+                            </div>
                           ) : (
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0 shadow-sm ${
+                            <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm ${
                               isDark ? "bg-slate-800 border border-white/5" : "bg-gray-50 border border-gray-100"
                             }`}>
                               🍽️
+                              {item.isRecommended && (
+                                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border border-white">
+                                  <Star className="w-2.5 h-2.5 text-white fill-white" />
+                                </div>
+                              )}
                             </div>
                           )}
-                          <div className="min-w-0 flex-1">
-                            <h3 className={`font-bold leading-tight text-xs tracking-tight ${isDark ? "text-white" : "text-gray-950"}`}>{item.name}</h3>
+                          <div className="min-w-0 flex-1 py-0.5">
+                            <h3 className={`font-extrabold leading-tight text-sm tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>{item.name}</h3>
                             {item.description && (
-                              <p className={`text-[10px] line-clamp-1 mt-0.5 leading-normal ${isDark ? "text-slate-450" : "text-gray-450"}`}>
+                              <p className={`text-[11px] line-clamp-1 mt-1 leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                                 {item.description}
                               </p>
                             )}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {item.spicyLevel !== undefined && item.spicyLevel !== null && (
+                                <span className={`text-[9px] tracking-widest uppercase font-black px-1.5 py-0.5 rounded-md ${isDark ? "text-red-400 bg-red-950/50" : "text-red-600 bg-red-50"}`}>
+                                  {item.spicyLevel === 0 ? "Mild" : item.spicyLevel === 1 ? "Med" : "Hot"} 🌶️
+                                </span>
+                              )}
+                              {item.isVegetarian && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" title="Vegetarian" />}
+                              {item.containsNuts && <span className="text-[10px]" title="Contains Nuts">🥜</span>}
+                              {item.isGlutenFree && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? "bg-indigo-950/50 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}>GF</span>}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2.5 flex-shrink-0">
-                          <span className={`font-extrabold text-xs ${isDark ? "text-brand-400" : "text-brand-600"}`}>
+                        <div className="flex flex-col items-end justify-center gap-2.5 flex-shrink-0">
+                          <span className={`font-black text-[13px] ${isDark ? "text-brand-400" : "text-brand-650"}`}>
                             {formatMenuPrice(item.price)}
                           </span>
                           {qty > 0 ? (
-                            <div className={`flex items-center border rounded-full h-8 px-1 gap-2 font-bold shadow-sm ${
-                              isDark ? "bg-brand-50/10 border-brand-500/25 text-brand-400" : "bg-brand-50 border-brand-100 text-brand-650"
+                            <div className={`flex items-center border rounded-full h-8 px-1 gap-1.5 font-bold shadow-sm backdrop-blur-sm ${
+                              isDark ? "bg-brand-500/10 border-brand-500/20 text-brand-300" : "bg-brand-50/80 border-brand-200/60 text-brand-700"
                             }`}>
                               <button
                                 onClick={() => updateQty(item.id, -1)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition ${
-                                  isDark ? "hover:bg-brand-500/20 text-brand-450" : "hover:bg-brand-100 text-brand-600"
-                                }`}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/20" : "hover:bg-brand-200/50"}`}
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <span className={`text-xs min-w-[12px] text-center select-none font-extrabold ${isDark ? "text-white" : "text-brand-700"}`}>
+                              <span className="text-xs min-w-[14px] text-center select-none font-black">
                                 {qty}
                               </span>
                               <button
                                 onClick={() => updateQty(item.id, 1)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition ${
-                                  isDark ? "hover:bg-brand-500/20 text-brand-450" : "hover:bg-brand-100 text-brand-600"
-                                }`}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/20" : "hover:bg-brand-200/50"}`}
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
@@ -1439,9 +1450,11 @@ export default function DinePage({
                           ) : (
                             <button
                               onClick={() => addToCart(item)}
-                              className={`px-3 py-1.5 bg-brand-600 text-white rounded-full font-bold text-xs flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all hover:bg-brand-700 ${
-                                bounceId === item.id ? "animate-cart-bounce" : ""
-                              }`}
+                              className={`px-4 py-1.5 rounded-full font-black text-[11px] flex items-center justify-center gap-1 shadow-sm active:scale-90 transition-all ${
+                                isDark 
+                                  ? "bg-brand-500 text-white hover:bg-brand-400 shadow-brand-500/20" 
+                                  : "bg-gray-900 text-white hover:bg-black shadow-gray-900/20 hover:shadow-lg"
+                              } ${bounceId === item.id ? "animate-cart-bounce" : ""}`}
                             >
                               <Plus className="w-3 h-3" />
                               Add
@@ -1453,15 +1466,11 @@ export default function DinePage({
                   })}
                 </div>
               ) : layout === "masonry" || layout === "fullscreen_story" ? (
-                <div className="grid grid-cols-2 gap-4 space-y-0 animate-fade-in">
+                <div className="grid grid-cols-2 gap-3 space-y-0 animate-fade-in">
                   {cat.items.map((item) => {
                     const cartItem = cart.find((c) => c.menuItemId === item.id);
                     const qty = cartItem ? cartItem.quantity : 0;
                     const isStory = layout === "fullscreen_story";
-                    
-                    // Recommendations/tags for Story layout
-                    const isChefsSpecial = isStory && !!item.isRecommended;
-                    const isPopular = isStory && !item.isRecommended && (item.id.charCodeAt(0) % 4 === 0);
                     
                     return (
                       <div
@@ -1475,90 +1484,101 @@ export default function DinePage({
                             setSelectedItem(item);
                           }
                         }}
-                        className={`flex flex-col rounded-[2.5rem] border overflow-hidden h-full relative transition-[transform,border-color,box-shadow] duration-300 will-change-transform group ${
+                        className={`flex flex-col rounded-[2rem] border overflow-hidden h-full relative transition-all duration-500 will-change-transform group ${
                           isStory ? "cursor-pointer" : ""
                         } ${
                           isDark 
-                            ? "bg-gradient-to-b from-slate-900/95 to-slate-950/85 border-white/[0.06] shadow-[0_12px_40px_rgba(0,0,0,0.55)] hover:border-brand-500/20" 
-                            : "bg-white border-gray-150/65 shadow-[0_8px_32px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)] hover:border-brand-500/25"
-                        } hover:-translate-y-1`}
+                            ? "bg-slate-900/90 border-white/5 shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:border-brand-500/30 hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(var(--brand-rgb),0.15)]" 
+                            : "bg-white/80 border-gray-200/50 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] hover:border-brand-500/30 hover:-translate-y-1 backdrop-blur-xl"
+                        }`}
                       >
-                        {isStory && (isChefsSpecial || isPopular) && (
-                          <span className={`absolute top-3.5 left-3.5 text-[7px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-10 shadow-md border animate-pulse ${
-                            isChefsSpecial 
-                              ? "bg-gradient-to-r from-emerald-500/90 via-teal-500/90 to-emerald-600/90 text-white border-emerald-400/20 shadow-emerald-950/10" 
-                              : "bg-gradient-to-r from-amber-500/90 via-orange-500/90 to-yellow-500/90 text-white border-amber-400/20 shadow-amber-950/10"
+                        {isStory && item.isRecommended && (
+                          <span className={`absolute top-2.5 left-2.5 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full z-10 shadow-[0_4px_10px_rgba(0,0,0,0.3)] border animate-pulse backdrop-blur-md ${
+                            isDark 
+                              ? "bg-amber-500/90 text-black border-amber-300" 
+                              : "bg-gradient-to-r from-amber-400 to-orange-500 text-white border-amber-200/50"
                           }`}>
-                            {isChefsSpecial ? "Chef's Special" : "Popular"}
+                            Signature
                           </span>
                         )}
                         
-                        <div className="relative overflow-hidden w-full h-36 flex-shrink-0">
+                        <div className={`relative overflow-hidden w-full flex-shrink-0 ${isStory ? "h-48" : "h-36"}`}>
                           {item.imageUrl ? (
                             <img
                               src={item.imageUrl}
                               alt={item.name}
-                              className="w-full h-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-105"
+                              className="w-full h-full object-cover transition-transform duration-700 will-change-transform group-hover:scale-110"
                             />
                           ) : (
-                            <div className={`w-full h-full flex items-center justify-center text-3xl ${
-                              isDark ? "bg-slate-800" : "bg-brand-50/50 border-b border-gray-100"
+                            <div className={`w-full h-full flex items-center justify-center text-4xl ${
+                              isDark ? "bg-slate-800" : "bg-gradient-to-br from-brand-50 to-white"
                             }`}>
                               🍽️
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-60" />
+                          <div className={`absolute inset-0 bg-gradient-to-t ${isDark ? "from-slate-900 via-slate-900/40" : "from-white/95 via-white/20"} to-transparent opacity-90`} />
+                          
+                          <div className="absolute bottom-2 left-2 flex gap-1">
+                            {item.spicyLevel !== undefined && item.spicyLevel !== null && (
+                              <span className="w-5 h-5 flex items-center justify-center rounded-full bg-red-500/90 text-[10px] shadow-sm backdrop-blur-md border border-white/20" title="Spicy">🌶️</span>
+                            )}
+                            {item.isVegetarian && <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/90 shadow-sm backdrop-blur-md border border-white/20"><span className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" title="Vegetarian" /></span>}
+                          </div>
                         </div>
                         
-                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div className="p-3.5 pt-1 flex-1 flex flex-col justify-between space-y-3 z-10 -mt-4">
                           <div className="min-w-0">
-                            <h3 className={`font-black leading-tight text-xs tracking-tight line-clamp-1 transition-colors ${
-                              isDark ? "text-white group-hover:text-brand-300" : "text-gray-950 group-hover:text-brand-650"
+                            <h3 className={`font-black leading-tight text-[14px] tracking-tight line-clamp-2 transition-colors ${
+                              isDark ? "text-white group-hover:text-brand-300 drop-shadow-sm" : "text-gray-900 group-hover:text-brand-650"
                             }`}>
                               {item.name}
                             </h3>
-                            {item.description && (
-                              <p className={`text-[10px] line-clamp-2 mt-1 leading-relaxed ${isDark ? "text-slate-450" : "text-gray-500"}`}>
+                            {item.description && !isStory && (
+                              <p className={`text-[10px] line-clamp-2 mt-1.5 leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                                 {item.description}
                               </p>
                             )}
                           </div>
                           
-                          <div className={`flex items-center justify-between pt-3 border-t ${isDark ? "border-white/5" : "border-gray-100/60"}`}>
-                            <span className={`font-black text-xs ${isDark ? "text-brand-400" : "text-brand-655"}`}>
+                          <div className={`flex items-center justify-between pt-2.5 border-t ${isDark ? "border-white/5" : "border-gray-200/50"}`}>
+                            <span className={`font-black text-[14px] tracking-tight ${isDark ? "text-brand-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" : "text-brand-650"}`}>
                               {formatMenuPrice(item.price)}
                             </span>
                             
                             {qty > 0 ? (
-                              <div className={`qty-controller flex items-center border rounded-full h-7.5 px-0.5 gap-1.5 font-bold shadow-sm ${
-                                isDark ? "bg-slate-950/60 border-white/10 text-brand-400" : "bg-brand-50 border-brand-100/65 text-brand-650"
+                              <div className={`qty-controller flex items-center border rounded-full h-[30px] px-0.5 gap-1.5 font-bold shadow-sm backdrop-blur-md ${
+                                isDark ? "bg-slate-950/80 border-white/10 text-brand-400" : "bg-brand-50/90 border-brand-200/60 text-brand-650"
                               }`}>
                                 <button
-                                  onClick={() => updateQty(item.id, -1)}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition ${
-                                    isDark ? "hover:bg-white/10 text-brand-400" : "hover:bg-brand-100 text-brand-600"
+                                  onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all ${
+                                    isDark ? "hover:bg-white/10 text-brand-300" : "hover:bg-brand-200/50 text-brand-700"
                                   }`}
                                 >
-                                  <Minus className="w-2.5 h-2.5" />
+                                  <Minus className="w-3 h-3" />
                                 </button>
-                                <span className={`text-[10px] min-w-[10px] text-center select-none font-extrabold ${isDark ? "text-white" : "text-brand-700"}`}>
+                                <span className={`text-[11px] min-w-[12px] text-center select-none font-black ${isDark ? "text-white" : "text-brand-700"}`}>
                                   {qty}
                                 </span>
                                 <button
-                                  onClick={() => updateQty(item.id, 1)}
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition ${
-                                    isDark ? "hover:bg-white/10 text-brand-400" : "hover:bg-brand-100 text-brand-600"
+                                  onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }}
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all ${
+                                    isDark ? "hover:bg-white/10 text-brand-300" : "hover:bg-brand-200/50 text-brand-700"
                                   }`}
                                 >
-                                  <Plus className="w-2.5 h-2.5" />
+                                  <Plus className="w-3 h-3" />
                                 </button>
                               </div>
                             ) : (
                               <button
-                                onClick={() => addToCart(item)}
-                                className="add-btn px-3.5 py-1.5 bg-brand-600 text-white rounded-full font-black text-[10px] flex items-center justify-center gap-0.5 shadow-sm active:scale-95 transition-all hover:bg-brand-700 hover:shadow-md hover:shadow-brand-500/10"
+                                onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                                className={`add-btn px-4 py-1.5 rounded-full font-black text-[11px] flex items-center justify-center gap-1 shadow-sm active:scale-90 transition-all ${
+                                  isDark 
+                                    ? "bg-brand-500 text-white hover:bg-brand-400 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)]" 
+                                    : "bg-brand-600 text-white hover:bg-brand-700 shadow-brand-600/20 hover:shadow-md"
+                                } ${bounceId === item.id ? "animate-cart-bounce" : ""}`}
                               >
-                                <Plus className="w-2.5 h-2.5" />
+                                <Plus className="w-3 h-3" />
                                 Add
                               </button>
                             )}
@@ -1577,65 +1597,82 @@ export default function DinePage({
                     return (
                       <div
                         key={item.id}
-                        className="bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-slate-900/50 backdrop-blur-xl rounded-[28px] border border-white/[0.06] p-4 flex gap-4 transition-all duration-300 hover:border-brand-500/35 hover:-translate-y-0.5 shadow-[0_12px_36px_-6px_rgba(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(var(--brand-rgb),0.12)] group"
+                        className="bg-gradient-to-br from-slate-900/95 via-slate-950/90 to-black backdrop-blur-2xl rounded-[2rem] border border-white/[0.04] p-4 flex gap-4 transition-all duration-500 hover:border-brand-500/40 hover:-translate-y-1 shadow-[0_12px_40px_-6px_rgba(0,0,0,0.8)] hover:shadow-[0_0_30px_rgba(var(--brand-rgb),0.15)] group relative overflow-hidden"
                       >
+                        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        
                         {item.imageUrl ? (
-                          <div className="relative overflow-hidden rounded-2xl flex-shrink-0 border border-white/[0.08] w-20 h-20 shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+                          <div className="relative overflow-hidden rounded-2xl flex-shrink-0 border border-white/[0.08] w-[88px] h-[88px] shadow-[0_4px_20px_rgba(0,0,0,0.6)] z-10">
                             <img
                               src={item.imageUrl}
                               alt={item.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                            {item.isRecommended && (
+                              <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.4)] border border-amber-200/50">
+                                <Star className="w-3.5 h-3.5 text-black fill-black" />
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/[0.08] flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+                          <div className="w-[88px] h-[88px] rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/[0.08] flex items-center justify-center text-3xl flex-shrink-0 shadow-inner z-10 relative">
                             🍽️
+                            {item.isRecommended && (
+                              <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.4)] border border-amber-200/50">
+                                <Star className="w-3.5 h-3.5 text-black fill-black" />
+                              </div>
+                            )}
                           </div>
                         )}
-                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="flex-1 min-w-0 flex flex-col justify-between z-10">
                           <div>
                             <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-extrabold text-white leading-tight text-sm tracking-tight group-hover:text-brand-300 transition-colors">{item.name}</h3>
-                              {item.id.charCodeAt(0) % 4 === 0 && (
-                                <span className="text-[7px] font-black tracking-widest text-brand-400 bg-brand-500/10 border border-brand-500/25 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
-                                  Signature
-                                </span>
-                              )}
+                              <h3 className="font-black text-white leading-tight text-[15px] tracking-tight group-hover:text-brand-300 transition-colors drop-shadow-sm">{item.name}</h3>
                             </div>
                             {item.description && (
-                              <p className="text-[11px] text-slate-400 font-medium line-clamp-2 mt-1.5 leading-relaxed">
+                              <p className="text-[11px] text-slate-400 font-medium line-clamp-2 mt-1 leading-relaxed">
                                 {item.description}
                               </p>
                             )}
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              {item.spicyLevel !== undefined && item.spicyLevel !== null && (
+                                <span className="text-[9px] tracking-widest uppercase font-black px-1.5 py-0.5 rounded-md text-red-400 bg-red-950/40 border border-red-500/20">
+                                  {item.spicyLevel === 0 ? "Mild" : item.spicyLevel === 1 ? "Med" : "Hot"} 🌶️
+                                </span>
+                              )}
+                              {item.isVegetarian && <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Vegetarian" />}
+                              {item.containsNuts && <span className="text-[9px]" title="Contains Nuts">🥜</span>}
+                              {item.isGlutenFree && <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-indigo-950/40 text-indigo-400 border border-indigo-500/20">GF</span>}
+                            </div>
                           </div>
-                          <div className="flex items-center justify-between mt-3 pt-1 border-t border-white/[0.04]">
-                            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 text-sm tracking-tight drop-shadow-[0_2px_8px_rgba(var(--brand-rgb),0.3)]">
+                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/[0.04]">
+                            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 text-[15px] tracking-tight drop-shadow-[0_2px_12px_rgba(var(--brand-rgb),0.4)]">
                               {formatMenuPrice(item.price)}
                             </span>
                             
                             {qty > 0 ? (
-                              <div className="flex items-center bg-slate-955/80 border border-white/10 text-brand-400 rounded-full h-8 px-1 gap-2 font-bold shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+                              <div className="flex items-center bg-slate-950/80 border border-brand-500/30 text-brand-400 rounded-full h-[34px] px-1 gap-2 font-bold shadow-[0_2px_12px_rgba(0,0,0,0.5)] backdrop-blur-md">
                                 <button
                                   onClick={() => updateQty(item.id, -1)}
-                                  className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-brand-400 active:scale-75 transition"
+                                  className="w-7 h-7 rounded-full hover:bg-brand-500/20 flex items-center justify-center text-brand-300 active:scale-75 transition-all"
                                 >
-                                  <Minus className="w-3 h-3" />
+                                  <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-xs min-w-[12px] text-center select-none font-extrabold text-white">
+                                <span className="text-[13px] min-w-[14px] text-center select-none font-black text-white">
                                   {qty}
                                 </span>
                                 <button
                                   onClick={() => updateQty(item.id, 1)}
-                                  className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-brand-400 active:scale-75 transition"
+                                  className="w-7 h-7 rounded-full hover:bg-brand-500/20 flex items-center justify-center text-brand-300 active:scale-75 transition-all"
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => addToCart(item)}
-                                className={`px-4 py-1.5 bg-brand-500/10 border border-brand-500/40 text-brand-350 rounded-full font-black text-xs flex items-center justify-center gap-1 shadow-[0_0_15px_rgba(var(--brand-rgb),0.1)] active:scale-95 transition-all hover:bg-brand-500/25 hover:border-brand-500/60 ${
+                                className={`px-4 py-2 bg-gradient-to-r from-brand-600/20 to-brand-500/10 border border-brand-500/40 text-brand-300 rounded-full font-black text-[11px] flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(var(--brand-rgb),0.15)] active:scale-90 transition-all hover:bg-brand-500/30 hover:border-brand-400 hover:text-brand-100 hover:shadow-[0_0_25px_rgba(var(--brand-rgb),0.3)] ${
                                   bounceId === item.id ? "animate-cart-bounce" : ""
                                 }`}
                               >
@@ -1651,7 +1688,7 @@ export default function DinePage({
                 </div>
               ) : (
                 // default layout (Classic Grid)
-                <div className="space-y-3 animate-fade-in">
+                <div className="space-y-4 animate-fade-in">
                   {cat.items.map((item) => {
                     const cartItem = cart.find((c) => c.menuItemId === item.id);
                     const qty = cartItem ? cartItem.quantity : 0;
@@ -1659,59 +1696,90 @@ export default function DinePage({
                     return (
                       <div
                         key={item.id}
-                        className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] p-3.5 flex gap-3.5 transition-all duration-300 hover:shadow-[0_6px_24px_-4px_rgba(0,0,0,0.07)]"
+                        className={`rounded-[1.5rem] border backdrop-blur-xl p-3.5 flex gap-4 transition-all duration-300 group ${
+                          isDark 
+                            ? "bg-slate-900/60 border-white/5 hover:border-white/10 hover:bg-slate-900/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.4)]" 
+                            : "bg-white/80 border-gray-150/60 hover:bg-white hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.02)] hover:border-gray-200"
+                        }`}
                       >
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-20 h-20 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
-                            🍽️
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="relative">
+                          {item.imageUrl ? (
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="w-[88px] h-[88px] rounded-2xl object-cover flex-shrink-0 shadow-sm border border-black/5 transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className={`w-[88px] h-[88px] rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner ${
+                              isDark ? "bg-slate-800 border-white/5" : "bg-gray-50 border border-gray-100"
+                            }`}>
+                              🍽️
+                            </div>
+                          )}
+                          {item.isRecommended && (
+                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border-[1.5px] border-white">
+                              <Star className="w-3.5 h-3.5 text-white fill-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                           <div>
-                            <h3 className="font-bold text-gray-955 leading-tight text-sm tracking-tight">{item.name}</h3>
+                            <h3 className={`font-extrabold leading-tight text-[15px] tracking-tight transition-colors ${
+                              isDark ? "text-white group-hover:text-brand-300" : "text-gray-950 group-hover:text-brand-650"
+                            }`}>
+                              {item.name}
+                            </h3>
                             {item.description && (
-                              <p className="text-[11px] text-gray-450 font-medium line-clamp-2 mt-1 leading-relaxed">
+                              <p className={`text-[11px] font-medium line-clamp-2 mt-1 leading-relaxed ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                                 {item.description}
                               </p>
                             )}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {item.spicyLevel !== undefined && item.spicyLevel !== null && (
+                                <span className={`text-[9px] tracking-widest uppercase font-black px-1.5 py-0.5 rounded-md ${isDark ? "text-red-400 bg-red-950/50" : "text-red-600 bg-red-50"}`}>
+                                  {item.spicyLevel === 0 ? "Mild" : item.spicyLevel === 1 ? "Med" : "Hot"} 🌶️
+                                </span>
+                              )}
+                              {item.isVegetarian && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" title="Vegetarian" />}
+                              {item.containsNuts && <span className="text-[10px]" title="Contains Nuts">🥜</span>}
+                              {item.isGlutenFree && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? "bg-indigo-950/50 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}>GF</span>}
+                            </div>
                           </div>
-                          <div className="flex items-center justify-between mt-2.5 pt-0.5">
-                            <span className="font-extrabold text-brand-600 text-sm tracking-tight">
+                          <div className="flex items-center justify-between mt-2 pt-1">
+                            <span className={`font-black text-[15px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
                               {formatMenuPrice(item.price)}
                             </span>
                             
                             {qty > 0 ? (
-                              <div className="flex items-center bg-brand-50 border border-brand-100 text-brand-650 rounded-full h-8 px-1 gap-2 font-bold shadow-sm transition-all animate-fade-in">
+                              <div className={`flex items-center rounded-full h-[34px] px-1 gap-1.5 font-bold shadow-sm transition-all animate-fade-in border backdrop-blur-sm ${
+                                isDark ? "bg-brand-500/15 border-brand-500/30 text-brand-300" : "bg-brand-50/80 border-brand-200/60 text-brand-700"
+                              }`}>
                                 <button
                                   onClick={() => updateQty(item.id, -1)}
-                                  className="w-6 h-6 rounded-full hover:bg-brand-100 flex items-center justify-center text-brand-600 active:scale-75 transition"
+                                  className={`w-7 h-7 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/20" : "hover:bg-brand-200/50"}`}
                                 >
-                                  <Minus className="w-3 h-3" />
+                                  <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-xs min-w-[12px] text-center select-none font-extrabold text-brand-700">
+                                <span className="text-[13px] min-w-[14px] text-center select-none font-black">
                                   {qty}
                                 </span>
                                 <button
                                   onClick={() => updateQty(item.id, 1)}
-                                  className="w-6 h-6 rounded-full hover:bg-brand-100 flex items-center justify-center text-brand-600 active:scale-75 transition"
+                                  className={`w-7 h-7 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/20" : "hover:bg-brand-200/50"}`}
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => addToCart(item)}
-                                className={`px-3.5 py-1.5 bg-brand-600 text-white rounded-full font-bold text-xs flex items-center justify-center gap-1 shadow-sm shadow-brand-100 active:scale-95 transition-all hover:bg-brand-700 hover:shadow-md ${
-                                  bounceId === item.id ? "animate-cart-bounce" : ""
-                                }`}
+                                className={`px-4 py-2 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-90 transition-all ${
+                                  isDark 
+                                    ? "bg-brand-500 text-white hover:bg-brand-400 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)]" 
+                                    : "bg-gray-900 text-white hover:bg-black shadow-gray-900/20 hover:shadow-lg"
+                                } ${bounceId === item.id ? "animate-cart-bounce" : ""}`}
                               >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-3.5 h-3.5" />
                                 Add
                               </button>
                             )}
@@ -1748,25 +1816,27 @@ export default function DinePage({
       {/* Floating Bottom Cart Pill */}
       {cartCount > 0 && (
         <div className="fixed bottom-6 left-4 right-4 z-40 max-w-md mx-auto no-print animate-fade-in">
+          <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full -z-10 animate-pulse" />
           <button
             onClick={() => {
               setCouponError(null);
               setShowCart(true);
             }}
-            className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white p-4 rounded-2xl font-bold flex items-center justify-between shadow-[0_12px_32px_rgba(234,88,12,0.35)] transition-all active:scale-98 transform hover:scale-[1.01]"
+            className="w-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600 bg-[length:200%_auto] animate-[gradient_4s_ease-in-out_infinite] text-white p-4 rounded-[2rem] font-bold flex items-center justify-between shadow-[0_15px_40px_-5px_rgba(var(--brand-rgb),0.5)] transition-all active:scale-[0.97] transform hover:scale-[1.02] border border-white/20 backdrop-blur-xl"
           >
-            <div className="flex flex-col text-left">
-              <span className="text-[10px] text-brand-100 uppercase tracking-widest font-extrabold">{cartCount} {cartCount === 1 ? 'item' : 'items'} added</span>
-              <span className="text-base font-black tracking-tight">{formatINR(cartTotal)}</span>
+            <div className="flex flex-col text-left pl-2">
+              <span className="text-[10px] text-white/80 uppercase tracking-[0.2em] font-black">{cartCount} {cartCount === 1 ? 'item' : 'items'} added</span>
+              <span className="text-xl font-black tracking-tighter drop-shadow-md">{formatINR(cartTotal)}</span>
             </div>
             
-            <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider shadow-inner">
+            <div className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md px-5 py-3 rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-inner transition-colors border border-white/10">
               <span>View Cart</span>
-              <ShoppingBag className="w-3.5 h-3.5" />
+              <ShoppingBag className="w-4 h-4 mb-0.5 drop-shadow-sm" />
             </div>
           </button>
         </div>
       )}
+
 
       {/* Immersive Item Detail Modal (for fullscreen_story layout) */}
       {selectedItem && (

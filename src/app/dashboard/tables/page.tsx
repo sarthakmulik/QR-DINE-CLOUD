@@ -240,23 +240,33 @@ export default function TablesPage() {
     <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            Table QR Codes
-            <span className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-              {currentPlan}
-            </span>
-          </h1>
-          <p className="text-gray-500 text-sm flex items-center gap-1.5 mt-1">
-            Generate unique QR codes for each table
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-            <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-gray-600"}`}>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Tables & QR Codes</h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm">
+            Manage your restaurant tables and generate order QR codes
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 mx-2" />
+            <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-slate-600"}`}>
               {totalTables} / {maxTables === "unlimited" ? "∞" : maxTables} tables used
             </span>
           </p>
         </div>
-        <Button onClick={() => setShowModal(true)} disabled={limitReached}>
-          <Plus className="w-4 h-4 mr-1" /> Add Table
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={loadTables}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <Button
+            onClick={() => setShowModal(true)}
+            disabled={limitReached}
+            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white"
+          >
+            <Plus size={16} />
+            Add Table
+          </Button>
+        </div>
       </div>
 
       {limitReached && (
@@ -271,111 +281,132 @@ export default function TablesPage() {
         </div>
       )}
 
-
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isSkeletons ? (
-          [...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border p-5 text-center animate-pulse flex flex-col justify-between h-80">
-              <div className="h-6 bg-slate-200 rounded w-24 mx-auto mb-3" />
-              <div className="w-40 h-40 bg-slate-100 rounded mx-auto mb-3" />
-              <div className="h-4 bg-slate-100 rounded w-16 mx-auto mb-3" />
-              <div className="space-y-2 mt-auto">
-                <div className="h-8 bg-slate-150 rounded w-full" />
-                <div className="h-8 bg-slate-150 rounded w-full" />
+          Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-100 animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
+              <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
+              <div className="aspect-square bg-slate-100 rounded-xl mb-4"></div>
+              <div className="flex gap-2">
+                <div className="h-8 bg-slate-200 rounded w-full"></div>
+                <div className="h-8 bg-slate-200 rounded w-full"></div>
+              </div>
+            </div>
+          ))
+        ) : tables.length > 0 ? (
+          tables.map((table) => (
+            <div
+              key={table.id}
+              className="bg-white rounded-[1.5rem] p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 group flex flex-col h-full relative overflow-hidden"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Table</div>
+                  <h3 className="font-black text-xl text-slate-900 tracking-tight leading-none mt-0.5">
+                    {table.tableNumber}
+                  </h3>
+                  {table.label !== `Table ${table.tableNumber}` && (
+                    <div className="text-xs text-slate-500 font-medium mt-1 truncate max-w-[120px]" title={table.label}>
+                      {table.label}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditTable(table)}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => deleteTable(table.id, table.label)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100 relative group/qr">
+                {regenerating === table.id ? (
+                  <div className="flex flex-col items-center justify-center h-32 space-y-3">
+                    <RefreshCw className="animate-spin text-brand-500" size={24} />
+                    <span className="text-xs font-bold text-slate-500 animate-pulse">Generating...</span>
+                  </div>
+                ) : table.qrCodeUrl ? (
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={table.qrCodeUrl}
+                      alt={`QR for ${table.label}`}
+                      className="w-32 h-32 object-contain rounded-lg transition-transform group-hover/qr:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-white/80 opacity-0 group-hover/qr:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm rounded-lg gap-2">
+                      <button
+                        onClick={() => downloadQR(table)}
+                        className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 shadow-md transform hover:scale-110 transition-all"
+                        title="Download QR"
+                      >
+                        <Download size={14} />
+                      </button>
+                      {table.dineUrl && (
+                        <button
+                          onClick={() => copyUrl(table.dineUrl!, table.id)}
+                          className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-black shadow-md transform hover:scale-110 transition-all"
+                          title="Copy Link"
+                        >
+                          {copied === table.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-32 flex items-center justify-center text-slate-400">
+                    <ShieldAlert size={32} className="opacity-20" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => regenerateQR(table)}
+                  disabled={regenerating === table.id}
+                  className="w-full text-xs font-bold h-9"
+                >
+                  <RefreshCw size={14} className="mr-1.5" />
+                  Regenerate
+                </Button>
+                {table.qrCodeUrl && (
+                  <Button
+                    size="sm"
+                    onClick={() => downloadQR(table)}
+                    className="w-full text-xs font-bold bg-slate-900 hover:bg-black text-white h-9"
+                  >
+                    <Download size={14} className="mr-1.5" />
+                    Save
+                  </Button>
+                )}
               </div>
             </div>
           ))
         ) : (
-          tables.map((table) => (
-            <div
-              key={table.id}
-              className="bg-white rounded-xl border p-5 text-center animate-fade-in relative group"
-            >
-              <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => openEditTable(table)}
-                  className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition"
-                  title="Edit Table"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => deleteTable(table.id, table.label || `Table ${table.tableNumber}`)}
-                  className="p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-600 transition"
-                  title="Delete Table"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <h3 className="font-semibold text-lg mb-3 pr-8 truncate" title={table.label}>{table.label}</h3>
-              {table.qrCodeUrl && (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={table.qrCodeUrl}
-                    alt={`QR for ${table.label}`}
-                    className="w-48 h-48 mx-auto"
-                  />
-                </>
-              )}
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <span className="text-xs text-gray-500 font-mono bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
-                  Table #{table.tableNumber}
-                </span>
-                {table.dineUrl && (
-                  <button
-                    onClick={() => copyUrl(table.dineUrl!, table.id)}
-                    className="p-1 hover:bg-gray-50 rounded border border-gray-200 hover:border-brand-200 text-gray-400 hover:text-brand-600 transition flex items-center gap-1 text-[10px] px-1.5 py-0.5 font-medium"
-                    title="Copy Dine-in URL"
-                  >
-                    {copied === table.id ? (
-                      <>
-                        <Check className="w-3 h-3 text-emerald-600" />
-                        <span className="text-emerald-600">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        <span>Copy Link</span>
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-col gap-2 mt-3">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => downloadQR(table)}
-                  disabled={!table.qrCodeUrl}
-                >
-                  <Download className="w-4 h-4 mr-1" /> Download QR
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => regenerateQR(table)}
-                  disabled={regenerating === table.id}
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 mr-1 ${
-                      regenerating === table.id ? "animate-spin" : ""
-                    }`}
-                  />
-                  {regenerating === table.id ? "Regenerating..." : "Regenerate QR"}
-                </Button>
-              </div>
+          <div className="col-span-full bg-white rounded-3xl border border-dashed border-slate-300 py-20 flex flex-col items-center justify-center text-center px-4">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+              <Plus size={32} className="text-slate-400" />
             </div>
-          ))
+            <h3 className="text-xl font-bold text-slate-800 mb-2">No Tables Yet</h3>
+            <p className="text-slate-500 max-w-sm mb-6 text-sm">
+              Add your first restaurant table to generate a QR code for your guests to scan.
+            </p>
+            <Button onClick={() => setShowModal(true)} className="font-bold">
+              Add First Table
+            </Button>
+          </div>
         )}
       </div>
-
-      {!isSkeletons && tables.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          Add your first table to generate QR codes
-        </div>
-      )}
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Add Table">
         <form onSubmit={createTable} className="space-y-4">

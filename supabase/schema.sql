@@ -102,3 +102,13 @@ CREATE INDEX IF NOT EXISTS idx_session_items_session ON session_items(session_id
 CREATE INDEX IF NOT EXISTS idx_menu_categories_hotel ON menu_categories(hotel_id);
 CREATE INDEX IF NOT EXISTS idx_menu_items_hotel ON menu_items(hotel_id);
 CREATE INDEX IF NOT EXISTS idx_menu_items_category ON menu_items(category_id);
+
+-- Enforce strict security: enable RLS on all tables
+-- This ensures the anon key cannot bypass our API routes and read/write data directly.
+ALTER TABLE hotels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE restaurant_tables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE table_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE session_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE menu_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE menu_items ENABLE ROW LEVEL SECURITY;
