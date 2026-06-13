@@ -35,14 +35,12 @@ export function PlanProvider({
     const fetchLatestPlan = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("hotels")
-          .select("plan")
-          .eq("id", hotelId)
-          .single();
-
-        if (data && !error) {
-          setPlan(data.plan.toLowerCase() as PlanType);
+        const res = await fetch("/api/hotel/profile");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.plan) {
+            setPlan(data.plan.toLowerCase() as PlanType);
+          }
         }
       } catch (err) {
         console.error("Error fetching hotel plan:", err);

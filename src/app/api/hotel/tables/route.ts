@@ -66,12 +66,17 @@ export async function GET() {
         }
       }
 
+      const baseDineUrl = getDineUrl(table.hotel_id, table.table_number);
+      const signature = getTableSignature(table.hotel_id, table.table_number);
+      const dineUrl = `${baseDineUrl}?sign=${signature}`;
+
       return {
         id: table.id,
         hotelId: table.hotel_id,
         tableNumber: table.table_number,
         label: table.label,
         qrCodeUrl: table.qr_code_url,
+        dineUrl,
         currentSessionId: table.current_session_id,
         currentSession,
         status: getTableStatus(currentSession),
@@ -149,6 +154,7 @@ export async function POST(req: NextRequest) {
       tableNumber: table!.table_number,
       label: table!.label,
       qrCodeUrl: table!.qr_code_url,
+      dineUrl,
     });
   } catch (e) {
     console.error(e);

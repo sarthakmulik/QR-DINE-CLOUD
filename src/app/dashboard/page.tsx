@@ -55,6 +55,8 @@ export default function TablesDashboardPage() {
   const [whatsappNumbers, setWhatsappNumbers] = useState<Record<string, string>>({});
   const [couponInput, setCouponInput] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [sessionToOpen, setSessionToOpen] = useState<TableData | null>(null);
+  const [openingSession, setOpeningSession] = useState(false);
   const checkoutPendingRef = useRef<Record<string, boolean>>({});
   const paymentPendingRef = useRef<Record<string, boolean>>({});
 
@@ -244,6 +246,34 @@ export default function TablesDashboardPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ menuItemId: item.id, name: item.name, price: item.price, quantity: qty }),
     }).then(() => pollTables());
+  }
+
+  async function handleOpenSession() {
+    if (!sessionToOpen) return;
+    setOpeningSession(true);
+    try {
+      const res = await fetch("/api/hotel/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableNumber: sessionToOpen.tableNumber }),
+      });
+      if (res.ok) {
+        setSessionToOpen(null);
+        await pollTables();
+        const refreshedTables = await fetch("/api/hotel/tables").then((r) => r.json());
+        const newlyOccupied = refreshedTables.find((t: any) => t.id === sessionToOpen.id);
+        if (newlyOccupied && newlyOccupied.status !== "free") {
+          setSelected(newlyOccupied);
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to start session");
+      }
+    } catch {
+      alert("Failed to start session due to network issue");
+    } finally {
+      setOpeningSession(false);
+    }
   }
 
   async function handleApplyAdminCoupon() {
@@ -635,10 +665,14 @@ Thank you for dining with us!`;
           tables.map((table) => (
             <button
               key={table.id}
-              onClick={() => table.status !== "free" && setSelected(table)}
-              className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md ${statusColors[table.status]} ${
-                table.status === "free" ? "cursor-default" : "cursor-pointer"
-              }`}
+              onClick={() => {
+                if (table.status === "free") {
+                  setSessionToOpen(table);
+                } else {
+                  setSelected(table);
+                }
+              }}
+              className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md cursor-pointer ${statusColors[table.status]}`}
             >
               <div className="font-bold text-lg">{table.label}</div>
               <Badge variant={table.status} className="mt-2">
@@ -877,6 +911,38 @@ Thank you for dining with us!`;
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!sessionToOpen}
+        onClose={() => setSessionToOpen(null)}
+        title={sessionToOpen ? `Start Session — ${sessionToOpen.label}` : ""}
+        className="max-w-md"
+      >
+        {sessionToOpen && (
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-gray-500">
+              Would you like to open a new dining session for <strong>{sessionToOpen.label}</strong>? 
+              This will mark the table as Occupied and allow you to log orders on behalf of walk-in guests.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setSessionToOpen(null)}
+                disabled={openingSession}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleOpenSession}
+                disabled={openingSession}
+                className="bg-brand-600 hover:bg-brand-700 text-white font-semibold"
+              >
+                {openingSession ? "Starting..." : "Start Dining Session"}
+              </Button>
+            </div>
           </div>
         )}
       </Modal>

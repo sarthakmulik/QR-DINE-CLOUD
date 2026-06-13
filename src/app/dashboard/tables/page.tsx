@@ -11,6 +11,7 @@ interface TableData {
   tableNumber: number;
   label: string;
   qrCodeUrl: string | null;
+  dineUrl?: string | null;
 }
 
 export default function TablesPage() {
@@ -97,7 +98,7 @@ export default function TablesPage() {
         const data = await res.json();
         // Update state locally
         setTables((prev) =>
-          prev.map((t) => (t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl } : t))
+          prev.map((t) => (t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl, dineUrl: data.dineUrl } : t))
         );
         // Also sync the sessionStorage cache!
         const cached = sessionStorage.getItem("admin_tables_list");
@@ -105,7 +106,7 @@ export default function TablesPage() {
           try {
             const list = JSON.parse(cached) as TableData[];
             const updatedList = list.map((t) =>
-              t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl } : t
+              t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl, dineUrl: data.dineUrl } : t
             );
             sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
           } catch (e) {
@@ -318,9 +319,30 @@ export default function TablesPage() {
                   />
                 </>
               )}
-              <p className="text-xs text-gray-500 mt-2">
-                Table #{table.tableNumber}
-              </p>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <span className="text-xs text-gray-500 font-mono bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+                  Table #{table.tableNumber}
+                </span>
+                {table.dineUrl && (
+                  <button
+                    onClick={() => copyUrl(table.dineUrl!, table.id)}
+                    className="p-1 hover:bg-gray-50 rounded border border-gray-200 hover:border-brand-200 text-gray-400 hover:text-brand-600 transition flex items-center gap-1 text-[10px] px-1.5 py-0.5 font-medium"
+                    title="Copy Dine-in URL"
+                  >
+                    {copied === table.id ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="text-emerald-600">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy Link</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <div className="flex flex-col gap-2 mt-3">
                 <Button
                   size="sm"

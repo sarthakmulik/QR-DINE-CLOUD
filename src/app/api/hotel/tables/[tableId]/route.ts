@@ -79,12 +79,18 @@ export async function PATCH(
 
     if (error) throw error;
 
+    const finalTableNumber = updated.table_number;
+    const baseDineUrl = getDineUrl(hotelId, finalTableNumber);
+    const signature = getTableSignature(hotelId, finalTableNumber);
+    const dineUrl = `${baseDineUrl}?sign=${signature}`;
+
     return NextResponse.json({
       id: updated.id,
       hotelId: updated.hotel_id,
       tableNumber: updated.table_number,
       label: updated.label,
       qrCodeUrl: updated.qr_code_url,
+      dineUrl,
     });
   } catch (e) {
     console.error("[Edit Table]", e);

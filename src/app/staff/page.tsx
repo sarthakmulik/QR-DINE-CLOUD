@@ -47,6 +47,31 @@ export default function StaffPanelPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<TableData | null>(null);
   const [performingAction, setPerformingAction] = useState(false);
+  const [sessionToOpen, setSessionToOpen] = useState<TableData | null>(null);
+  const [openingSession, setOpeningSession] = useState(false);
+
+  async function handleOpenSession() {
+    if (!sessionToOpen) return;
+    setOpeningSession(true);
+    try {
+      const res = await fetch("/api/hotel/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableNumber: sessionToOpen.tableNumber }),
+      });
+      if (res.ok) {
+        setSessionToOpen(null);
+        await loadData();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to start session");
+      }
+    } catch {
+      alert("Failed to start session due to network issue");
+    } finally {
+      setOpeningSession(false);
+    }
+  }
 
   // Audio alert reference
   const prevRequestsCountRef = useRef<number | null>(null);
@@ -281,7 +306,13 @@ export default function StaffPanelPage() {
                 return (
                   <div
                     key={table.id}
-                    onClick={() => table.status !== "free" && setSelectedTable(table)}
+                    onClick={() => {
+                      if (table.status === "free") {
+                        setSessionToOpen(table);
+                      } else {
+                        setSelectedTable(table);
+                      }
+                    }}
                     className={`border rounded-2xl p-4 text-left flex flex-col justify-between h-28 cursor-pointer hover:shadow-lg transition-all ${
                       statusColors[table.status]
                     }`}
@@ -377,6 +408,25 @@ export default function StaffPanelPage() {
               )}
               <Button variant="secondary" className="w-full" onClick={() => setSelectedTable(null)}>
                 Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={!!sessionToOpen} onClose={() => setSessionToOpen(null)} title={sessionToOpen ? `Start Session — Table ${sessionToOpen.tableNumber}` : ""}>
+        {sessionToOpen && (
+          <div className="space-y-4 pt-2 text-white">
+            <p className="text-sm text-slate-350">
+              Open a new dining session for <strong>Table {sessionToOpen.tableNumber}</strong>? 
+              This will mark the table as occupied and allow you to request checkout and log payments once they are finished.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <Button variant="secondary" onClick={() => setSessionToOpen(null)} disabled={openingSession}>
+                Cancel
+              </Button>
+              <Button onClick={handleOpenSession} disabled={openingSession} className="bg-brand-600 hover:bg-brand-700 text-white font-bold">
+                {openingSession ? "Starting..." : "Start Dining Session"}
               </Button>
             </div>
           </div>

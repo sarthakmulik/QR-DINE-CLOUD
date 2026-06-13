@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapTableSession } from "@/lib/types";
 import type { SessionItem, TableSession } from "@/lib/types";
+import { getOrCreateOpenSession } from "@/lib/session-service";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -35,5 +38,30 @@ export async function GET() {
     return NextResponse.json(result);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { hotelId } = await requireHotelAccess();
+    const body = await req.json();
+    const tableNumber = parseInt(body.tableNumber);
+
+    if (isNaN(tableNumber) || tableNumber < 1) {
+      return NextResponse.json({ error: "Invalid table number" }, { status: 400 });
+    }
+
+    const result = await getOrCreateOpenSession(hotelId, tableNumber);
+
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json(result.session);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to create session" },
+      { status: 500 }
+    );
   }
 }
