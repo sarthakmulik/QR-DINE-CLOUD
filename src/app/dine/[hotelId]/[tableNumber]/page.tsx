@@ -1933,23 +1933,25 @@ export default function DinePage({
 
       {/* Floating Bottom Cart Pill */}
       {cartCount > 0 && (
-        <div className="fixed bottom-8 left-4 right-4 z-40 max-w-md mx-auto no-print animate-fade-in">
-          <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full -z-10" />
+        <div className="fixed bottom-6 left-4 right-4 z-40 max-w-md mx-auto no-print animate-fade-in">
           <button
             onClick={() => {
               setCouponError(null);
               setShowCart(true);
             }}
-            className="w-full bg-gradient-to-r from-brand-600 to-brand-500 text-white p-4 rounded-[2rem] font-bold flex items-center justify-between shadow-[0_15px_40px_-5px_rgba(var(--brand-rgb),0.5)] transition-all active:scale-[0.97] transform hover:scale-[1.02] border border-white/20 backdrop-blur-xl"
+            className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white p-4 rounded-2xl font-black flex items-center justify-between transition-all active:scale-95 transform hover:scale-[1.01] border border-white/20"
+            style={{ boxShadow: "0 12px 36px rgba(var(--brand-rgb), 0.35)" }}
           >
             <div className="flex flex-col text-left pl-2">
-              <span className="text-[10px] text-white/80 uppercase tracking-[0.2em] font-black">{cartCount} {cartCount === 1 ? 'item' : 'items'} added</span>
-              <span className="text-xl font-black tracking-tighter drop-shadow-md">{formatINR(cartTotal)}</span>
+              <span className="text-[10px] text-white/80 uppercase tracking-widest font-black">
+                {cartCount} {cartCount === 1 ? "item" : "items"} added
+              </span>
+              <span className="text-base font-black tracking-tight">{formatINR(cartTotal)}</span>
             </div>
-            
-            <div className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md px-5 py-3 rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-inner transition-colors border border-white/10">
+
+            <div className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-inner transition-colors border border-white/10">
               <span>View Cart</span>
-              <ShoppingBag className="w-4 h-4 mb-0.5 drop-shadow-sm" />
+              <ShoppingBag className="w-4 h-4 mb-0.5" />
             </div>
           </button>
         </div>
