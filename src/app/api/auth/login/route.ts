@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { findProfileForUser } from "@/lib/profile";
+import { checkLoginRateLimit, recordLoginFailure, resetLoginAttempts } from "@/lib/rate-limit";
 
 function sanitizeRedirectPath(redirect?: string): string {
   if (!redirect) return "/dashboard";
@@ -21,6 +22,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Email and password are required" },
       { status: 400 }
+    );
+  }
+
+  // Prevent multiple long password DoS attacks (ceiling of 72 characters)
+  if (password.length < 6 || password.length > 72) {
+    return NextResponse.json(
+      { error: "Password must be between 6 and 72 characters" },
+      { status: 400 }
+    );
+  }
+
+  // Rate Limiting / Lockout checks
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "127.0.0.1";
+  const ipKey = `ip:${ip}`;
+  const emailKey = `email:${email.trim().toLowerCase()}`;
+
+  const ipLimit = checkLoginRateLimit(ipKey);
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: `Too many login attempts from this IP. Please try again in ${Math.ceil(ipLimit.lockTimeLeft / 60)} minutes.` },
+      { status: 429 }
+    );
+  }
+
+  const emailLimit = checkLoginRateLimit(emailKey);
+  if (!emailLimit.allowed) {
+    return NextResponse.json(
+      { error: `This account is temporarily locked due to too many failed login attempts. Please try again in ${Math.ceil(emailLimit.lockTimeLeft / 60)} minutes.` },
+      { status: 429 }
     );
   }
 
@@ -59,11 +89,17 @@ export async function POST(request: NextRequest) {
   });
 
   if (signInError) {
+    recordLoginFailure(ipKey);
+    recordLoginFailure(emailKey);
     return NextResponse.json(
       { error: "Invalid email or password" },
       { status: 401 }
     );
   }
+
+  // Reset login attempts on successful credentials validation
+  resetLoginAttempts(ipKey);
+  resetLoginAttempts(emailKey);
 
   const {
     data: { user },

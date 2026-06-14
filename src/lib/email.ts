@@ -28,11 +28,15 @@ export async function sendCredentialsEmail(
   `;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log("\n=== EMAIL (dev mode - SMTP not configured) ===");
-    console.log(`To: ${to}`);
-    console.log(`Login: ${loginEmail} / Password: ${password}`);
-    console.log("==============================================\n");
-    return { sent: false, message: "Credentials logged to console (SMTP not configured)" };
+    if (process.env.NODE_ENV !== "production") {
+      console.log("\n=== EMAIL (dev mode - SMTP not configured) ===");
+      console.log(`To: ${to}`);
+      console.log(`Login: ${loginEmail} / Password: ${password}`);
+      console.log("==============================================\n");
+    } else {
+      console.error("SMTP credentials not configured in production");
+    }
+    return { sent: false, message: "Credentials not sent (SMTP not configured)" };
   }
 
   const transporter = nodemailer.createTransport({

@@ -41,8 +41,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (password.length < 4) {
-      return NextResponse.json({ error: "Password must be at least 4 characters" }, { status: 400 });
+    if (password.length < 4 || password.length > 72) {
+      return NextResponse.json({ error: "Password must be between 4 and 72 characters" }, { status: 400 });
     }
 
     const sb = createAdminClient();

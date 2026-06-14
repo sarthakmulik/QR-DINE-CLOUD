@@ -89,8 +89,8 @@ export async function PATCH(req: NextRequest) {
     // Check if updating password
     if (body.password) {
       const newPassword = String(body.password);
-      if (newPassword.length < 6) {
-        return NextResponse.json({ error: "Password must be at least 6 characters long" }, { status: 400 });
+      if (newPassword.length < 6 || newPassword.length > 72) {
+        return NextResponse.json({ error: "Password must be between 6 and 72 characters long" }, { status: 400 });
       }
 
       const { error: authPassError } = await sb.auth.admin.updateUserById(userId, {

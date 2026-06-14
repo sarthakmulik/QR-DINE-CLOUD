@@ -16,8 +16,8 @@ export async function PATCH(
     const { id } = await props.params;
     const body = await req.json();
 
-    if (body.password && body.password.length < 4) {
-      return NextResponse.json({ error: "Password must be at least 4 characters" }, { status: 400 });
+    if (body.password && (body.password.length < 4 || body.password.length > 72)) {
+      return NextResponse.json({ error: "Password must be between 4 and 72 characters" }, { status: 400 });
     }
 
     const sb = createAdminClient();
