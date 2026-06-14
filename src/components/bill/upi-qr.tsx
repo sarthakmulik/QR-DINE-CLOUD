@@ -39,7 +39,8 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQr
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(upiLink);
+      const safeUpiLink = upiLink.replace(/[\r\n\x00-\x1F\x7F]/g, "");
+      await navigator.clipboard.writeText(safeUpiLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {

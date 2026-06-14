@@ -4,6 +4,21 @@ import { getOrCreateOpenSession, addItemToSession } from "@/lib/session-service"
 import type { Hotel, MenuItem, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 import { verifyTableSignature } from "@/lib/crypto";
+import crypto from "crypto";
+
+const lastOrderHash = new Map<string, { hash: string; timestamp: number }>();
+
+// Clean up old order fingerprints to avoid memory leaks
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of lastOrderHash.entries()) {
+      if (now - value.timestamp > 60000) {
+        lastOrderHash.delete(key);
+      }
+    }
+  }, 60000);
+}
 
 export async function POST(
   req: NextRequest,
@@ -24,11 +39,19 @@ export async function POST(
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
     }
 
-    // Validate quantities
+    // Limit array payload bounds (NoSQL/SQL injection payload stress prevention)
+    if (items.length > 50) {
+      return NextResponse.json({ error: "Too many distinct items in a single order (max 50)" }, { status: 400 });
+    }
+
+    // Validate quantities and ID formats
     const menuItemIds: string[] = [];
     for (const item of items) {
       if (!item.menuItemId || typeof item.menuItemId !== "string") {
         return NextResponse.json({ error: "Invalid item ID" }, { status: 400 });
+      }
+      if (item.menuItemId.length > 50) {
+        return NextResponse.json({ error: "Invalid item ID format" }, { status: 400 });
       }
       const qty = parseInt(String(item.quantity));
       if (isNaN(qty) || qty < 1 || qty > 99) {
@@ -36,6 +59,27 @@ export async function POST(
       }
       menuItemIds.push(item.menuItemId);
     }
+
+    // Fingerprint hashing to prevent client order replay spam within 5 seconds
+    const payloadString = JSON.stringify(
+      items
+        .map((i) => ({ id: i.menuItemId, q: i.quantity }))
+        .sort((a, b) => a.id.localeCompare(b.id))
+    );
+    const fingerprint = crypto
+      .createHash("sha256")
+      .update(`${hotelId}:${tableNumber}:${payloadString}`)
+      .digest("hex");
+
+    const tableKey = `${hotelId}:${tableNumber}`;
+    const lastOrder = lastOrderHash.get(tableKey);
+    if (lastOrder && lastOrder.hash === fingerprint && Date.now() - lastOrder.timestamp < 5000) {
+      return NextResponse.json(
+        { error: "Duplicate order submission blocked. Please wait a few seconds." },
+        { status: 409 }
+      );
+    }
+    lastOrderHash.set(tableKey, { hash: fingerprint, timestamp: Date.now() });
 
     const sb = createAdminClient();
 

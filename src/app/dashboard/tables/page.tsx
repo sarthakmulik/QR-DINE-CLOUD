@@ -224,7 +224,8 @@ export default function TablesPage() {
   }
 
   async function copyUrl(url: string, id: string) {
-    await navigator.clipboard.writeText(url);
+    const safeUrl = url.replace(/[\r\n\x00-\x1F\x7F]/g, "");
+    await navigator.clipboard.writeText(safeUrl);
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
   }

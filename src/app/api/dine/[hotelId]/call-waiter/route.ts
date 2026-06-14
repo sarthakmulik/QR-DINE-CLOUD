@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTableSignature } from "@/lib/crypto";
 
+const lastWaiterCalls = new Map<string, number>();
+
+// Cleanup helper for expired table call keys
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, timestamp] of lastWaiterCalls.entries()) {
+      if (now - timestamp > 60000) {
+        lastWaiterCalls.delete(key);
+      }
+    }
+  }, 60000);
+}
+
 export async function POST(
   req: NextRequest,
   props: { params: Promise<{ hotelId: string }> }
@@ -15,6 +29,18 @@ export async function POST(
     if (isNaN(parsedTableNum) || parsedTableNum < 1) {
       return NextResponse.json({ error: "Invalid table number." }, { status: 400 });
     }
+
+    // Enforce 30-second cooldown per table to block spammed waiter calls
+    const callKey = `${hotelId}:${parsedTableNum}`;
+    const lastCall = lastWaiterCalls.get(callKey);
+    if (lastCall && Date.now() - lastCall < 30000) {
+      const secondsLeft = Math.ceil((30000 - (Date.now() - lastCall)) / 1000);
+      return NextResponse.json(
+        { error: `Please wait ${secondsLeft} seconds before calling the waiter again.` },
+        { status: 429 }
+      );
+    }
+    lastWaiterCalls.set(callKey, Date.now());
 
     const sb = createAdminClient();
 
