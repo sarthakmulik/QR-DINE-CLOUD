@@ -1931,7 +1931,7 @@ export default function DinePage({
                   }}
                   className={`snap-center scroll-mx-4 px-5 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap transition-all duration-300 transform ${
                     isActive
-                      ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_6px_20px_rgba(var(--brand-rgb),0.35)] scale-105 border border-transparent"
+                      ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white scale-105 border border-transparent"
                       : isDark
                         ? "bg-slate-900 text-slate-400 border border-white/[0.08] hover:bg-slate-800 hover:text-slate-300 active:scale-95"
                         : "bg-white text-gray-550 border border-gray-200/80 hover:bg-gray-50 hover:text-gray-900 active:scale-95 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.02)]"
