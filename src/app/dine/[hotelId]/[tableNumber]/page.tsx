@@ -1147,6 +1147,9 @@ export default function DinePage({
     );
   }
 
+  return null;
+}
+
   const brandVariables = customizations?.primaryColor ? generateBrandColors(customizations.primaryColor) : {};
   const customStyles = {
     ...brandVariables,
@@ -2237,6 +2240,5 @@ export default function DinePage({
     </div>
     </div>
   );
-}
 }
 
