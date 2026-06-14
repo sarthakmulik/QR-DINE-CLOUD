@@ -351,34 +351,43 @@ export default function DinePage({
   useEffect(() => {
     if (state.type !== "menu" || searchQuery || categories.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the category that is most visible
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const catId = entry.target.id.replace("cat-", "");
-            setActiveCategory(catId);
-            const btn = document.getElementById(`cat-btn-${catId}`);
-            if (btn) {
-              btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-            }
+    const handleScroll = () => {
+      // Height of the combined sticky header
+      const headerOffset = 190; 
+      const scrollPosition = window.scrollY + headerOffset;
+
+      let currentActive: string | null = null;
+      for (const cat of categories) {
+        const el = document.getElementById(`cat-${cat.id}`);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            currentActive = cat.id;
             break;
           }
         }
-      },
-      {
-        rootMargin: "-210px 0px -50% 0px",
-        threshold: 0.1,
       }
-    );
 
-    categories.forEach((cat) => {
-      const el = document.getElementById(`cat-${cat.id}`);
-      if (el) observer.observe(el);
-    });
+      if (!currentActive && categories.length > 0) {
+        if (window.scrollY < 50) {
+          currentActive = categories[0].id;
+        }
+      }
 
-    return () => observer.disconnect();
-  }, [state.type, searchQuery, categories]);
+      if (currentActive && currentActive !== activeCategory) {
+        setActiveCategory(currentActive);
+        const btn = document.getElementById(`cat-btn-${currentActive}`);
+        if (btn) {
+          btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [state.type, searchQuery, categories, activeCategory]);
 
   // Load cart and cached menu from sessionStorage on mount
   useEffect(() => {
@@ -1202,10 +1211,14 @@ export default function DinePage({
         </div>
       )}
 
-      {/* Glassmorphic Header */}
-      <header className={`backdrop-blur-md sticky top-0 z-30 px-4 py-3.5 flex items-center justify-between transition-colors duration-300 border-b ${
-        isDark ? "bg-slate-900/95 border-white/5" : "bg-white/95 border-gray-100/80"
+      {/* Combined Sticky Header */}
+      <div className={`sticky top-0 z-30 flex flex-col transition-colors duration-300 ${
+        isDark ? "bg-slate-950" : "bg-gray-50"
       }`}>
+        {/* Glassmorphic Header */}
+        <header className={`px-4 py-3.5 flex items-center justify-between transition-colors duration-300 border-b ${
+          isDark ? "bg-slate-900/95 border-white/5" : "bg-white/95 border-gray-100/80"
+        }`}>
         <div className="flex items-center gap-3">
           {state.hotelLogo ? (
             <div className="relative">
@@ -1253,8 +1266,8 @@ export default function DinePage({
         )}
       </header>
 
-      {/* Sticky Search bar */}
-      <div className={`px-4 pt-4 sticky top-[69px] z-20 pb-2 border-b border-transparent transition-colors duration-300 ${
+      {/* Search bar */}
+      <div className={`px-4 pt-3 pb-2 transition-colors duration-300 ${
         isDark ? "bg-slate-950" : "bg-gray-50"
       }`}>
         <div className="relative max-w-md mx-auto">
@@ -1299,10 +1312,10 @@ export default function DinePage({
         </div>
       )}
 
-      {/* Category Navigation Bar (only if search query is empty) */}
+      {/* Category Navigation Bar */}
       {!searchQuery && (
-        <div className={`sticky top-[141px] z-20 border-b pb-3 pt-2 no-print transition-colors duration-300 backdrop-blur-2xl ${
-          isDark ? "bg-slate-950/80 border-white/5" : "bg-white/80 border-gray-150/50"
+        <div className={`border-b pb-3 pt-2 no-print transition-colors duration-300 ${
+          isDark ? "bg-slate-950 border-white/5" : "bg-gray-50 border-gray-150/50"
         }`}>
           <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory max-w-md mx-auto items-center">
             {state.categories.map((cat) => {
@@ -1339,6 +1352,7 @@ export default function DinePage({
           </div>
         </div>
       )}
+      </div> {/* End Combined Sticky Header */}
 
       {/* Running Items Section */}
       {state.runningItems && state.runningItems.length > 0 && (
@@ -1464,24 +1478,24 @@ export default function DinePage({
                             }`}>
                               <button
                                 onClick={() => updateQty(item.id, -1)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/30 text-brand-200" : "hover:bg-brand-200/60 text-brand-800"}`}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/30 text-brand-200" : "hover:bg-brand-200/60 text-brand-800"}`}
                               >
-                                <Minus className="w-3 h-3" />
+                                <Minus className="w-3.5 h-3.5" />
                               </button>
-                              <span className="text-xs min-w-[16px] text-center select-none font-black">
+                              <span className="text-xs min-w-[20px] text-center select-none font-black">
                                 {qty}
                               </span>
                               <button
                                 onClick={() => updateQty(item.id, 1)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/30 text-brand-200" : "hover:bg-brand-200/60 text-brand-800"}`}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center active:scale-75 transition-all ${isDark ? "hover:bg-brand-500/30 text-brand-200" : "hover:bg-brand-200/60 text-brand-800"}`}
                               >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => addToCart(item)}
-                              className={`px-5 py-2 rounded-full font-black text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all will-change-transform ${
+                              className={`px-5 py-2 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all will-change-transform ${
                                 isDark 
                                   ? "bg-brand-500 text-white hover:bg-brand-400 shadow-[0_4px_14px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5" 
                                   : "bg-gray-900 text-white hover:bg-black shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:-translate-y-0.5"
@@ -1566,7 +1580,7 @@ export default function DinePage({
                                 >
                                   <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className={`text-[12px] min-w-[12px] text-center select-none font-black ${isDark ? "text-white" : "text-brand-700"}`}>
+                                <span className={`text-xs min-w-[20px] text-center select-none font-black ${isDark ? "text-white" : "text-brand-700"}`}>
                                   {qty}
                                 </span>
                                 <button
@@ -1581,13 +1595,13 @@ export default function DinePage({
                             ) : (
                               <button
                                 onClick={(e) => { e.stopPropagation(); addToCart(item); }}
-                                className={`add-btn w-full h-[32px] rounded-[1rem] font-black text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all ${
+                                className={`add-btn w-full h-[32px] rounded-[1rem] font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all ${
                                   isDark 
                                     ? "bg-brand-500/20 text-brand-300 hover:bg-brand-500 hover:text-white border border-brand-500/30" 
-                                    : "bg-white text-brand-650 hover:bg-brand-50 hover:text-brand-700 border border-gray-200 shadow-sm"
+                                    : "bg-gray-900 text-white hover:bg-black border border-gray-900 shadow-[0_4px_14px_rgba(0,0,0,0.15)]"
                                 } ${bounceId === item.id ? "animate-cart-bounce" : ""}`}
                               >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-3.5 h-3.5" />
                                 Add
                               </button>
                             )}
@@ -1663,7 +1677,7 @@ export default function DinePage({
                                 >
                                   <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-[12px] min-w-[14px] text-center select-none font-black text-white">
+                                <span className="text-xs min-w-[20px] text-center select-none font-black text-white">
                                   {qty}
                                 </span>
                                 <button
@@ -1676,7 +1690,7 @@ export default function DinePage({
                             ) : (
                               <button
                                 onClick={(e) => { e.stopPropagation(); addToCart(item); }}
-                                className={`add-btn px-4 py-1.5 rounded-full font-black text-[11px] flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all backdrop-blur-md ${
+                                className={`add-btn px-4 py-1.5 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all backdrop-blur-md ${
                                   isDark 
                                     ? "bg-brand-500/80 text-white hover:bg-brand-500 border border-brand-400/50" 
                                     : "bg-white/90 text-gray-950 hover:bg-white border border-white"
@@ -1763,7 +1777,7 @@ export default function DinePage({
                                 >
                                   <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-[13px] min-w-[16px] text-center select-none font-black text-white">
+                                <span className="text-[13px] min-w-[20px] text-center select-none font-black text-white">
                                   {qty}
                                 </span>
                                 <button
@@ -1776,7 +1790,7 @@ export default function DinePage({
                             ) : (
                               <button
                                 onClick={() => addToCart(item)}
-                                className={`px-5 py-2 bg-gradient-to-r from-brand-600/20 to-brand-500/10 border border-brand-500/40 text-brand-300 rounded-full font-black text-[11px] flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(var(--brand-rgb),0.15)] active:scale-95 transition-all hover:bg-brand-500/30 hover:border-brand-400 hover:text-brand-100 hover:shadow-[0_0_25px_rgba(var(--brand-rgb),0.3)] will-change-transform ${
+                                className={`px-5 py-2 bg-gradient-to-r from-brand-600/20 to-brand-500/10 border border-brand-500/40 text-brand-300 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(var(--brand-rgb),0.15)] active:scale-95 transition-all hover:bg-brand-500/30 hover:border-brand-400 hover:text-brand-100 hover:shadow-[0_0_25px_rgba(var(--brand-rgb),0.3)] will-change-transform ${
                                   bounceId === item.id ? "animate-cart-bounce" : ""
                                 }`}
                               >
@@ -1864,7 +1878,7 @@ export default function DinePage({
                                 >
                                   <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-[13px] min-w-[16px] text-center select-none font-black">
+                                <span className="text-[13px] min-w-[20px] text-center select-none font-black">
                                   {qty}
                                 </span>
                                 <button
@@ -1919,14 +1933,14 @@ export default function DinePage({
 
       {/* Floating Bottom Cart Pill */}
       {cartCount > 0 && (
-        <div className="fixed bottom-6 left-4 right-4 z-40 max-w-md mx-auto no-print animate-fade-in">
-          <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full -z-10 animate-pulse" />
+        <div className="fixed bottom-8 left-4 right-4 z-40 max-w-md mx-auto no-print animate-fade-in">
+          <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full -z-10" />
           <button
             onClick={() => {
               setCouponError(null);
               setShowCart(true);
             }}
-            className="w-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600 bg-[length:200%_auto] animate-gradient-shift text-white p-4 rounded-[2rem] font-bold flex items-center justify-between shadow-[0_15px_40px_-5px_rgba(var(--brand-rgb),0.5)] transition-all active:scale-[0.97] transform hover:scale-[1.02] border border-white/20 backdrop-blur-xl"
+            className="w-full bg-gradient-to-r from-brand-600 to-brand-500 text-white p-4 rounded-[2rem] font-bold flex items-center justify-between shadow-[0_15px_40px_-5px_rgba(var(--brand-rgb),0.5)] transition-all active:scale-[0.97] transform hover:scale-[1.02] border border-white/20 backdrop-blur-xl"
           >
             <div className="flex flex-col text-left pl-2">
               <span className="text-[10px] text-white/80 uppercase tracking-[0.2em] font-black">{cartCount} {cartCount === 1 ? 'item' : 'items'} added</span>
