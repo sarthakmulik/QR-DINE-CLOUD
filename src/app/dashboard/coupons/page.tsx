@@ -25,6 +25,7 @@ export default function CouponsPage() {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     code: "",
@@ -112,6 +113,8 @@ export default function CouponsPage() {
   }
 
   async function handleToggleStatus(coupon: Coupon) {
+    if (togglingId === coupon.id) return; // prevent double-click
+    setTogglingId(coupon.id);
     try {
       await fetch(`/api/hotel/coupons/${coupon.id}`, {
         method: "PATCH",
@@ -119,8 +122,10 @@ export default function CouponsPage() {
         body: JSON.stringify({ isActive: !coupon.is_active }),
       });
       loadCoupons();
-    } catch (err) {
-      console.error("Failed to toggle coupon status:", err);
+    } catch {
+      // silent — UI will show stale state
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -196,8 +201,8 @@ export default function CouponsPage() {
                 </div>
               </div>
               <div className="mt-6 pt-4 border-t flex justify-between items-center">
-                <div className="h-6 w-16 bg-gray-150 rounded-full" />
-                <div className="h-6 w-12 bg-gray-150 rounded" />
+                <div className="h-6 w-16 bg-gray-200 rounded-full" />
+                <div className="h-6 w-12 bg-gray-200 rounded" />
               </div>
             </div>
           ))
@@ -233,26 +238,27 @@ export default function CouponsPage() {
               <div className="mt-6 pt-4 border-t flex items-center justify-between">
                 <button
                   onClick={() => handleToggleStatus(coupon)}
-                  className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
+                  disabled={togglingId === coupon.id}
+                  className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider transition-all disabled:opacity-50 ${
                     coupon.is_active
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-slate-100 text-slate-500 border border-slate-200"
+                      ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                      : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
                   }`}
                 >
-                  {coupon.is_active ? "Active" : "Inactive"}
+                  {togglingId === coupon.id ? "…" : coupon.is_active ? "Active" : "Inactive"}
                 </button>
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEditModal(coupon)}
-                    className="p-1 text-gray-400 hover:text-gray-650 transition"
+                  className="p-1 text-gray-400 hover:text-gray-600 transition"
                     title="Edit coupon"
                   >
                     <Pencil size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(coupon.id)}
-                    className="p-1 text-red-400 hover:text-red-650 transition"
+                    className="p-1 text-red-400 hover:text-red-600 transition"
                     title="Delete coupon"
                   >
                     <Trash2 size={16} />
@@ -264,8 +270,10 @@ export default function CouponsPage() {
         )}
 
         {!isSkeletons && coupons.length === 0 && (
-          <div className="col-span-full text-center py-12 bg-slate-50 border border-dashed rounded-2xl text-gray-400">
-            No active coupon codes. Create your first promo code.
+          <div className="col-span-full flex flex-col items-center justify-center text-center py-16 bg-slate-50 border border-dashed rounded-2xl text-gray-400">
+            <Tag size={40} className="opacity-30 mb-3" />
+            <p className="font-semibold text-gray-500 text-sm">No coupon codes yet</p>
+            <p className="text-xs text-gray-400 mt-1">Create your first promo code to drive more orders</p>
           </div>
         )}
       </div>

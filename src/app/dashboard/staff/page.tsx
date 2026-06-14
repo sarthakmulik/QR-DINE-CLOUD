@@ -173,7 +173,7 @@ export default function StaffPage() {
           <div>
             <p className="font-bold">Staff Limit Reached</p>
             <p className="text-amber-700 mt-0.5">
-              Your Pro plan supports up to 5 staff accounts. Upgrade to Elite for unlimited staff management.
+              Your {currentPlan.toUpperCase()} plan supports up to {maxStaff} staff accounts. Upgrade to a higher plan for more accounts.
             </p>
           </div>
         </div>
@@ -190,33 +190,37 @@ export default function StaffPage() {
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-150">
+            <tbody className="divide-y divide-gray-200">
               {isSkeletons ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gray-200" />
-                      <div className="h-4 bg-gray-200 rounded w-24" />
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200" />
+                        <div className="h-4 bg-gray-200 rounded w-24" />
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-5 bg-gray-150 rounded w-16" />
+                      <div className="h-5 bg-gray-200 rounded w-16" />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-4 bg-gray-150 rounded w-32" />
+                      <div className="h-4 bg-gray-200 rounded w-32" />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="h-6 w-12 bg-gray-250 rounded ml-auto" />
+                      <div className="h-6 w-12 bg-gray-200 rounded ml-auto" />
                     </td>
                   </tr>
                 ))
               ) : (
                 staffList.map((staff) => (
                   <tr key={staff.id} className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-semibold text-gray-900 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs uppercase">
-                        {staff.name.substring(0, 2)}
+                    <td className="px-6 py-4 font-semibold text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs uppercase">
+                          {staff.name.substring(0, 2)}
+                        </div>
+                        {staff.name}
                       </div>
-                      {staff.name}
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -236,13 +240,13 @@ export default function StaffPage() {
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => openEditModal(staff)}
-                          className="p-1 text-gray-400 hover:text-gray-650 transition"
+                          className="p-1 text-gray-400 hover:text-gray-600 transition"
                         >
                           <Pencil size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(staff.id)}
-                          className="p-1 text-red-400 hover:text-red-650 transition"
+                          className="p-1 text-red-400 hover:text-red-600 transition"
                         >
                           <Trash2 size={16} />
                         </button>

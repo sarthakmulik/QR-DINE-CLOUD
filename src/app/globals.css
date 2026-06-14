@@ -18,7 +18,7 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-gray-50 text-gray-900 antialiased overscroll-none;
   }
 }
 
@@ -32,12 +32,29 @@
   .animate-fade-in {
     animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
-  .scrollbar-none::-webkit-scrollbar {
+  /* Moves page entrance into the proper @layer so Tailwind purges it correctly */
+  .animate-page-entrance {
+    animation: pageEntrance 0.2s ease-out forwards;
+  }
+  /* Gradient shimmer for cart pill border */
+  .animate-gradient-shift {
+    animation: gradientShift 4s ease-in-out infinite;
+    background-size: 200% 200%;
+  }
+  /* Scrollbar: hide completely */
+  .scrollbar-none::-webkit-scrollbar,
+  .custom-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  .scrollbar-none {
+  .scrollbar-none,
+  .custom-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  /* Modal overscroll containment — prevents parent scroll chaining on iOS Safari */
+  .modal-scroll {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -57,16 +74,25 @@
 }
 
 @keyframes pageEntrance {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-page-entrance {
-  animation: pageEntrance 0.2s ease-out forwards;
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Marquee: duplicate content in DOM so the loop is seamless */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  animation: marquee 20s linear infinite;
+  white-space: nowrap;
 }
 
 .print-only,
@@ -85,7 +111,8 @@
     display: flex !important;
   }
 
-  /* Thermal Printer Receipt Styles */
+  /* Thermal Printer Receipt Styles — scoped to .receipt-print-layout only.
+     Do NOT apply width: 80mm to html/body — that breaks printing all other pages. */
   .receipt-print-layout {
     width: 80mm !important;
     max-width: 80mm !important;
@@ -98,42 +125,15 @@
     font-family: 'Courier New', Courier, monospace, sans-serif !important;
   }
 
-  .receipt-print-layout h1 {
-    font-size: 15px !important;
-  }
-
+  .receipt-print-layout h1 { font-size: 15px !important; }
   .receipt-print-layout h2,
-  .receipt-print-layout h3 {
-    font-size: 12px !important;
-  }
-
+  .receipt-print-layout h3 { font-size: 12px !important; }
   .receipt-print-layout p,
   .receipt-print-layout table,
-  .receipt-print-layout div {
-    font-size: 11px !important;
-  }
+  .receipt-print-layout div { font-size: 11px !important; }
 
-  /* Force standard margins to 0 for thermal printer page size compatibility */
   @page {
     size: auto;
     margin: 0 !important;
   }
-
-  html, body {
-    width: 80mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-}
-
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
-}
-
-.animate-marquee {
-  display: inline-block;
-  padding-left: 100%;
-  animation: marquee 20s linear infinite;
 }

@@ -229,18 +229,14 @@ export default function TablesPage() {
     setTimeout(() => setCopied(null), 2000);
   }
 
-  // Extract the dine URL from the QR data URL isn't possible, so fetch it from env
-  function getDineUrl(tableNumber: number) {
-    // This will be the APP_URL-based URL — same as what's in the QR
-    const origin = window.location.origin;
-    return `${origin}/dine/[hotelId]/${tableNumber}`;
-  }
+  // getDineUrl is intentionally removed — use table.dineUrl from the API response
+  // which is pre-generated with the correct hotel ID by the server.
 
   return (
     <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Tables & QR Codes</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Tables & QR Codes</h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
             Manage your restaurant tables and generate order QR codes
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 mx-2" />
@@ -284,7 +280,7 @@ export default function TablesPage() {
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isSkeletons ? (
           Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-100 animate-pulse">
+            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 animate-pulse">
               <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
               <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
               <div className="aspect-square bg-slate-100 rounded-xl mb-4"></div>
@@ -298,7 +294,7 @@ export default function TablesPage() {
           tables.map((table) => (
             <div
               key={table.id}
-              className="bg-white rounded-[1.5rem] p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 group flex flex-col h-full relative overflow-hidden"
+              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300 group flex flex-col h-full relative overflow-hidden"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>

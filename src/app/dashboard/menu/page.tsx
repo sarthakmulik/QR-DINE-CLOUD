@@ -330,7 +330,7 @@ export default function MenuPage() {
     <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Menu Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Menu Management</h1>
           <p className="text-slate-500 font-medium mt-1 text-sm flex items-center gap-2">
             Organize categories and items
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 mx-2" />
@@ -649,13 +649,13 @@ export default function MenuPage() {
                   <p className="text-red-500 text-xs mt-2 font-medium bg-red-50 p-2 rounded-lg border border-red-100">{imageError}</p>
                 )}
                 <p className="text-[10px] text-slate-500 mt-2 font-medium">
-                  JPEG, PNG, or WebP. Max 10MB. Images are automatically compressed.
+                  JPEG, PNG, or WebP. Max 5MB. Images are automatically compressed.
                 </p>
               </div>
             )}
           </div>
 
-          <div className="border-t border-slate-100 pt-4 pb-2 space-y-4 bg-slate-50/50 rounded-xl p-4">
+          <div className="border-t border-slate-100 p-4 space-y-4 bg-slate-50/50 rounded-xl mt-4">
             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">Item Attributes</h4>
             
             <div className="grid grid-cols-2 gap-3">

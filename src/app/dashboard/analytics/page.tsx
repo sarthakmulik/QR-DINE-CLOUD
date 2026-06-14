@@ -275,7 +275,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12 animate-page-entrance">
+    <div className="space-y-6 animate-page-entrance">
       {/* Load Chart.js CDN */}
       <Script
         src="https://cdn.jsdelivr.net/npm/chart.js"
@@ -311,6 +311,7 @@ export default function AnalyticsPage() {
               <input
                 type="date"
                 value={customFrom}
+                max={customTo || new Date().toISOString().split("T")[0]}
                 onChange={(e) => setCustomFrom(e.target.value)}
                 className="focus:outline-none border-none text-gray-700 bg-transparent text-xs"
               />
@@ -318,6 +319,8 @@ export default function AnalyticsPage() {
               <input
                 type="date"
                 value={customTo}
+                min={customFrom}
+                max={new Date().toISOString().split("T")[0]}
                 onChange={(e) => setCustomTo(e.target.value)}
                 className="focus:outline-none border-none text-gray-700 bg-transparent text-xs"
               />

@@ -244,7 +244,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-7 space-y-6">
           <form onSubmit={handleSave} className="bg-white rounded-xl border p-6 space-y-4">
             {/* Store Status Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-150">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-900">Accepting Orders</span>
@@ -393,7 +393,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Menu Layout Preset Selector */}
-            <div className="border-t border-gray-150 pt-4 space-y-4">
+            <div className="border-t border-gray-200 pt-4 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
                   Menu Layout Preset
@@ -476,7 +476,7 @@ export default function SettingsPage() {
                           ? "border-brand-600 bg-brand-50/10 shadow-sm"
                           : layout.allowed
                           ? "border-gray-200 bg-white hover:bg-slate-50/50 hover:border-gray-300"
-                          : "border-gray-150 bg-gray-50/30 opacity-60 cursor-not-allowed"
+                          : "border-gray-200 bg-gray-50/30 opacity-60 cursor-not-allowed"
                       }`}
                     >
                       <div className="flex-1 pr-12">
@@ -489,8 +489,8 @@ export default function SettingsPage() {
                           )}
                           {layout.allowed && (
                             <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                              layout.badge === "Free" ? "bg-slate-150 text-slate-500" :
-                              layout.badge === "Pro" ? "bg-brand-50 text-brand-600" : "bg-indigo-50 text-indigo-650"
+                              layout.badge === "Free" ? "bg-slate-200 text-slate-500" :
+                              layout.badge === "Pro" ? "bg-brand-50 text-brand-600" : "bg-indigo-50 text-indigo-600"
                             }`}>
                               {layout.badge}
                             </span>
@@ -516,7 +516,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Elite Whitelabel Customization */}
-            <div className="border-t border-gray-150 pt-4 space-y-4">
+            <div className="border-t border-gray-200 pt-4 space-y-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                   Elite Whitelabel Customization
@@ -735,7 +735,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div className="border-t border-gray-150 pt-4 space-y-4">
+            <div className="border-t border-gray-200 pt-4 space-y-4">
               <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>
               
               <div>
@@ -885,7 +885,7 @@ export default function SettingsPage() {
                 </div>
 
                 {form.customizations?.layout === "compact" ? (
-                  <div className="bg-white rounded-xl border border-gray-150 divide-y divide-gray-100 overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                     <div className="p-2 flex items-center justify-between gap-2 bg-transparent">
                       <div className="min-w-0 flex-1">
                         <h6 className="font-extrabold text-[8px] text-gray-950 truncate">Paneer Tikka</h6>

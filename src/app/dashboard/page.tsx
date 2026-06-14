@@ -600,7 +600,7 @@ Thank you for dining with us!`;
 
         {hasFeedbackAccess ? (
           isSkeletons ? (
-            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-150 animate-pulse">
+            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-200 animate-pulse">
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center">
                   <div className="w-full bg-slate-100 rounded-t-md" style={{ height: "40px" }} />
@@ -609,7 +609,7 @@ Thank you for dining with us!`;
               ))}
             </div>
           ) : (
-            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-150">
+            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-200">
               {stats.hourlyDistribution?.map((h) => {
                 const hourName = h.hour % 12 || 12;
                 const ampm = h.hour >= 12 ? "pm" : "am";
@@ -637,7 +637,7 @@ Thank you for dining with us!`;
         ) : (
           <div className="h-28 bg-slate-50 rounded-lg flex flex-col items-center justify-center border border-dashed text-slate-400">
             <Zap size={20} className="mb-1 text-brand-400" />
-            <p className="text-xs font-bold text-slate-650">Upgrade to Pro or Elite Plan</p>
+            <p className="text-xs font-bold text-slate-600">Upgrade to Pro or Elite Plan</p>
             <p className="text-[10px] text-slate-400">To unlock hourly workload & order distribution charts.</p>
           </div>
         )}

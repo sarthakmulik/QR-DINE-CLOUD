@@ -80,7 +80,7 @@ export default function FeedbackPage() {
   });
 
   return (
-    <div className="space-y-8 animate-page-entrance">
+    <div className="space-y-6 animate-page-entrance">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           Customer Reviews
@@ -99,7 +99,7 @@ export default function FeedbackPage() {
             <div className="h-10 w-16 bg-gray-200 rounded mt-2" />
             <div className="flex gap-1 mt-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-5 h-5 bg-gray-150 rounded" />
+                <div key={i} className="w-5 h-5 bg-gray-200 rounded" />
               ))}
             </div>
             <div className="h-3 w-36 bg-gray-100 rounded mt-3" />
@@ -114,10 +114,10 @@ export default function FeedbackPage() {
                   <div className="flex justify-between items-center">
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, j) => (
-                        <div key={j} className="w-3.5 h-3.5 bg-gray-150 rounded" />
+                        <div key={j} className="w-3.5 h-3.5 bg-gray-200 rounded" />
                       ))}
                     </div>
-                    <div className="h-4 w-24 bg-gray-150 rounded" />
+                    <div className="h-4 w-24 bg-gray-200 rounded" />
                   </div>
                   <div className="h-12 bg-gray-100 rounded-xl" />
                 </div>
@@ -159,7 +159,7 @@ export default function FeedbackPage() {
                       {stars} <span className="text-amber-500 text-xs">★</span>
                     </span>
                     <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-amber-400 h-full rounded-full" style={{ width: `${percentage}%` }} />
+                      <div className="bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
                     </div>
                     <span className="w-8 text-right font-medium text-gray-500">{count}</span>
                   </div>
@@ -213,7 +213,9 @@ export default function FeedbackPage() {
         </div>
       ) : (
         <div className="text-center py-16 bg-slate-50 border border-dashed rounded-2xl text-gray-400">
-          No feedback responses received from guests yet.
+          <MessageSquare size={40} className="mx-auto opacity-30 mb-3" />
+          <p className="font-semibold text-gray-500 text-sm">No feedback yet</p>
+          <p className="text-xs text-gray-400 mt-1">Guest reviews will appear here after billing</p>
         </div>
       )}
     </div>
