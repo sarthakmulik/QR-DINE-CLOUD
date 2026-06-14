@@ -11,36 +11,26 @@ export async function GET() {
     const { hotelId } = await requireHotelAccess();
     const sb = createAdminClient();
 
-    const [categoriesRes, itemsRes] = await Promise.all([
-      sb
-        .from("menu_categories")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .order("sort_order", { ascending: true }),
-      sb
-        .from("menu_items")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .order("name", { ascending: true }),
-    ]);
+    const { data: categoriesRes, error } = await sb
+      .from("menu_categories")
+      .select("*, menu_items(*)")
+      .eq("hotel_id", hotelId)
+      .order("sort_order", { ascending: true });
 
-    const categories = (categoriesRes.data || []) as MenuCategory[];
-    const items = (itemsRes.data || []) as MenuItem[];
+    if (error) throw error;
 
-    const itemsByCategoryId: Record<string, MenuItem[]> = {};
-    for (const item of items) {
-      if (!itemsByCategoryId[item.category_id]) {
-        itemsByCategoryId[item.category_id] = [];
-      }
-      itemsByCategoryId[item.category_id].push(item);
-    }
+    const categories = (categoriesRes || []) as (MenuCategory & { menu_items?: MenuItem[] })[];
 
-    const result = categories.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      sortOrder: cat.sort_order,
-      items: (itemsByCategoryId[cat.id] || []).map(mapMenuItem),
-    }));
+    const result = categories.map((cat) => {
+      // Sort items by name alphabetically since we can't easily order nested joins securely in all PostgREST versions
+      const sortedItems = (cat.menu_items || []).sort((a, b) => a.name.localeCompare(b.name));
+      return {
+        id: cat.id,
+        name: cat.name,
+        sortOrder: cat.sort_order,
+        items: sortedItems.map(mapMenuItem),
+      };
+    });
 
     return NextResponse.json(result);
   } catch {

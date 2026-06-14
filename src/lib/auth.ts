@@ -9,8 +9,9 @@ export const SUPER_ADMIN_EMAIL = "sarthakmulik16@gmail.com";
 export const getAuthUser = cache(async function (): Promise<AuthUser | null> {
   const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user?.email) {
     try {

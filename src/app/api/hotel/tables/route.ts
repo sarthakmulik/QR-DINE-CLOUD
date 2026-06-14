@@ -23,24 +23,20 @@ export async function GET() {
         .order("table_number", { ascending: true }),
       sb
         .from("table_sessions")
-        .select("*")
+        .select("*, session_items(*)")
         .eq("hotel_id", hotelId)
         .neq("status", "closed"),
     ]);
 
     const tables = (tablesRes.data || []) as RestaurantTable[];
-    const sessions = (sessionsRes.data || []) as TableSession[];
-    const activeSessionIds = sessions.map((s) => s.id);
+    const sessions = (sessionsRes.data || []) as (TableSession & { session_items?: SessionItem[] })[];
 
     let items: SessionItem[] = [];
-    if (activeSessionIds.length > 0) {
-      const { data: itemsRes } = await sb
-        .from("session_items")
-        .select("*")
-        .in("session_id", activeSessionIds)
-        .order("added_at", { ascending: true });
-      items = (itemsRes || []) as SessionItem[];
-    }
+    sessions.forEach(s => {
+      if (s.session_items) {
+        items.push(...s.session_items);
+      }
+    });
 
     const itemsBySessionId: Record<string, SessionItem[]> = {};
     for (const item of items) {
