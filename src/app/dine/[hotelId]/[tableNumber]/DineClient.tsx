@@ -667,17 +667,7 @@ export default function DineClient({
     }
     return false;
   });
-  const [animReady, setAnimReady] = useState(() => {
-    if (typeof window !== "undefined") {
-      const key = `qr_welcome_shown_${initialHotel?.id}`;
-      const alreadySeen = sessionStorage.getItem(key);
-      const plan = (initialHotel?.plan || "").toLowerCase();
-      if (!alreadySeen && initialHotel?.welcome_animation_enabled && ["pro", "elite"].includes(plan)) {
-        return true;
-      }
-    }
-    return false;
-  });
+
   const [welcomePreset, setWelcomePreset] = useState<"elegant" | "vibrant" | "minimal">(() => {
     return initialHotel?.welcome_animation_preset || "elegant";
   });
@@ -831,9 +821,6 @@ export default function DineClient({
       sessionStorage.setItem(`hotel_logo_${hotelId}`, data.hotel.logo || "");
       sessionStorage.setItem(`hotel_plan_${hotelId}`, data.hotel.plan);
       sessionStorage.setItem(`hotel_tax_rate_${hotelId}`, String(data.hotel.taxRate));
-
-      // Welcome Animation Session Logic is now handled synchronously in useState
-      setAnimReady(true);
     }
     if (data.categories && !sessionOnly) {
       sessionStorage.setItem(`menu_${hotelId}`, JSON.stringify(data.categories));
@@ -1802,6 +1789,13 @@ export default function DineClient({
             href={`https://fonts.googleapis.com/css2?family=${customizations.fontFamily.replace(/\s+/g, "+")}:wght@400;500;600;700;800;900&display=swap`}
           />
         )}
+        {showWelcome && (
+          <WelcomeAnimation
+            restaurantName={initialHotel?.name || ""}
+            preset={welcomePreset}
+            onComplete={() => setShowWelcome(false)}
+          />
+        )}
         {renderContent()}
       </div>
     );
@@ -1827,8 +1821,7 @@ export default function DineClient({
         />
       )}
 
-      {animReady && (
-        <div className={`min-h-screen pb-32 transition-colors duration-300 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"}`}>
+      <div className={`min-h-screen pb-32 transition-colors duration-300 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"}`}>
       {/* Toast notification */}
       {renderToast()}
 
@@ -2402,7 +2395,6 @@ export default function DineClient({
         </div>
       )}
       </div>
-      )}
     </div>
   );
 }
