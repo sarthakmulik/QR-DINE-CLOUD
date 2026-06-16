@@ -6,10 +6,15 @@ import "./welcome-animation.css";
 interface WelcomeAnimationProps {
   restaurantName: string;
   preset: "elegant" | "vibrant" | "minimal";
+  theme?: {
+    primaryColor?: string;
+    fontFamily?: string;
+    layout?: string;
+  };
   onComplete: () => void;
 }
 
-export function WelcomeAnimation({ restaurantName, preset, onComplete }: WelcomeAnimationProps) {
+export function WelcomeAnimation({ restaurantName, preset, theme, onComplete }: WelcomeAnimationProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -35,7 +40,23 @@ export function WelcomeAnimation({ restaurantName, preset, onComplete }: Welcome
     return () => clearTimeout(timeoutId);
   }, [preset, prefersReducedMotion, onComplete]);
 
-  // Generate 14 random particles for 'elegant' preset once
+  // Compute CSS Variables based on Theme
+  const isDark = theme?.layout === "dark_slider";
+  const bgColor = isDark ? "#020617" : "#f9fafb";
+  const textColor = isDark ? "#ffffff" : "#0f172a";
+  const subTextColor = isDark ? "rgba(255, 255, 255, 0.55)" : "rgba(15, 23, 42, 0.55)";
+  const primaryColor = theme?.primaryColor || "#3b82f6";
+  const fontFamily = theme?.fontFamily ? `"${theme.fontFamily.replace(/\+/g, ' ')}", sans-serif` : "inherit";
+
+  const cssVars = {
+    "--wa-bg": bgColor,
+    "--wa-text": textColor,
+    "--wa-sub": subTextColor,
+    "--wa-primary": primaryColor,
+    "--wa-font": fontFamily,
+  } as React.CSSProperties;
+
+  // Generate random particles for 'elegant' preset once
   const particles = useMemo(() => {
     if (preset !== "elegant") return [];
     
@@ -44,7 +65,7 @@ export function WelcomeAnimation({ restaurantName, preset, onComplete }: Welcome
       const left = Math.floor(Math.random() * 91) + 5; // 5% to 95%
       const bottom = Math.floor(Math.random() * 36) + 5; // 5% to 40%
       const dur = (Math.random() * 1.0 + 2.2).toFixed(2); // 2.2s to 3.2s
-      const delay = (i * 0.1).toFixed(1); // 0s to 1.4s (wait, i goes up to 13, so 1.3s max)
+      const delay = (i * 0.1).toFixed(1); 
       
       return {
         id: i,
@@ -60,8 +81,8 @@ export function WelcomeAnimation({ restaurantName, preset, onComplete }: Welcome
 
   if (prefersReducedMotion) {
     return (
-      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <h1 style={{ fontFamily: "sans-serif", fontSize: "2rem", color: "#333", textAlign: "center" }}>
+      <div style={{ ...cssVars, position: "fixed", inset: 0, zIndex: 9999, background: "var(--wa-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <h1 style={{ fontFamily: "var(--wa-font)", fontSize: "2rem", color: "var(--wa-text)", textAlign: "center" }}>
           {restaurantName}
         </h1>
       </div>
@@ -70,7 +91,7 @@ export function WelcomeAnimation({ restaurantName, preset, onComplete }: Welcome
 
   if (preset === "elegant") {
     return (
-      <div className="wa-elegant">
+      <div className="wa-elegant" style={cssVars}>
         {particles.map((style, i) => (
           <div key={i} className="wa-particle" style={style} />
         ))}
@@ -85,7 +106,7 @@ export function WelcomeAnimation({ restaurantName, preset, onComplete }: Welcome
 
   if (preset === "vibrant") {
     return (
-      <div className="wa-vibrant">
+      <div className="wa-vibrant" style={cssVars}>
         <div className="wa-vibrant-content">
           <div className="wa-vibrant-name">{restaurantName}</div>
           <div className="wa-vibrant-sub">Scan to order seamlessly</div>
@@ -101,7 +122,7 @@ export function WelcomeAnimation({ restaurantName, preset, onComplete }: Welcome
 
   // minimal
   return (
-    <div className="wa-minimal">
+    <div className="wa-minimal" style={cssVars}>
       <div className="wa-minimal-ring"></div>
       <div className="wa-minimal-content">
         <div className="wa-minimal-name">{restaurantName}</div>

@@ -1804,6 +1804,11 @@ export default function DineClient({
           <WelcomeAnimation
             restaurantName={initialHotel?.name || ""}
             preset={welcomePreset}
+            theme={{
+              primaryColor: customizations?.primaryColor,
+              fontFamily: customizations?.fontFamily,
+              layout: customizations?.layout
+            }}
             onComplete={() => setShowWelcome(false)}
           />
         )}
@@ -1828,6 +1833,11 @@ export default function DineClient({
         <WelcomeAnimation
           restaurantName={initialHotel?.name || state.hotelName || ""}
           preset={welcomePreset}
+          theme={{
+            primaryColor: customizations?.primaryColor,
+            fontFamily: customizations?.fontFamily,
+            layout: customizations?.layout
+          }}
           onComplete={() => setShowWelcome(false)}
         />
       )}

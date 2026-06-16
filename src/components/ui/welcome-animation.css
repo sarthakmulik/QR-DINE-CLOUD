@@ -1,22 +1,27 @@
+/* ───────────────────────────────────────── */
+/* PRESET 1 — "elegant"                      */
+/* ───────────────────────────────────────── */
+
 .wa-elegant {
   position: fixed; inset: 0; z-index: 9999;
-  background: radial-gradient(ellipse at center, #1A1A2E 0%, #0D0D18 100%);
+  background: var(--wa-bg);
   display: flex; align-items: center; justify-content: center;
   animation: waElegantExit 600ms ease-in-out 2600ms both;
 }
 @keyframes waElegantExit {
-  to { opacity: 0; }
+  to { opacity: 0; visibility: hidden; }
 }
 
 .wa-particle {
   position: absolute;
   border-radius: 50%;
-  background: rgba(200, 168, 130, 0.65);
+  background: var(--wa-primary);
+  opacity: 0.35;
   animation: waParticleRise var(--dur) ease-in var(--delay) infinite;
 }
 @keyframes waParticleRise {
   0%   { transform: translateY(0) scale(1); opacity: 0; }
-  15%  { opacity: 0.85; }
+  15%  { opacity: 0.55; }
   100% { transform: translateY(-130px) scale(0); opacity: 0; }
 }
 
@@ -26,29 +31,29 @@
 }
 
 .wa-elegant-name {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--wa-font);
   font-size: clamp(1.8rem, 5.5vw, 3rem);
-  color: #C8A882;
-  letter-spacing: 0.18em;
+  color: var(--wa-primary);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0;
   animation: waFadeUp 900ms ease-out 300ms forwards;
 }
 
 .wa-elegant-sub {
-  font-family: sans-serif;
+  font-family: var(--wa-font);
   font-size: 0.72rem;
-  letter-spacing: 0.45em;
+  letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--wa-sub);
   margin-top: 10px;
   opacity: 0;
   animation: waFadeUp 900ms ease-out 900ms forwards;
 }
 
 .wa-elegant-line {
-  height: 1px;
-  background: #C8A882;
+  height: 1.5px;
+  background: var(--wa-primary);
   width: 0;
   margin: 16px auto 0;
   animation: waLineGrow 700ms ease-out 1200ms forwards;
@@ -68,18 +73,29 @@
 
 .wa-vibrant {
   position: fixed; inset: 0; z-index: 9999;
-  background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 50%, #4ECDC4 100%);
-  background-size: 300% 300%;
+  background: var(--wa-bg);
   display: flex; align-items: center; justify-content: center;
-  animation: waGradShift 2.5s ease infinite alternate,
-             waVibrantExit 500ms ease-in 2500ms both;
+  overflow: hidden;
+  animation: waVibrantExit 500ms ease-in 2500ms both;
 }
-@keyframes waGradShift {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+
+/* Vibrant Glow Behind Text */
+.wa-vibrant::before {
+  content: '';
+  position: absolute;
+  width: 150vw; height: 150vw;
+  background: radial-gradient(circle, var(--wa-primary) 0%, transparent 60%);
+  opacity: 0.12;
+  animation: waPulse 2s ease-in-out infinite alternate;
+  pointer-events: none;
 }
+@keyframes waPulse {
+  0% { transform: scale(0.95); opacity: 0.08; }
+  100% { transform: scale(1.05); opacity: 0.16; }
+}
+
 @keyframes waVibrantExit {
-  to { transform: scale(1.08); opacity: 0; }
+  to { transform: scale(1.05); opacity: 0; visibility: hidden; }
 }
 
 .wa-vibrant-content {
@@ -87,20 +103,20 @@
 }
 
 .wa-vibrant-name {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
+  font-family: var(--wa-font);
+  font-weight: 800;
   font-size: clamp(2rem, 5.5vw, 3.2rem);
-  color: #ffffff;
-  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+  color: var(--wa-text);
+  text-shadow: 0 4px 32px var(--wa-primary);
   opacity: 0;
   animation: waSpringIn 650ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms forwards;
 }
 
 .wa-vibrant-sub {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 300;
+  font-family: var(--wa-font);
+  font-weight: 500;
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--wa-sub);
   margin-top: 10px;
   opacity: 0;
   animation: waSlideUp 600ms ease-out 800ms forwards;
@@ -134,24 +150,25 @@
 
 .wa-minimal {
   position: fixed; inset: 0; z-index: 9999;
-  background: #FAFAF8;
+  background: var(--wa-bg);
   display: flex; align-items: center; justify-content: center;
   animation: waMinimalExit 500ms ease-out 2500ms both;
 }
 @keyframes waMinimalExit {
-  to { filter: blur(8px); opacity: 0; }
+  to { filter: blur(8px); opacity: 0; visibility: hidden; }
 }
 
 .wa-minimal-ring {
   position: absolute;
   width: min(260px, 55vw); height: min(260px, 55vw);
   border-radius: 50%;
-  border: 1.5px solid #E0E0E0;
+  border: 1.5px solid var(--wa-primary);
+  opacity: 0.15;
   animation: waRingContract 900ms ease-out 100ms both;
 }
 @keyframes waRingContract {
   from { transform: scale(1.55); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  to   { transform: scale(1); opacity: 0.15; }
 }
 
 .wa-minimal-content {
@@ -159,10 +176,10 @@
 }
 
 .wa-minimal-name {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 300;
+  font-family: var(--wa-font);
+  font-weight: 400;
   font-size: clamp(1.6rem, 4.5vw, 2.6rem);
-  color: #1A1A1A;
+  color: var(--wa-text);
   letter-spacing: -0.025em;
   opacity: 0;
   animation: waJustFade 1100ms ease-out 400ms forwards;
@@ -170,7 +187,7 @@
 
 .wa-minimal-dot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #1A1A1A;
+  background: var(--wa-primary);
   margin: 16px auto;
   transform: scale(0);
   animation: waDotPulse 700ms ease-out 1200ms forwards;
@@ -182,11 +199,11 @@
 }
 
 .wa-minimal-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--wa-font);
   font-size: 0.72rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #999999;
+  color: var(--wa-sub);
   opacity: 0;
   animation: waJustFade 800ms ease-out 1400ms forwards;
 }
