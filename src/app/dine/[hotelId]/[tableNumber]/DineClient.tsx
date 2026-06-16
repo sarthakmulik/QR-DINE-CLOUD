@@ -655,18 +655,20 @@ export default function DineClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const [showWelcome, setShowWelcome] = useState(() => {
-    if (typeof window !== "undefined") {
-      const key = `qr_welcome_shown_${initialHotel?.id}`;
-      const alreadySeen = sessionStorage.getItem(key);
-      const plan = (initialHotel?.plan || "").toLowerCase();
-      if (!alreadySeen && initialHotel?.welcome_animation_enabled && ["pro", "elite"].includes(plan)) {
-        sessionStorage.setItem(key, "1");
-        return true;
-      }
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    const key = `qr_welcome_shown_${initialHotel?.id}`;
+    const alreadySeen = sessionStorage.getItem(key);
+    const plan = (initialHotel?.plan || "").toLowerCase();
+    
+    if (!alreadySeen && initialHotel?.welcome_animation_enabled && ["pro", "elite"].includes(plan)) {
+      sessionStorage.setItem(key, "1");
+      setShowWelcome(true);
     }
-    return false;
-  });
+    setSessionChecked(true);
+  }, [initialHotel]);
 
   const [welcomePreset, setWelcomePreset] = useState<"elegant" | "vibrant" | "minimal">(() => {
     return initialHotel?.welcome_animation_preset || "elegant";
@@ -1779,6 +1781,15 @@ export default function DineClient({
     ...brandVariables,
     fontFamily: customizations?.fontFamily ? `${customizations.fontFamily}, sans-serif` : "inherit"
   } as React.CSSProperties;
+
+  if (!sessionChecked) {
+    return (
+      <div 
+        style={{ ...customStyles, height: '100vh', width: '100vw' }} 
+        className={`fixed inset-0 z-[99999] transition-colors duration-300 ${customizations?.layout === "dark_slider" ? "bg-slate-950" : "bg-gray-50"}`} 
+      />
+    );
+  }
 
   if (state.type !== "menu") {
     return (
