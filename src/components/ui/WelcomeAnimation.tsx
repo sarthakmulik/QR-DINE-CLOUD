@@ -1,156 +1,113 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Head from "next/head";
+import { useEffect, useState, useMemo } from "react";
+import "./welcome-animation.css";
 
 interface WelcomeAnimationProps {
-  hotelId: string;
-  hotelName: string;
-  preset: "elegant" | "vibrant" | "minimal" | string;
+  restaurantName: string;
+  preset: "elegant" | "vibrant" | "minimal";
+  onComplete: () => void;
 }
 
-export function WelcomeAnimation({ hotelId, hotelName, preset }: WelcomeAnimationProps) {
-  const [shouldShow, setShouldShow] = useState(false);
-  const [isHiding, setIsHiding] = useState(false);
+export function WelcomeAnimation({ restaurantName, preset, onComplete }: WelcomeAnimationProps) {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    const sessionKey = `qr_welcome_shown_${hotelId}`;
-    const hasBeenShown = sessionStorage.getItem(sessionKey);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
 
-    if (!hasBeenShown) {
-      setShouldShow(true);
-      // Start exit animation
-      const hideTimer = setTimeout(() => {
-        setIsHiding(true);
-      }, 2500);
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-      // Remove from DOM and set session storage
-      const removeTimer = setTimeout(() => {
-        setShouldShow(false);
-        sessionStorage.setItem(sessionKey, "true");
-      }, 3000);
-
-      return () => {
-        clearTimeout(hideTimer);
-        clearTimeout(removeTimer);
-      };
+    if (prefersReducedMotion) {
+      timeoutId = setTimeout(onComplete, 1000);
+    } else {
+      let duration = 3000;
+      if (preset === "elegant") duration = 3200;
+      timeoutId = setTimeout(onComplete, duration);
     }
-  }, [hotelId]);
 
-  if (!shouldShow) return null;
+    return () => clearTimeout(timeoutId);
+  }, [preset, prefersReducedMotion, onComplete]);
 
-  const presetStyles = {
-    elegant: {
-      fontFamily: "'Playfair Display', serif",
-      background: "linear-gradient(135deg, #000000, #2c3e50)",
-      color: "#f1c40f",
-      animationName: "fadeSlideUp",
-    },
-    vibrant: {
-      fontFamily: "'Poppins', sans-serif",
-      background: "linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)",
-      color: "#d63031",
-      animationName: "popBounce",
-    },
-    minimal: {
-      fontFamily: "'DM Sans', sans-serif",
-      background: "#ffffff",
-      color: "#2d3436",
-      animationName: "fadeIn",
-    },
-  };
+  // Generate 14 random particles for 'elegant' preset once
+  const particles = useMemo(() => {
+    if (preset !== "elegant") return [];
+    
+    return Array.from({ length: 14 }).map((_, i) => {
+      const size = Math.floor(Math.random() * 4) + 3; // 3 to 6px
+      const left = Math.floor(Math.random() * 91) + 5; // 5% to 95%
+      const bottom = Math.floor(Math.random() * 36) + 5; // 5% to 40%
+      const dur = (Math.random() * 1.0 + 2.2).toFixed(2); // 2.2s to 3.2s
+      const delay = (i * 0.1).toFixed(1); // 0s to 1.4s (wait, i goes up to 13, so 1.3s max)
+      
+      return {
+        id: i,
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${left}%`,
+        bottom: `${bottom}%`,
+        "--dur": `${dur}s`,
+        "--delay": `${delay}s`,
+      } as React.CSSProperties;
+    });
+  }, [preset]);
 
-  const currentStyle = presetStyles[(preset as keyof typeof presetStyles)] || presetStyles.elegant;
+  if (prefersReducedMotion) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <h1 style={{ fontFamily: "sans-serif", fontSize: "2rem", color: "#333", textAlign: "center" }}>
+          {restaurantName}
+        </h1>
+      </div>
+    );
+  }
 
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@400;600;800&display=swap');
-
-        @keyframes fadeSlideUp {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes popBounce {
-          0% { opacity: 0; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-
-        @keyframes fadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-
-        @keyframes overlayFadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-
-        @keyframes overlayFadeOut {
-          0% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-
-        .welcome-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          z-index: 999999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: overlayFadeIn 0.5s ease-out forwards;
-        }
-
-        .welcome-overlay.hiding {
-          animation: overlayFadeOut 0.5s ease-in forwards;
-        }
-
-        .welcome-content {
-          text-align: center;
-          padding: 2rem;
-        }
-
-        .welcome-title {
-          font-size: 2.5rem;
-          font-weight: 700;
-          margin-bottom: 0.5rem;
-          line-height: 1.2;
-        }
-
-        .welcome-subtitle {
-          font-size: 1.2rem;
-          opacity: 0.9;
-        }
-        
-        @media (prefers-reduced-motion: reduce) {
-          .welcome-overlay, .welcome-overlay.hiding, .welcome-content {
-            animation: none !important;
-          }
-        }
-      `}} />
-      <div 
-        className={`welcome-overlay ${isHiding ? 'hiding' : ''}`}
-        style={{
-          background: currentStyle.background,
-          color: currentStyle.color,
-          fontFamily: currentStyle.fontFamily
-        }}
-      >
-        <div 
-          className="welcome-content"
-          style={{
-            animation: `${currentStyle.animationName} 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`
-          }}
-        >
-          <div className="welcome-subtitle">Welcome to</div>
-          <h1 className="welcome-title">{hotelName}</h1>
+  if (preset === "elegant") {
+    return (
+      <div className="wa-elegant">
+        {particles.map((style, i) => (
+          <div key={i} className="wa-particle" style={style} />
+        ))}
+        <div className="wa-elegant-content">
+          <div className="wa-elegant-name">{restaurantName}</div>
+          <div className="wa-elegant-sub">Welcome</div>
+          <div className="wa-elegant-line"></div>
         </div>
       </div>
-    </>
+    );
+  }
+
+  if (preset === "vibrant") {
+    return (
+      <div className="wa-vibrant">
+        <div className="wa-vibrant-content">
+          <div className="wa-vibrant-name">{restaurantName}</div>
+          <div className="wa-vibrant-sub">Scan to order seamlessly</div>
+          <div className="wa-vibrant-icons">
+            <span>🍔</span>
+            <span>🍹</span>
+            <span>✨</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // minimal
+  return (
+    <div className="wa-minimal">
+      <div className="wa-minimal-ring"></div>
+      <div className="wa-minimal-content">
+        <div className="wa-minimal-name">{restaurantName}</div>
+        <div className="wa-minimal-dot"></div>
+        <div className="wa-minimal-sub">Welcome</div>
+      </div>
+    </div>
   );
 }

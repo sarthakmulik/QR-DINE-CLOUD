@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS hotels (
   logo TEXT,
   address TEXT,
   tax_rate NUMERIC(5,2) NOT NULL DEFAULT 5,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  welcome_animation_enabled BOOLEAN NOT NULL DEFAULT true,
+  welcome_animation_preset TEXT NOT NULL DEFAULT 'elegant' CHECK (welcome_animation_preset IN ('elegant', 'vibrant', 'minimal'))
 );
 
 CREATE TABLE IF NOT EXISTS profiles (

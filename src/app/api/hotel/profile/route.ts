@@ -175,6 +175,17 @@ export async function PATCH(req: NextRequest) {
       };
     }
 
+    if (body.welcomeAnimationEnabled !== undefined) {
+      updates.welcome_animation_enabled = Boolean(body.welcomeAnimationEnabled);
+    }
+
+    if (body.welcomeAnimationPreset !== undefined) {
+      const preset = String(body.welcomeAnimationPreset);
+      if (['elegant', 'vibrant', 'minimal'].includes(preset)) {
+        updates.welcome_animation_preset = preset;
+      }
+    }
+
     // Only apply update if updates object is not empty
     if (Object.keys(updates).length > 0) {
       const { data: hotel, error } = await sb

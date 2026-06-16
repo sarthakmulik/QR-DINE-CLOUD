@@ -42,9 +42,9 @@ export interface Hotel {
     announcementText?: string;
     welcomeMessage?: string;
     layout?: string;
-    welcomeAnimationEnabled?: boolean;
-    welcomeAnimationPreset?: 'elegant' | 'vibrant' | 'minimal' | string;
   } | null;
+  welcome_animation_enabled?: boolean | null;
+  welcome_animation_preset?: string | null;
 }
 
 export interface RestaurantTable {
@@ -158,6 +158,8 @@ export function mapHotel(h: Hotel) {
     kitchenPin: h.kitchen_pin ?? null,
     upiId: h.upi_id ?? null,
     secureQr: !!h.secure_qr,
+    welcomeAnimationEnabled: h.welcome_animation_enabled ?? true,
+    welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
     customizations,
   };
 }

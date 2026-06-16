@@ -651,6 +651,10 @@ export default function DinePage({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [animReady, setAnimReady] = useState(false);
+  const [welcomePreset, setWelcomePreset] = useState<"elegant" | "vibrant" | "minimal">("elegant");
+
   const closeWindow = useCallback(() => {
     try {
       window.close();
@@ -800,6 +804,17 @@ export default function DinePage({
       sessionStorage.setItem(`hotel_logo_${hotelId}`, data.hotel.logo || "");
       sessionStorage.setItem(`hotel_plan_${hotelId}`, data.hotel.plan);
       sessionStorage.setItem(`hotel_tax_rate_${hotelId}`, String(data.hotel.taxRate));
+
+      // Welcome Animation Session Logic
+      const key = `qr_welcome_shown_${hotelId}`;
+      const alreadySeen = sessionStorage.getItem(key);
+      const plan = (data.hotel.plan || "").toLowerCase();
+      if (!alreadySeen && data.hotel.welcomeAnimationEnabled && ["pro", "elite"].includes(plan)) {
+        sessionStorage.setItem(key, "1");
+        setWelcomePreset(data.hotel.welcomeAnimationPreset as any || "elegant");
+        setShowWelcome(true);
+      }
+      setAnimReady(true);
     }
     if (data.categories && !sessionOnly) {
       sessionStorage.setItem(`menu_${hotelId}`, JSON.stringify(data.categories));
@@ -1785,15 +1800,16 @@ export default function DinePage({
         />
       )}
       
-      {customizations?.welcomeAnimationEnabled && (
+      {showWelcome && (
         <WelcomeAnimation
-          hotelId={hotelId}
-          hotelName={state.hotelName}
-          preset={customizations.welcomeAnimationPreset || "elegant"}
+          restaurantName={state.hotelName}
+          preset={welcomePreset}
+          onComplete={() => setShowWelcome(false)}
         />
       )}
 
-      <div className={`min-h-screen pb-32 transition-colors duration-300 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"}`}>
+      {animReady && (
+        <div className={`min-h-screen pb-32 transition-colors duration-300 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"}`}>
       {/* Toast notification */}
       {renderToast()}
 
@@ -2366,8 +2382,8 @@ export default function DinePage({
           </div>
         </div>
       )}
-    </div>
+      </div>
+      )}
     </div>
   );
 }
-

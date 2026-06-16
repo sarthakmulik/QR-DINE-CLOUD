@@ -97,6 +97,8 @@ model Hotel {
   address         String?
   taxRate         Float         @default(5)
   createdAt       DateTime      @default(now())
+  welcomeAnimationEnabled Boolean @default(true)
+  welcomeAnimationPreset  String  @default("elegant")
   users           User[]
   tables          Table[]
   sessions        TableSession[]

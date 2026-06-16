@@ -30,9 +30,9 @@ export default function SettingsPage() {
       announcementText: "",
       welcomeMessage: "Welcome to our Restaurant",
       layout: "default",
-      welcomeAnimationEnabled: false,
-      welcomeAnimationPreset: "elegant"
-    }
+    },
+    welcomeAnimationEnabled: false,
+    welcomeAnimationPreset: "elegant"
   });
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -109,6 +109,30 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleWelcomeAnimationUpdate(patch: { welcomeAnimationEnabled?: boolean, welcomeAnimationPreset?: string }) {
+    // Optimistic update
+    setForm((prev: any) => ({ ...prev, ...patch }));
+    
+    try {
+      const res = await fetch("/api/hotel/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          welcomeAnimationEnabled: patch.welcomeAnimationEnabled,
+          welcomeAnimationPreset: patch.welcomeAnimationPreset
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(data.error || "Failed to save welcome animation settings");
+      } else {
+        sessionStorage.setItem("admin_profile", JSON.stringify(data));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   useEffect(() => {
     const cached = sessionStorage.getItem("admin_profile");
     if (cached) {
@@ -135,8 +159,6 @@ export default function SettingsPage() {
             announcementText: data.customizations.announcementText || "",
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
-            welcomeAnimationEnabled: !!data.customizations.welcomeAnimationEnabled,
-            welcomeAnimationPreset: data.customizations.welcomeAnimationPreset || "elegant",
           } : {
             theme: "default",
             primaryColor: "#ea580c",
@@ -146,9 +168,9 @@ export default function SettingsPage() {
             announcementText: "",
             welcomeMessage: "Welcome to our Restaurant",
             layout: "default",
-            welcomeAnimationEnabled: false,
-            welcomeAnimationPreset: "elegant",
-          }
+          },
+          welcomeAnimationEnabled: data.welcomeAnimationEnabled ?? false,
+          welcomeAnimationPreset: data.welcomeAnimationPreset || "elegant"
         });
       } catch (e) {
         console.error("Failed to parse cached profile:", e);
@@ -179,8 +201,6 @@ export default function SettingsPage() {
             announcementText: data.customizations.announcementText || "",
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
-            welcomeAnimationEnabled: !!data.customizations.welcomeAnimationEnabled,
-            welcomeAnimationPreset: data.customizations.welcomeAnimationPreset || "elegant",
           } : {
             theme: "default",
             primaryColor: "#ea580c",
@@ -190,9 +210,9 @@ export default function SettingsPage() {
             announcementText: "",
             welcomeMessage: "Welcome to our Restaurant",
             layout: "default",
-            welcomeAnimationEnabled: false,
-            welcomeAnimationPreset: "elegant",
-          }
+          },
+          welcomeAnimationEnabled: data.welcomeAnimationEnabled ?? false,
+          welcomeAnimationPreset: data.welcomeAnimationPreset || "elegant"
         });
         sessionStorage.setItem("admin_profile", JSON.stringify(data));
       });
@@ -746,7 +766,15 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <WelcomeAnimationSettings form={form} setForm={setForm} />
+            <WelcomeAnimationSettings
+              plan={currentPlan as any || "basic"}
+              settings={{
+                welcomeAnimationEnabled: form.welcomeAnimationEnabled,
+                welcomeAnimationPreset: form.welcomeAnimationPreset
+              }}
+              onUpdate={handleWelcomeAnimationUpdate}
+              restaurantName={form.name || "Your Restaurant"}
+            />
 
             <div className="border-t border-gray-200 pt-4 space-y-4">
               <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>

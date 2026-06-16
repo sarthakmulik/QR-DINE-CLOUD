@@ -1,112 +1,185 @@
-import { usePlan } from "@/lib/contexts/plan-context";
+import React from "react";
 
-interface WelcomeAnimationSettingsProps {
-  form: any;
-  setForm: (form: any) => void;
+export interface RestaurantSettings {
+  welcomeAnimationEnabled: boolean;
+  welcomeAnimationPreset: string;
 }
 
-export function WelcomeAnimationSettings({ form, setForm }: WelcomeAnimationSettingsProps) {
-  const { currentPlan } = usePlan();
-  const plan = (currentPlan || "basic").toLowerCase();
-  
-  const isElite = plan === "elite";
-  const isPro = plan === "pro";
-  const isBasic = !isElite && !isPro;
+interface WelcomeAnimationSettingsProps {
+  plan: "basic" | "pro" | "elite";
+  settings: RestaurantSettings;
+  onUpdate: (patch: Partial<RestaurantSettings>) => void;
+  restaurantName: string;
+}
 
-  if (isBasic) {
-    return null; // Completely hidden for basic
-  }
+export function WelcomeAnimationSettings({ plan, settings, onUpdate, restaurantName }: WelcomeAnimationSettingsProps) {
+  if (plan === "basic") return null;
 
-  const enabled = form.customizations?.welcomeAnimationEnabled || false;
-  const preset = form.customizations?.welcomeAnimationPreset || "elegant";
+  const { welcomeAnimationEnabled: enabled, welcomeAnimationPreset: preset } = settings;
 
-  return (
-    <div className="border-t border-gray-200 pt-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-          QR Welcome Animation
-        </h3>
-        {isPro && !isElite && (
-          <span className="text-[9px] bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full font-bold">
-            Pro Feature
-          </span>
-        )}
-        {isElite && (
-          <span className="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
-            Elite Feature
-          </span>
-        )}
-      </div>
-      
-      <p className="text-xs text-gray-500 mb-2">
-        Displays a beautiful full-screen animation when a customer scans your QR code for the first time in a session.
-      </p>
+  const handleToggle = () => {
+    onUpdate({ welcomeAnimationEnabled: !enabled });
+  };
 
-      <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <input
-          type="checkbox"
-          id="welcomeAnimationEnabled"
-          checked={enabled}
-          onChange={(e) => {
-            setForm({
-              ...form,
-              customizations: {
-                ...form.customizations,
-                welcomeAnimationEnabled: e.target.checked,
-                // Ensure pro users always use elegant if enabled
-                welcomeAnimationPreset: isElite ? preset : "elegant"
-              }
-            });
-          }}
-          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
-        />
-        <label htmlFor="welcomeAnimationEnabled" className="block text-sm font-bold text-gray-800 cursor-pointer">
-          Enable Welcome Animation
-        </label>
-      </div>
+  const handlePresetSelect = (p: string) => {
+    onUpdate({ welcomeAnimationPreset: p });
+  };
 
-      {enabled && isElite && (
-        <div className="mt-4 pl-1 space-y-3">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Animation Preset
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              { id: "elegant", name: "Elegant", desc: "Dark theme, gold text, fade & slide up (Playfair Font)" },
-              { id: "vibrant", name: "Vibrant", desc: "Bright gradient, pop bounce effect (Poppins Font)" },
-              { id: "minimal", name: "Minimal", desc: "Clean white, simple fade in (DM Sans Font)" },
-            ].map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => {
-                  setForm({
-                    ...form,
-                    customizations: {
-                      ...form.customizations,
-                      welcomeAnimationPreset: p.id,
-                    }
-                  });
-                }}
-                className={`text-left p-3 rounded-xl border transition-all ${
-                  preset === p.id
-                    ? "border-brand-600 bg-brand-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-gray-900">{p.name}</span>
-                  {preset === p.id && (
-                    <div className="w-4 h-4 rounded-full bg-brand-600 flex items-center justify-center text-white text-[10px] font-bold">
-                      ✓
-                    </div>
-                  )}
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1">{p.desc}</p>
-              </button>
-            ))}
+  const renderPreviewContent = (p: string) => {
+    if (p === "elegant") {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, #1A1A2E 0%, #0D0D18 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 2rem" }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem", color: "#C8A882", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+              {restaurantName}
+            </div>
+            <div style={{ fontFamily: "sans-serif", fontSize: "0.72rem", letterSpacing: "0.45em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.45)", marginTop: "10px" }}>
+              Welcome
+            </div>
+            <div style={{ height: "1px", background: "#C8A882", width: "90px", margin: "16px auto 0" }}></div>
           </div>
         </div>
+      );
+    }
+    if (p === "vibrant") {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #FF6B6B 0%, #FFE66D 50%, #4ECDC4 100%)", backgroundSize: "300% 300%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center", zIndex: 2, padding: "0 2rem" }}>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "2rem", color: "#ffffff", textShadow: "0 4px 24px rgba(0, 0, 0, 0.22)" }}>
+              {restaurantName}
+            </div>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 300, fontSize: "1rem", color: "rgba(255, 255, 255, 0.92)", marginTop: "10px" }}>
+              Scan to order seamlessly
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (p === "minimal") {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "#FAFAF8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", width: "160px", height: "160px", borderRadius: "50%", border: "1.5px solid #E0E0E0" }}></div>
+          <div style={{ textAlign: "center", zIndex: 2 }}>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 300, fontSize: "1.6rem", color: "#1A1A1A", letterSpacing: "-0.025em" }}>
+              {restaurantName}
+            </div>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1A1A1A", margin: "16px auto" }}></div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.72rem", letterSpacing: "0.24em", textTransform: "uppercase", color: "#999999" }}>
+              Welcome
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid #E5E5E5" }}>
+      <h3 style={{ fontSize: "15px", fontWeight: 500, color: "#1A1A1A", margin: 0 }}>Welcome Experience</h3>
+      <p style={{ fontSize: "12px", color: "#6B7280", margin: "4px 0 16px 0" }}>Shown to guests the first time they scan your QR code.</p>
+
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+        <button
+          type="button"
+          onClick={handleToggle}
+          style={{
+            width: "40px",
+            height: "22px",
+            borderRadius: "22px",
+            background: enabled ? "#1A1A1A" : "#D4D4D4",
+            position: "relative",
+            border: "none",
+            cursor: "pointer",
+            transition: "background 200ms ease",
+            padding: 0
+          }}
+        >
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              borderRadius: "50%",
+              background: "#ffffff",
+              position: "absolute",
+              top: "3px",
+              left: "3px",
+              transition: "transform 200ms ease",
+              transform: enabled ? "translateX(18px)" : "translateX(0)"
+            }}
+          />
+        </button>
+        <span style={{ fontSize: "14px", fontWeight: 500 }}>Enable Welcome Animation</span>
+      </div>
+
+      {enabled && (
+        <>
+          {plan === "pro" && (
+            <div>
+              <p style={{ fontSize: "13px", color: "#4B5563", marginBottom: "12px", fontWeight: 500 }}>Style: Elegant (Pro plan)</p>
+              <div style={{ width: "200px", height: "110px", position: "relative", overflow: "hidden", borderRadius: "8px", border: "1px solid #E5E5E5" }}>
+                <div style={{ width: "400px", height: "220px", transform: "scale(0.5)", transformOrigin: "0 0", position: "absolute", top: 0, left: 0 }}>
+                  {renderPreviewContent("elegant")}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {plan === "elite" && (
+            <div>
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
+                {[
+                  { id: "elegant", label: "Elegant", color: "#C8A882" },
+                  { id: "vibrant", label: "Vibrant", color: "#FF6B6B" },
+                  { id: "minimal", label: "Minimal", color: "#1A1A1A" },
+                ].map((p) => {
+                  const isSelected = preset === p.id;
+                  return (
+                    <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <button
+                        type="button"
+                        onClick={() => handlePresetSelect(p.id)}
+                        style={{
+                          width: "180px",
+                          height: "100px",
+                          borderRadius: "8px",
+                          border: isSelected ? `2px solid ${p.color}` : "1px solid #E5E5E5",
+                          padding: 0,
+                          cursor: "pointer",
+                          position: "relative",
+                          overflow: "hidden",
+                          background: "#fff",
+                          boxShadow: isSelected ? "0 4px 12px rgba(0,0,0,0.05)" : "none"
+                        }}
+                      >
+                        {isSelected && (
+                          <div style={{ position: "absolute", top: "6px", right: "6px", width: "12px", height: "12px", borderRadius: "50%", background: p.color, zIndex: 10 }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: "8px", height: "8px", margin: "2px" }}>
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </div>
+                        )}
+                        <div style={{ width: "400px", height: "220px", transform: "scale(0.45)", transformOrigin: "0 0", position: "absolute", top: 0, left: 0 }}>
+                          {renderPreviewContent(p.id)}
+                        </div>
+                      </button>
+                      <span style={{ fontSize: "12px", color: "#6B7280", textAlign: "center", fontWeight: isSelected ? 600 : 400 }}>{p.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ marginTop: "16px" }}>
+                <p style={{ fontSize: "13px", color: "#4B5563", marginBottom: "8px", fontWeight: 500 }}>Live Preview</p>
+                <div style={{ width: "200px", height: "110px", position: "relative", overflow: "hidden", borderRadius: "8px", border: "1px solid #E5E5E5" }}>
+                  <div style={{ width: "400px", height: "220px", transform: "scale(0.5)", transformOrigin: "0 0", position: "absolute", top: 0, left: 0 }}>
+                    {renderPreviewContent(preset)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,0 +1,195 @@
+.wa-elegant {
+  position: fixed; inset: 0; z-index: 9999;
+  background: radial-gradient(ellipse at center, #1A1A2E 0%, #0D0D18 100%);
+  display: flex; align-items: center; justify-content: center;
+  animation: waElegantExit 600ms ease-in-out 2600ms both;
+}
+@keyframes waElegantExit {
+  to { opacity: 0; }
+}
+
+.wa-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(200, 168, 130, 0.65);
+  animation: waParticleRise var(--dur) ease-in var(--delay) infinite;
+}
+@keyframes waParticleRise {
+  0%   { transform: translateY(0) scale(1); opacity: 0; }
+  15%  { opacity: 0.85; }
+  100% { transform: translateY(-130px) scale(0); opacity: 0; }
+}
+
+.wa-elegant-content {
+  position: relative; z-index: 2;
+  text-align: center; padding: 0 2rem;
+}
+
+.wa-elegant-name {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5.5vw, 3rem);
+  color: #C8A882;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: waFadeUp 900ms ease-out 300ms forwards;
+}
+
+.wa-elegant-sub {
+  font-family: sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 10px;
+  opacity: 0;
+  animation: waFadeUp 900ms ease-out 900ms forwards;
+}
+
+.wa-elegant-line {
+  height: 1px;
+  background: #C8A882;
+  width: 0;
+  margin: 16px auto 0;
+  animation: waLineGrow 700ms ease-out 1200ms forwards;
+}
+
+@keyframes waFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes waLineGrow {
+  to { width: 90px; }
+}
+
+/* ───────────────────────────────────────── */
+/* PRESET 2 — "vibrant"                      */
+/* ───────────────────────────────────────── */
+
+.wa-vibrant {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 50%, #4ECDC4 100%);
+  background-size: 300% 300%;
+  display: flex; align-items: center; justify-content: center;
+  animation: waGradShift 2.5s ease infinite alternate,
+             waVibrantExit 500ms ease-in 2500ms both;
+}
+@keyframes waGradShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+@keyframes waVibrantExit {
+  to { transform: scale(1.08); opacity: 0; }
+}
+
+.wa-vibrant-content {
+  text-align: center; z-index: 2; padding: 0 2rem;
+}
+
+.wa-vibrant-name {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 5.5vw, 3.2rem);
+  color: #ffffff;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  animation: waSpringIn 650ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms forwards;
+}
+
+.wa-vibrant-sub {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 300;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 10px;
+  opacity: 0;
+  animation: waSlideUp 600ms ease-out 800ms forwards;
+}
+
+.wa-vibrant-icons {
+  display: flex; gap: 18px; justify-content: center;
+  margin-top: 18px; font-size: 1.5rem;
+}
+
+.wa-vibrant-icons span:nth-child(1) { animation: waSpinIn 500ms ease-out 600ms both; }
+.wa-vibrant-icons span:nth-child(2) { animation: waSpinIn 500ms ease-out 800ms both; }
+.wa-vibrant-icons span:nth-child(3) { animation: waSpinIn 500ms ease-out 1000ms both; }
+
+@keyframes waSpringIn {
+  from { opacity: 0; transform: scale(0.55); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes waSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes waSpinIn {
+  from { opacity: 0; transform: rotate(0deg) scale(0); }
+  to   { opacity: 1; transform: rotate(360deg) scale(1); }
+}
+
+/* ───────────────────────────────────────── */
+/* PRESET 3 — "minimal"                      */
+/* ───────────────────────────────────────── */
+
+.wa-minimal {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #FAFAF8;
+  display: flex; align-items: center; justify-content: center;
+  animation: waMinimalExit 500ms ease-out 2500ms both;
+}
+@keyframes waMinimalExit {
+  to { filter: blur(8px); opacity: 0; }
+}
+
+.wa-minimal-ring {
+  position: absolute;
+  width: min(260px, 55vw); height: min(260px, 55vw);
+  border-radius: 50%;
+  border: 1.5px solid #E0E0E0;
+  animation: waRingContract 900ms ease-out 100ms both;
+}
+@keyframes waRingContract {
+  from { transform: scale(1.55); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.wa-minimal-content {
+  text-align: center; z-index: 2;
+}
+
+.wa-minimal-name {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+  color: #1A1A1A;
+  letter-spacing: -0.025em;
+  opacity: 0;
+  animation: waJustFade 1100ms ease-out 400ms forwards;
+}
+
+.wa-minimal-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #1A1A1A;
+  margin: 16px auto;
+  transform: scale(0);
+  animation: waDotPulse 700ms ease-out 1200ms forwards;
+}
+@keyframes waDotPulse {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.wa-minimal-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #999999;
+  opacity: 0;
+  animation: waJustFade 800ms ease-out 1400ms forwards;
+}
+@keyframes waJustFade {
+  to { opacity: 1; }
+}
