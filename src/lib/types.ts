@@ -42,6 +42,8 @@ export interface Hotel {
     announcementText?: string;
     welcomeMessage?: string;
     layout?: string;
+    welcomeAnimationEnabled?: boolean;
+    welcomeAnimationPreset?: 'elegant' | 'vibrant' | 'minimal' | string;
   } | null;
 }
 

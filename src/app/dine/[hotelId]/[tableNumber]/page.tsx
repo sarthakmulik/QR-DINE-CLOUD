@@ -4,6 +4,7 @@ import React, { useEffect, useState, use, useCallback, useMemo, useRef } from "r
 import { formatINR, formatMenuPrice } from "@/lib/utils";
 import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search } from "lucide-react";
 import { generateBrandColors } from "@/lib/theme";
+import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
 
 interface MenuItem {
   id: string;
@@ -1783,6 +1784,15 @@ export default function DinePage({
           href={`https://fonts.googleapis.com/css2?family=${customizations.fontFamily.replace(/\s+/g, "+")}:wght@400;500;600;700;800;900&display=swap`}
         />
       )}
+      
+      {customizations?.welcomeAnimationEnabled && (
+        <WelcomeAnimation
+          hotelId={hotelId}
+          hotelName={state.hotelName}
+          preset={customizations.welcomeAnimationPreset || "elegant"}
+        />
+      )}
+
       <div className={`min-h-screen pb-32 transition-colors duration-300 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"}`}>
       {/* Toast notification */}
       {renderToast()}

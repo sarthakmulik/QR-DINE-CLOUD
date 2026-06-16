@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { compressImage } from "@/lib/image";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { themePresets, generateBrandColors } from "@/lib/theme";
+import { WelcomeAnimationSettings } from "@/components/admin/WelcomeAnimationSettings";
 
 export default function SettingsPage() {
   const { currentPlan } = usePlan();
@@ -28,7 +29,9 @@ export default function SettingsPage() {
       fontFamily: "Inter",
       announcementText: "",
       welcomeMessage: "Welcome to our Restaurant",
-      layout: "default"
+      layout: "default",
+      welcomeAnimationEnabled: false,
+      welcomeAnimationPreset: "elegant"
     }
   });
   const [saved, setSaved] = useState(false);
@@ -132,6 +135,8 @@ export default function SettingsPage() {
             announcementText: data.customizations.announcementText || "",
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
+            welcomeAnimationEnabled: !!data.customizations.welcomeAnimationEnabled,
+            welcomeAnimationPreset: data.customizations.welcomeAnimationPreset || "elegant",
           } : {
             theme: "default",
             primaryColor: "#ea580c",
@@ -141,6 +146,8 @@ export default function SettingsPage() {
             announcementText: "",
             welcomeMessage: "Welcome to our Restaurant",
             layout: "default",
+            welcomeAnimationEnabled: false,
+            welcomeAnimationPreset: "elegant",
           }
         });
       } catch (e) {
@@ -172,6 +179,8 @@ export default function SettingsPage() {
             announcementText: data.customizations.announcementText || "",
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
+            welcomeAnimationEnabled: !!data.customizations.welcomeAnimationEnabled,
+            welcomeAnimationPreset: data.customizations.welcomeAnimationPreset || "elegant",
           } : {
             theme: "default",
             primaryColor: "#ea580c",
@@ -181,6 +190,8 @@ export default function SettingsPage() {
             announcementText: "",
             welcomeMessage: "Welcome to our Restaurant",
             layout: "default",
+            welcomeAnimationEnabled: false,
+            welcomeAnimationPreset: "elegant",
           }
         });
         sessionStorage.setItem("admin_profile", JSON.stringify(data));
@@ -734,6 +745,8 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+
+            <WelcomeAnimationSettings form={form} setForm={setForm} />
 
             <div className="border-t border-gray-200 pt-4 space-y-4">
               <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>
