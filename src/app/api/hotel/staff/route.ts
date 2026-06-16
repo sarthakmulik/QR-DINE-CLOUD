@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validatePassword } from "@/lib/utils";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
@@ -41,8 +42,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (password.length < 4 || password.length > 72) {
-      return NextResponse.json({ error: "Password must be between 4 and 72 characters" }, { status: 400 });
+    const { isValid, error: passError } = validatePassword(password);
+    if (!isValid) {
+      return NextResponse.json({ error: passError }, { status: 400 });
     }
 
     const sb = createAdminClient();

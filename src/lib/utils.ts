@@ -68,3 +68,12 @@ export function getAppUrl(): string {
 export function getDineUrl(hotelId: string, tableNumber: number): string {
   return `${getAppUrl()}/dine/${hotelId}/${tableNumber}`;
 }
+
+export function validatePassword(password: string): { isValid: boolean; error?: string } {
+  if (password.length < 8 || password.length > 72) return { isValid: false, error: "Password must be between 8 and 72 characters." };
+  if (!/[A-Z]/.test(password)) return { isValid: false, error: "Password must contain at least one uppercase letter." };
+  if (!/[a-z]/.test(password)) return { isValid: false, error: "Password must contain at least one lowercase letter." };
+  if (!/[0-9]/.test(password)) return { isValid: false, error: "Password must contain at least one number." };
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return { isValid: false, error: "Password must contain at least one special character." };
+  return { isValid: true };
+}

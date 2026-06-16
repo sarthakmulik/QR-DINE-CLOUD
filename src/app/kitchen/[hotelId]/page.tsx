@@ -474,7 +474,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
           <div
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                ? "columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6"
                 : "flex flex-col space-y-4 max-w-5xl mx-auto"
             }
           >
@@ -485,7 +485,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
               return (
                 <div
                   key={session.id}
-                  className={`bg-slate-900 border rounded-2xl transition-all duration-500 shadow-xl flex flex-col ${
+                  className={`bg-slate-900 border rounded-2xl transition-all duration-500 shadow-xl flex flex-col break-inside-avoid ${
                     isReady
                       ? "border-emerald-500 ring-2 ring-emerald-500/20 scale-[0.98] opacity-75"
                       : overdue
