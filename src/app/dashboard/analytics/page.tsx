@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import Script from "next/script";
 import { formatINR } from "@/lib/utils";
 import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
@@ -32,19 +31,18 @@ export default function AnalyticsPage() {
   const [customTo, setCustomTo] = useState("");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [chartJsLoaded, setChartJsLoaded] = useState(false);
 
-  // Chart refs to destroy them before re-rendering
+  // Chart instance refs — used to destroy before re-rendering
   const revenueChartRef = useRef<any>(null);
   const topItemsChartRef = useRef<any>(null);
   const hourlyChartRef = useRef<any>(null);
 
-  // Canvas refs
+  // Canvas element refs
   const revenueCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const topItemsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hourlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 1. Fetch analytics data on date range changes
+  // 1. Fetch analytics data whenever the date range changes
   const fetchAnalytics = useCallback(async () => {
     if (!hasAccess) return;
     let fromStr = "";
@@ -61,28 +59,20 @@ export default function AnalyticsPage() {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       fromStr = monthAgo.toISOString();
     } else if (range === "custom") {
-      if (customFrom) {
-        fromStr = new Date(customFrom + "T00:00:00.000Z").toISOString();
-      }
-      if (customTo) {
-        toStr = new Date(customTo + "T23:59:59.999Z").toISOString();
-      }
+      if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000Z").toISOString();
+      if (customTo) toStr = new Date(customTo + "T23:59:59.999Z").toISOString();
     }
 
     const cacheKey = `admin_analytics_${range}_${customFrom}_${customTo}`;
     const cached = sessionStorage.getItem(cacheKey);
-    let hasCache = false;
     if (cached) {
       try {
         setData(JSON.parse(cached));
         setLoading(false);
-        hasCache = true;
-      } catch (e) {
-        console.error("Failed to parse cached analytics:", e);
+      } catch {
+        /* ignore stale cache */
       }
-    }
-
-    if (!hasCache) {
+    } else {
       setLoading(true);
     }
 
@@ -91,8 +81,8 @@ export default function AnalyticsPage() {
       const params = new URLSearchParams();
       if (fromStr) params.append("from", fromStr);
       if (toStr) params.append("to", toStr);
-      const queryString = params.toString();
-      if (queryString) url += `?${queryString}`;
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
 
       const res = await fetch(url);
       if (res.ok) {
@@ -111,48 +101,31 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  // 2. Render/Update charts when data or library loads
+  // 2. Render charts using npm chart.js — dynamic import avoids SSR and CDN timing issues
   useEffect(() => {
     if (!data || loading || !hasAccess) return;
 
-    // Support both: Chart.js already loaded (cached nav) or freshly loaded via Script
-    const tryRenderCharts = () => {
-      const Chart = (window as any).Chart;
-      if (!Chart) return;
-      renderCharts(Chart);
+    let cancelled = false;
+
+    const destroyAll = () => {
+      revenueChartRef.current?.destroy();
+      revenueChartRef.current = null;
+      topItemsChartRef.current?.destroy();
+      topItemsChartRef.current = null;
+      hourlyChartRef.current?.destroy();
+      hourlyChartRef.current = null;
     };
 
-    // If Chart.js is already on window (e.g. page revisit), render immediately
-    if ((window as any).Chart) {
-      tryRenderCharts();
-      return;
-    }
+    const renderCharts = async () => {
+      // Dynamically import chart.js — bundled by Next.js, always available, no CDN needed
+      const { Chart, registerables } = await import("chart.js");
+      Chart.register(...registerables);
 
-    // Otherwise wait for chartJsLoaded state (set by Script onReady)
-    if (!chartJsLoaded) return;
-    tryRenderCharts();
+      if (cancelled) return; // effect was cleaned up before import resolved
 
-    function renderCharts(Chart: any) {
-      if (!data) return; // TypeScript null guard — data is guaranteed by caller but required for strict checks
-      // Helper to clear existing charts
-      const destroyCharts = () => {
-        if (revenueChartRef.current) {
-          revenueChartRef.current.destroy();
-          revenueChartRef.current = null;
-        }
-        if (topItemsChartRef.current) {
-          topItemsChartRef.current.destroy();
-          topItemsChartRef.current = null;
-        }
-        if (hourlyChartRef.current) {
-          hourlyChartRef.current.destroy();
-          hourlyChartRef.current = null;
-        }
-      };
+      destroyAll();
 
-      destroyCharts();
-
-      // Line Chart: Daily Revenue
+      // ── Line Chart: Daily Revenue ──
       if (revenueCanvasRef.current) {
         const ctx = revenueCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -160,8 +133,7 @@ export default function AnalyticsPage() {
             type: "line",
             data: {
               labels: data.dailyRevenue.map((d) => {
-                const dateObj = new Date(d.date);
-                return dateObj.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+                return new Date(d.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" });
               }),
               datasets: [
                 {
@@ -172,6 +144,8 @@ export default function AnalyticsPage() {
                   borderWidth: 2,
                   fill: true,
                   tension: 0.3,
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
                 },
               ],
             },
@@ -188,7 +162,7 @@ export default function AnalyticsPage() {
         }
       }
 
-      // Horizontal Bar Chart: Top 5 Items
+      // ── Horizontal Bar Chart: Top 5 Items ──
       if (topItemsCanvasRef.current) {
         const ctx = topItemsCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -220,7 +194,7 @@ export default function AnalyticsPage() {
         }
       }
 
-      // Vertical Bar Chart: Hourly Performance
+      // ── Vertical Bar Chart: Hourly Performance ──
       if (hourlyCanvasRef.current) {
         const ctx = hourlyCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -228,10 +202,9 @@ export default function AnalyticsPage() {
             type: "bar",
             data: {
               labels: data.byHour.map((h) => {
-                const hour = h.hour;
-                const ampm = hour >= 12 ? "PM" : "AM";
-                const formattedHour = hour % 12 || 12;
-                return `${formattedHour} ${ampm}`;
+                const ampm = h.hour >= 12 ? "PM" : "AM";
+                const fmt = h.hour % 12 || 12;
+                return `${fmt} ${ampm}`;
               }),
               datasets: [
                 {
@@ -254,10 +227,15 @@ export default function AnalyticsPage() {
           });
         }
       }
+    };
 
-      return destroyCharts;
-    } // end renderCharts
-  }, [chartJsLoaded, data, loading, hasAccess]);
+    renderCharts();
+
+    return () => {
+      cancelled = true;
+      destroyAll();
+    };
+  }, [data, loading, hasAccess]);
 
   if (!hasAccess) {
     return (
@@ -271,12 +249,6 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 animate-page-entrance">
-      {/* Load Chart.js CDN - strategy=afterInteractive ensures it runs after hydration */}
-      <Script
-        src="https://cdn.jsdelivr.net/npm/chart.js"
-        strategy="afterInteractive"
-        onReady={() => setChartJsLoaded(true)}
-      />
 
       {/* Header section with filters */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
