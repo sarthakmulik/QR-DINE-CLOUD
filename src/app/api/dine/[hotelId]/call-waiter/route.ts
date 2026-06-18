@@ -1,6 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTableSignature } from "@/lib/crypto";
+import webpush from "web-push";
+
+// Configure VAPID — only if keys are present (graceful fallback for local dev)
+if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+  webpush.setVapidDetails(
+    "mailto:admin@qrdinecoud.app",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
+/** Fire push notifications to all subscribed staff for this hotel — non-blocking */
+async function notifyStaff(hotelId: string, tableNumber: number) {
+  try {
+    if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return;
+
+    const sb = createAdminClient();
+    const { data: subscriptions } = await sb
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("hotel_id", hotelId);
+
+    if (!subscriptions || subscriptions.length === 0) return;
+
+    const payload = JSON.stringify({
+      title: `🔔 Table ${tableNumber} — Waiter Needed!`,
+      body: `Table ${tableNumber} is calling for assistance.`,
+      tag: `waiter-${hotelId}-${tableNumber}`,
+      url: "/staff",
+    });
+
+    // Fire all push notifications in parallel — ignore individual failures
+    await Promise.allSettled(
+      subscriptions.map((sub) =>
+        webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload
+        ).catch(() => {
+          // Remove expired/invalid subscriptions silently
+          sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        })
+      )
+    );
+  } catch (err) {
+    // Push failure must NEVER affect the waiter call response
+    console.error("Push notification dispatch failed (non-critical):", err);
+  }
+}
 
 const lastWaiterCalls = new Map<string, number>();
 
@@ -80,6 +128,9 @@ export async function POST(
       .single();
 
     if (error) throw error;
+
+    // Fire push notifications to all staff subscribed to this hotel — non-blocking
+    notifyStaff(hotelId, parsedTableNum);
 
     return NextResponse.json(request);
   } catch (err: any) {

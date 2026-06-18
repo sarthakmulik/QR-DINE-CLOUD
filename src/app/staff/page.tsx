@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
-import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils } from "lucide-react";
+import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff } from "lucide-react";
 
 interface TableItem {
   id: string;
@@ -49,6 +49,54 @@ export default function StaffPanelPage() {
   const [performingAction, setPerformingAction] = useState(false);
   const [sessionToOpen, setSessionToOpen] = useState<TableData | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
+
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      setPushSupported(true);
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.pushManager.getSubscription().then((sub) => {
+          if (sub) setPushEnabled(true);
+        });
+      });
+    }
+  }, []);
+
+  async function handleEnablePush() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("Notifications blocked. Please enable them in your browser settings.");
+        return;
+      }
+      
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        });
+      }
+
+      const res = await fetch("/api/staff/push-subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.toJSON().keys })
+      });
+      
+      if (res.ok) {
+        setPushEnabled(true);
+      } else {
+        alert("Failed to save push subscription to server.");
+      }
+    } catch (err) {
+      console.error("Push error:", err);
+      alert("Failed to enable push notifications.");
+    }
+  }
 
   async function handleOpenSession() {
     if (!sessionToOpen) return;
@@ -255,6 +303,24 @@ export default function StaffPanelPage() {
 
       {/* Main Container */}
       <main className="flex-1 p-4 space-y-6 max-w-3xl mx-auto w-full">
+        {/* Push Notification Banner */}
+        {pushSupported && !pushEnabled && (
+          <div className="bg-brand-500/10 border border-brand-500/30 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-brand-500/20 rounded-full text-brand-400">
+                <BellRing size={18} />
+              </div>
+              <div>
+                <h3 className="font-bold text-brand-100 text-sm">Enable Notifications</h3>
+                <p className="text-xs text-brand-200/70 mt-0.5">Get real-time alerts when tables call for help.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={handleEnablePush} className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs">
+              Enable
+            </Button>
+          </div>
+        )}
+
         {/* Waiter Calls Section */}
         {pendingRequests.length > 0 && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 space-y-3 shadow-lg">
