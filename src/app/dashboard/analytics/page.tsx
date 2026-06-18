@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Script from "next/script";
 import { formatINR } from "@/lib/utils";
-import { TrendingUp, ShoppingBag, DollarSign, Award, Calendar } from "lucide-react";
+import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 
@@ -113,155 +113,150 @@ export default function AnalyticsPage() {
 
   // 2. Render/Update charts when data or library loads
   useEffect(() => {
-    if (!chartJsLoaded || !data || loading || !hasAccess) return;
+    if (!data || loading || !hasAccess) return;
 
-    const Chart = (window as any).Chart;
-    if (!Chart) return;
-
-    // Helper to clear existing charts
-    const destroyCharts = () => {
-      if (revenueChartRef.current) {
-        revenueChartRef.current.destroy();
-        revenueChartRef.current = null;
-      }
-      if (topItemsChartRef.current) {
-        topItemsChartRef.current.destroy();
-        topItemsChartRef.current = null;
-      }
-      if (hourlyChartRef.current) {
-        hourlyChartRef.current.destroy();
-        hourlyChartRef.current = null;
-      }
+    // Support both: Chart.js already loaded (cached nav) or freshly loaded via Script
+    const tryRenderCharts = () => {
+      const Chart = (window as any).Chart;
+      if (!Chart) return;
+      renderCharts(Chart);
     };
 
-    destroyCharts();
-
-    // Line Chart: Daily Revenue
-    if (revenueCanvasRef.current) {
-      const ctx = revenueCanvasRef.current.getContext("2d");
-      if (ctx) {
-        revenueChartRef.current = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: data.dailyRevenue.map((d) => {
-              const dateObj = new Date(d.date);
-              return dateObj.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
-            }),
-            datasets: [
-              {
-                label: "Revenue (₹)",
-                data: data.dailyRevenue.map((d) => d.revenue),
-                borderColor: "#0ea5e9", // sky-500
-                backgroundColor: "rgba(14, 165, 233, 0.1)",
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                grid: { color: "#f1f5f9" },
-              },
-              x: {
-                grid: { display: false },
-              },
-            },
-          },
-        });
-      }
+    // If Chart.js is already on window (e.g. page revisit), render immediately
+    if ((window as any).Chart) {
+      tryRenderCharts();
+      return;
     }
 
-    // Horizontal Bar Chart: Top 5 Items
-    if (topItemsCanvasRef.current) {
-      const ctx = topItemsCanvasRef.current.getContext("2d");
-      if (ctx) {
-        topItemsChartRef.current = new Chart(ctx, {
-          type: "bar",
-          data: {
-            labels: data.topItems.map((i) => i.name),
-            datasets: [
-              {
-                label: "Qty Sold",
-                data: data.topItems.map((i) => i.qty),
-                backgroundColor: "#10b981", // emerald-500
-                borderRadius: 6,
-                barThickness: 20,
-              },
-            ],
-          },
-          options: {
-            indexAxis: "y",
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-            },
-            scales: {
-              x: {
-                beginAtZero: true,
-                grid: { color: "#f1f5f9" },
-              },
-              y: {
-                grid: { display: false },
-              },
-            },
-          },
-        });
-      }
-    }
+    // Otherwise wait for chartJsLoaded state (set by Script onReady)
+    if (!chartJsLoaded) return;
+    tryRenderCharts();
 
-    // Vertical Bar Chart: Hourly Performance
-    if (hourlyCanvasRef.current) {
-      const ctx = hourlyCanvasRef.current.getContext("2d");
-      if (ctx) {
-        hourlyChartRef.current = new Chart(ctx, {
-          type: "bar",
-          data: {
-            labels: data.byHour.map((h) => {
-              const hour = h.hour;
-              const ampm = hour >= 12 ? "PM" : "AM";
-              const formattedHour = hour % 12 || 12;
-              return `${formattedHour} ${ampm}`;
-            }),
-            datasets: [
-              {
-                label: "Orders",
-                data: data.byHour.map((h) => h.count),
-                backgroundColor: "#6366f1", // indigo-500
-                borderRadius: 4,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1 },
-                grid: { color: "#f1f5f9" },
-              },
-              x: {
-                grid: { display: false },
-              },
-            },
-          },
-        });
-      }
-    }
+    function renderCharts(Chart: any) {
+      if (!data) return; // TypeScript null guard — data is guaranteed by caller but required for strict checks
+      // Helper to clear existing charts
+      const destroyCharts = () => {
+        if (revenueChartRef.current) {
+          revenueChartRef.current.destroy();
+          revenueChartRef.current = null;
+        }
+        if (topItemsChartRef.current) {
+          topItemsChartRef.current.destroy();
+          topItemsChartRef.current = null;
+        }
+        if (hourlyChartRef.current) {
+          hourlyChartRef.current.destroy();
+          hourlyChartRef.current = null;
+        }
+      };
 
-    return () => destroyCharts();
+      destroyCharts();
+
+      // Line Chart: Daily Revenue
+      if (revenueCanvasRef.current) {
+        const ctx = revenueCanvasRef.current.getContext("2d");
+        if (ctx) {
+          revenueChartRef.current = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: data.dailyRevenue.map((d) => {
+                const dateObj = new Date(d.date);
+                return dateObj.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+              }),
+              datasets: [
+                {
+                  label: "Revenue (₹)",
+                  data: data.dailyRevenue.map((d) => d.revenue),
+                  borderColor: "#0ea5e9",
+                  backgroundColor: "rgba(14, 165, 233, 0.1)",
+                  borderWidth: 2,
+                  fill: true,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true, grid: { color: "#f1f5f9" } },
+                x: { grid: { display: false } },
+              },
+            },
+          });
+        }
+      }
+
+      // Horizontal Bar Chart: Top 5 Items
+      if (topItemsCanvasRef.current) {
+        const ctx = topItemsCanvasRef.current.getContext("2d");
+        if (ctx) {
+          topItemsChartRef.current = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.topItems.map((i) => i.name),
+              datasets: [
+                {
+                  label: "Qty Sold",
+                  data: data.topItems.map((i) => i.qty),
+                  backgroundColor: "#10b981",
+                  borderRadius: 6,
+                  barThickness: 20,
+                },
+              ],
+            },
+            options: {
+              indexAxis: "y",
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { beginAtZero: true, grid: { color: "#f1f5f9" } },
+                y: { grid: { display: false } },
+              },
+            },
+          });
+        }
+      }
+
+      // Vertical Bar Chart: Hourly Performance
+      if (hourlyCanvasRef.current) {
+        const ctx = hourlyCanvasRef.current.getContext("2d");
+        if (ctx) {
+          hourlyChartRef.current = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.byHour.map((h) => {
+                const hour = h.hour;
+                const ampm = hour >= 12 ? "PM" : "AM";
+                const formattedHour = hour % 12 || 12;
+                return `${formattedHour} ${ampm}`;
+              }),
+              datasets: [
+                {
+                  label: "Orders",
+                  data: data.byHour.map((h) => h.count),
+                  backgroundColor: "#6366f1",
+                  borderRadius: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "#f1f5f9" } },
+                x: { grid: { display: false } },
+              },
+            },
+          });
+        }
+      }
+
+      return destroyCharts;
+    } // end renderCharts
   }, [chartJsLoaded, data, loading, hasAccess]);
 
   if (!hasAccess) {
@@ -276,10 +271,11 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 animate-page-entrance">
-      {/* Load Chart.js CDN */}
+      {/* Load Chart.js CDN - strategy=afterInteractive ensures it runs after hydration */}
       <Script
         src="https://cdn.jsdelivr.net/npm/chart.js"
-        onLoad={() => setChartJsLoaded(true)}
+        strategy="afterInteractive"
+        onReady={() => setChartJsLoaded(true)}
       />
 
       {/* Header section with filters */}
@@ -340,7 +336,7 @@ export default function AnalyticsPage() {
             <StatCard
               title="Total Revenue"
               value={formatINR(data.totalRevenue)}
-              icon={<DollarSign size={22} className="text-sky-500" />}
+              icon={<IndianRupee size={22} className="text-sky-500" />}
               bgColor="bg-sky-50"
               borderColor="border-sky-100"
             />

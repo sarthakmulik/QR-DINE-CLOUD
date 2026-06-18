@@ -9,6 +9,7 @@ import Link from "next/link";
 import { usePlan } from "@/lib/contexts/plan-context";
 import {
   DollarSign,
+  IndianRupee,
   ShoppingBag,
   TrendingUp,
   Star,
@@ -524,7 +525,7 @@ Thank you for dining with us!`;
             </h3>
           </div>
           <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-            <DollarSign size={18} />
+            <IndianRupee size={18} />
           </div>
         </div>
 
