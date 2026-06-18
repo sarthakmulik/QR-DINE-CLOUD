@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validatePassword } from "@/lib/utils";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
@@ -18,9 +17,8 @@ export async function PATCH(
     const body = await req.json();
 
     if (body.password) {
-      const { isValid, error: passError } = validatePassword(body.password);
-      if (!isValid) {
-        return NextResponse.json({ error: passError }, { status: 400 });
+      if (body.password.length < 4 || body.password.length > 72) {
+        return NextResponse.json({ error: "Password/PIN must be between 4 and 72 characters." }, { status: 400 });
       }
     }
 
