@@ -98,7 +98,7 @@ async function loadTableWithSession(hotelId: string, tableNumber: number) {
   return { table, currentSession };
 }
 
-export async function getOrCreateOpenSession(hotelId: string, tableNumber: number) {
+export async function getOrCreateOpenSession(hotelId: string, tableNumber: number, expectedSessionId?: string | null) {
   const sb = admin();
   const [hotelRes, tableData] = await Promise.all([
     sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>(),
@@ -108,6 +108,10 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
   const hotel = hotelRes.data;
   if (!hotel) throw new Error("Hotel not found");
   const { table, currentSession } = tableData;
+
+  if (expectedSessionId && (!currentSession || currentSession.id !== expectedSessionId)) {
+    return { error: "session_closed" as const, hotel, table };
+  }
 
   if (currentSession && currentSession.status !== "closed") {
     if (currentSession.status === "checkout_initiated" || currentSession.status === "bill_printed") {

@@ -853,6 +853,22 @@ export default function DineClient({
     }
   }, [state, feedbackSubmitted]);
 
+  // Listen for visibility change (e.g. user minimizing and reopening browser)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        if (state.type !== "closed" && state.type !== "thankyou" && state.type !== "paused" && state.type !== "loading" && state.type !== "error") {
+          load(true);
+        }
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [state.type, load]);
+
   useEffect(() => {
     if (!startCountdown) return;
     
@@ -1256,10 +1272,16 @@ export default function DineClient({
             menuItemId: c.menuItemId,
             quantity: c.quantity,
           })),
+          sessionId: state.type === "menu" ? state.sessionId : undefined,
         }),
       });
 
       const data = await res.json();
+
+      if (res.status === 403 && data.error === "session_closed") {
+        setState({ type: "closed" });
+        return;
+      }
 
       if (res.status === 423) {
         // Checkout locked — restore state

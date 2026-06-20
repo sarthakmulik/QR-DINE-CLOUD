@@ -33,7 +33,7 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { items } = body as { items: { menuItemId: string; quantity: number }[] };
+    const { items, sessionId: expectedSessionId } = body as { items: { menuItemId: string; quantity: number }[], sessionId?: string };
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
@@ -113,9 +113,15 @@ export async function POST(
     const menuItemMap = new Map<string, { id: string; name: string; price: number }>((menuItemsRes.data || []).map((m: any) => [m.id, m]));
 
     // Get or create session
-    const sessionResult = await getOrCreateOpenSession(hotelId, tableNumber);
+    const sessionResult = await getOrCreateOpenSession(hotelId, tableNumber, expectedSessionId);
 
     if ("error" in sessionResult) {
+      if (sessionResult.error === "session_closed") {
+        return NextResponse.json(
+          { error: "session_closed", message: "Your session has closed. Please scan the QR code again." },
+          { status: 403 }
+        );
+      }
       if (sessionResult.error === "checkout") {
         return NextResponse.json(
           { error: "Your bill is being prepared. No new items can be added.", session: sessionResult.session, hotel: sessionResult.hotel },
