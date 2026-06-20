@@ -374,13 +374,13 @@ export default function MenuPage() {
           {categories.map((category) => (
             <div key={category.id} className="bg-white border border-slate-200 rounded-[1.5rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] overflow-hidden group/cat transition-all duration-300">
               <div className="flex justify-between items-center p-5 bg-slate-50/50 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-black text-slate-800 tracking-tight">{category.name}</h2>
-                  <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-xs font-bold">
+                <div className="flex items-center gap-3 min-w-0">
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight break-words">{category.name}</h2>
+                  <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-xs font-bold shrink-0">
                     {category.items?.length || 0} items
                   </span>
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover/cat:opacity-100 transition-opacity">
+                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover/cat:opacity-100 transition-opacity">
                   <button
                     onClick={() => openEditCategory(category)}
                     className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
@@ -442,10 +442,10 @@ export default function MenuPage() {
                         <div className="flex-1 min-w-0 flex flex-col justify-between">
                           <div>
                             <div className="flex justify-between items-start gap-2">
-                              <h3 className="font-bold text-slate-900 leading-tight truncate min-w-0 flex-1" title={item.name}>
+                              <h3 className="font-bold text-slate-900 leading-tight break-words min-w-0 flex-1" title={item.name}>
                                 {item.name}
                               </h3>
-                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-slate-100">
+                              <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-slate-100">
                                 <button
                                   onClick={() => openEditItem(item, category.id)}
                                   className="p-1 text-slate-400 hover:text-brand-600 rounded transition-colors"
