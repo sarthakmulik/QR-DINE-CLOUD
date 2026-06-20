@@ -159,6 +159,7 @@ export default function SettingsPage() {
             announcementText: data.customizations.announcementText || "",
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
+            printerSize: data.customizations.printerSize || "80mm",
           } : {
             theme: "default",
             primaryColor: "#ea580c",
@@ -168,6 +169,7 @@ export default function SettingsPage() {
             announcementText: "",
             welcomeMessage: "Welcome to our Restaurant",
             layout: "default",
+            printerSize: "80mm",
           },
           welcomeAnimationEnabled: data.welcomeAnimationEnabled ?? false,
           welcomeAnimationPreset: data.welcomeAnimationPreset || "elegant"
@@ -201,6 +203,7 @@ export default function SettingsPage() {
             announcementText: data.customizations.announcementText || "",
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
+            printerSize: data.customizations.printerSize || "80mm",
           } : {
             theme: "default",
             primaryColor: "#ea580c",
@@ -210,6 +213,7 @@ export default function SettingsPage() {
             announcementText: "",
             welcomeMessage: "Welcome to our Restaurant",
             layout: "default",
+            printerSize: "80mm",
           },
           welcomeAnimationEnabled: data.welcomeAnimationEnabled ?? false,
           welcomeAnimationPreset: data.welcomeAnimationPreset || "elegant"
@@ -405,6 +409,49 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-500 mt-1">
                 Used to dynamically generate payment QR codes on digital bills.
               </p>
+            </div>
+
+            {/* Thermal Printer Size */}
+            <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                  🖨️ Thermal Receipt Printer Size
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Choose the paper width of your thermal receipt printer. This controls the bill layout when printing from the dashboard.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: "58mm", label: "58 mm", desc: "Compact — common in smaller printers" },
+                  { value: "80mm", label: "80 mm", desc: "Standard — most restaurant POS printers" },
+                ].map((opt) => {
+                  const selected = (form.customizations?.printerSize || "80mm") === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          customizations: {
+                            ...form.customizations,
+                            printerSize: opt.value,
+                          },
+                        })
+                      }
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        selected
+                          ? "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                      }`}
+                    >
+                      <div className="font-bold text-sm">{opt.label}</div>
+                      <div className="text-xs mt-0.5 opacity-70">{opt.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>

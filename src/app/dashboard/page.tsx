@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { generateBillHTML, silentPrint, type PrinterSize } from "@/lib/bill-generator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -355,6 +356,23 @@ export default function TablesDashboardPage() {
       });
   }
 
+  /** Fetch bill data and silently print to thermal printer — no new tab */
+  async function silentBillPrint(sessionId: string, paymentMethod?: string) {
+    try {
+      const res = await fetch(`/api/hotel/sessions/${sessionId}/bill-data`);
+      if (!res.ok) return; // non-blocking — don't alert on background print failure
+      const data = await res.json();
+      const size: PrinterSize =
+        (hotelProfile?.customizations?.printerSize as PrinterSize) ||
+        (data.hotel?.printerSize as PrinterSize) ||
+        "80mm";
+      const html = generateBillHTML(data, size, paymentMethod);
+      silentPrint(html);
+    } catch (e) {
+      console.error("Silent bill print error:", e);
+    }
+  }
+
   async function handlePrint() {
     if (!selected?.currentSession || isPrinting) return;
     setIsPrinting(true);
@@ -368,11 +386,8 @@ export default function TablesDashboardPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to register print");
       }
-      const session = await res.json();
-
-      // Open bill in a new tab — fully authenticated, no iframe cookie issues
-      window.open(`/bill/${session.id}`, "_blank", "noopener");
-
+      // Silent thermal print — no new tab
+      await silentBillPrint(selected.currentSession.id);
       pollTables();
     } catch (err: any) {
       console.error(err);
@@ -410,6 +425,8 @@ export default function TablesDashboardPage() {
           pollTables();
           alert("Failed to record payment");
         } else {
+          // Auto silent-print bill with payment method after successful payment
+          silentBillPrint(sessionId, method);
           pollTables();
         }
       })
@@ -604,29 +621,31 @@ Thank you for dining with us!`;
               ))}
             </div>
           ) : (
-            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-200">
-              {stats.hourlyDistribution?.map((h) => {
-                const hourName = h.hour % 12 || 12;
-                const ampm = h.hour >= 12 ? "pm" : "am";
-                const percentHeight = Math.max(4, (h.count / maxHourlyCount) * 100);
+            <div className="overflow-x-auto -mx-1">
+              <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-200 min-w-[520px] px-1">
+                {stats.hourlyDistribution?.map((h) => {
+                  const hourName = h.hour % 12 || 12;
+                  const ampm = h.hour >= 12 ? "pm" : "am";
+                  const percentHeight = Math.max(4, (h.count / maxHourlyCount) * 100);
 
-                return (
-                  <div key={h.hour} className="flex-1 flex flex-col items-center group">
-                    <div className="w-full bg-slate-100 group-hover:bg-slate-200 transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
-                      <div
-                        className="w-full bg-brand-500 group-hover:bg-brand-600 rounded-t-md transition-all"
-                        style={{ height: `${percentHeight}%` }}
-                      />
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
-                        {h.count} orders
+                  return (
+                    <div key={h.hour} className="flex-1 flex flex-col items-center group">
+                      <div className="w-full bg-slate-100 group-hover:bg-slate-200 transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
+                        <div
+                          className="w-full bg-brand-500 group-hover:bg-brand-600 rounded-t-md transition-all"
+                          style={{ height: `${percentHeight}%` }}
+                        />
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
+                          {h.count} orders
+                        </div>
                       </div>
+                      <span className="text-[8px] font-bold text-gray-400 mt-1.5 uppercase truncate max-w-[30px]">
+                        {hourName}{ampm}
+                      </span>
                     </div>
-                    <span className="text-[8px] font-bold text-gray-400 mt-1.5 uppercase truncate max-w-[30px]">
-                      {hourName}{ampm}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )
         ) : (

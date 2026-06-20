@@ -442,10 +442,10 @@ export default function MenuPage() {
                         <div className="flex-1 min-w-0 flex flex-col justify-between">
                           <div>
                             <div className="flex justify-between items-start gap-2">
-                              <h3 className="font-bold text-slate-900 leading-tight truncate" title={item.name}>
+                              <h3 className="font-bold text-slate-900 leading-tight truncate min-w-0 flex-1" title={item.name}>
                                 {item.name}
                               </h3>
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-slate-100">
+                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-slate-100">
                                 <button
                                   onClick={() => openEditItem(item, category.id)}
                                   className="p-1 text-slate-400 hover:text-brand-600 rounded transition-colors"
