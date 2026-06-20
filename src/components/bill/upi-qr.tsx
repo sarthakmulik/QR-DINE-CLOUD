@@ -50,7 +50,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQr
 
   return (
     <>
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 max-w-sm mx-auto shadow-sm no-print">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 max-w-sm mx-auto shadow-sm">
         <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm tracking-wide uppercase">
           <QrIcon size={16} className="text-brand-600" />
           <span>Pay via UPI App</span>

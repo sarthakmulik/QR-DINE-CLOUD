@@ -257,22 +257,19 @@ export default function StaffPanelPage() {
   }
 
   async function handleSignOut() {
-    // Clear staff storage
+    // 1. Clear all staff localStorage keys
     localStorage.removeItem("staff_token");
     localStorage.removeItem("staff_name");
     localStorage.removeItem("staff_role");
     localStorage.removeItem("staff_hotel_id");
+    localStorage.removeItem("staff_overview");
 
-    // Clear session cookies
-    await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "logout", password: "logout" }), // dummy data to trigger signout
-    });
+    // 2. Clear the server-side staff_session httpOnly cookie
+    await fetch("/api/auth/staff-logout", { method: "POST" });
 
-    // We can also trigger signout by clear staff session cookie
-    document.cookie = "staff_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    // 3. Redirect to staff login (not /login — staff have their own auth flow)
     router.push("/staff/login");
+    router.refresh();
   }
 
   const isSkeletons = loading && tables.length === 0;

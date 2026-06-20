@@ -119,7 +119,19 @@ function StaffLoginContent() {
 
         <div className="mt-8 border-t border-slate-800/60 pt-4 text-center">
           <button
-            onClick={() => router.push("/login")}
+            onClick={async () => {
+              // Clear staff session cookie server-side
+              await fetch("/api/auth/staff-logout", { method: "POST" });
+              // Clear staff localStorage
+              ["staff_token", "staff_name", "staff_role", "staff_hotel_id", "staff_overview"].forEach(
+                (k) => localStorage.removeItem(k)
+              );
+              // Sign out any active Supabase session so middleware doesn't auto-redirect
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              router.push("/login");
+              router.refresh();
+            }}
             className="text-xs text-slate-500 hover:text-slate-400 font-semibold"
           >
             Are you a Hotel Owner? Sign in here

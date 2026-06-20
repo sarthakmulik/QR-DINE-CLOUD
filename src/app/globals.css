@@ -133,7 +133,7 @@
   .receipt-print-layout div { font-size: 11px !important; }
 
   @page {
-    size: auto;
+    size: 80mm auto;
     margin: 0 !important;
   }
 }

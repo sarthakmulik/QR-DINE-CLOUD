@@ -58,6 +58,7 @@ export default function TablesDashboardPage() {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [sessionToOpen, setSessionToOpen] = useState<TableData | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const checkoutPendingRef = useRef<Record<string, boolean>>({});
   const paymentPendingRef = useRef<Record<string, boolean>>({});
 
@@ -355,36 +356,29 @@ export default function TablesDashboardPage() {
   }
 
   async function handlePrint() {
-    if (!selected?.currentSession) return;
+    if (!selected?.currentSession || isPrinting) return;
+    setIsPrinting(true);
     try {
+      // Register the print on the server (marks session as bill_printed)
       const res = await fetch(
         `/api/hotel/sessions/${selected.currentSession.id}/print`,
         { method: "POST" }
       );
-      if (!res.ok) throw new Error("Failed to register print");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to register print");
+      }
       const session = await res.json();
-      
-      // Programmatic hidden iframe printing
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.width = "0px";
-      iframe.style.height = "0px";
-      iframe.style.border = "none";
-      iframe.src = `/bill/${session.id}`;
-      document.body.appendChild(iframe);
-      
-      iframe.onload = () => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1000);
-      };
-      
+
+      // Open bill in a new tab — fully authenticated, no iframe cookie issues
+      window.open(`/bill/${session.id}`, "_blank", "noopener");
+
       pollTables();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to print bill");
+      alert(err.message || "Failed to print bill");
+    } finally {
+      setIsPrinting(false);
     }
   }
 
@@ -899,7 +893,9 @@ Thank you for dining with us!`;
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-2">
-                  <Button onClick={handlePrint}>Print Bill</Button>
+                  <Button onClick={handlePrint} disabled={isPrinting}>
+                    {isPrinting ? "Opening..." : "🖨️ Print Bill"}
+                  </Button>
                   <Button variant="secondary" onClick={() => handlePay("Cash")}>
                     Paid — Cash
                   </Button>

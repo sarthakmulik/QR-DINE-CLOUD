@@ -249,8 +249,9 @@ export async function printBill(sessionId: string) {
     .eq("id", sessionId).single();
 
   if (error || !sessionData) throw new Error("Session not found");
-  if (sessionData.status !== "checkout_initiated" && sessionData.status !== "bill_printed") {
-    throw new Error("Session must be in checkout to print bill");
+  // Allow printing from open, checkout_initiated, or bill_printed — only block closed sessions
+  if (sessionData.status === "closed") {
+    throw new Error("Cannot print bill for a closed session.");
   }
 
   const items = (sessionData.session_items || []) as SessionItem[];

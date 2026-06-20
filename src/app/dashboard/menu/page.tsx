@@ -729,7 +729,7 @@ export default function MenuPage() {
             {/* Spice Level */}
             <div className="space-y-2 pt-2 border-t border-slate-200">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">Spice Intensity</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { level: null, label: "None 🚫" },
                   { level: 0, label: "Mild 🌶️" },

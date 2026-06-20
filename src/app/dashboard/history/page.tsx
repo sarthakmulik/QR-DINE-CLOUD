@@ -102,58 +102,60 @@ export default function HistoryPage() {
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Table</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Items</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Payment</th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Closed At</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading && sessions.length === 0 ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-20" /></td>
-                  <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-40" /></td>
-                  <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-16" /></td>
-                  <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-28" /></td>
-                  <td className="px-4 py-3 text-right"><div className="h-4 bg-gray-100 rounded w-16 ml-auto" /></td>
-                </tr>
-              ))
-            ) : sessions.length > 0 ? (
-              sessions.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {s.table?.label || `Table ${s.tableNumber}`}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 max-w-[200px]">
-                    <span className="line-clamp-1 text-xs">
-                      {s.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{s.paymentMethod || "—"}</td>
-                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                    {s.closedAt ? formatDateTime(s.closedAt) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                    {formatINR(s.total)}
-                  </td>
-                </tr>
-              ))
-            ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <td colSpan={5} className="px-4 py-16 text-center">
-                  <History size={36} className="mx-auto text-gray-200 mb-3" />
-                  <p className="text-sm font-medium text-gray-500">No completed orders yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Completed sessions will appear here</p>
-                </td>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Table</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Items</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Payment</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Closed At</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600">Total</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading && sessions.length === 0 ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-20" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-40" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-16" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-100 rounded w-28" /></td>
+                    <td className="px-4 py-3 text-right"><div className="h-4 bg-gray-100 rounded w-16 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : sessions.length > 0 ? (
+                sessions.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {s.table?.label || `Table ${s.tableNumber}`}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 max-w-[200px]">
+                      <span className="line-clamp-1 text-xs">
+                        {s.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{s.paymentMethod || "—"}</td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                      {s.closedAt ? formatDateTime(s.closedAt) : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                      {formatINR(s.total)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-4 py-16 text-center">
+                    <History size={36} className="mx-auto text-gray-200 mb-3" />
+                    <p className="text-sm font-medium text-gray-500">No completed orders yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Completed sessions will appear here</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
