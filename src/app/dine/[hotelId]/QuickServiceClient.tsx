@@ -7,10 +7,11 @@ import { Modal } from "@/components/ui/modal";
 import { formatINR } from "@/lib/utils";
 import type { Hotel, MenuCategory, MenuItem, TableSession } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
-import { WelcomeAnimation } from "@/components/dine/welcome-animation";
-import { MenuGrid } from "@/components/dine/menu-grid";
+import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
 
 type CartItem = MenuItem & { quantity: number };
+
+type CategoryWithItems = MenuCategory & { items: MenuItem[] };
 
 export default function QuickServiceClient({
   params,
@@ -22,7 +23,7 @@ export default function QuickServiceClient({
   const { hotelId } = use(params);
   const [loading, setLoading] = useState(true);
   const [hotel, setHotel] = useState<Partial<Hotel> | null>(initialHotel);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [categories, setCategories] = useState<CategoryWithItems[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -136,7 +137,7 @@ export default function QuickServiceClient({
   }, [initialHotel]);
 
   if (showWelcome && initialHotel) {
-    return <WelcomeAnimation hotelName={initialHotel.name || "Restaurant"} preset={initialHotel.welcome_animation_preset as any || "elegant"} />;
+    return <WelcomeAnimation restaurantName={initialHotel.name || "Restaurant"} preset={initialHotel.welcome_animation_preset as any || "elegant"} onComplete={() => setShowWelcome(false)} />;
   }
 
   if (activeOrder) {
@@ -243,7 +244,84 @@ export default function QuickServiceClient({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
           </div>
         ) : filteredItems.length > 0 ? (
-          <MenuGrid items={filteredItems} getQty={getQty} updateQuantity={updateQuantity} />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredItems.map((item) => {
+              const qty = getQty(item.id);
+              return (
+                <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        {item.is_vegetarian !== null && item.is_vegetarian !== undefined && (
+                          <div
+                            className={`w-4 h-4 border-2 rounded-sm flex items-center justify-center mb-1.5 ${
+                              item.is_vegetarian
+                                ? "border-emerald-600"
+                                : "border-red-600"
+                            }`}
+                          >
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                item.is_vegetarian
+                                  ? "bg-emerald-600"
+                                  : "bg-red-600"
+                              }`}
+                            />
+                          </div>
+                        )}
+                        <h3 className="font-bold text-slate-800 leading-tight">
+                          {item.name}
+                        </h3>
+                      </div>
+                      {item.spicy_level && item.spicy_level > 0 && (
+                        <div className="flex">
+                          {Array.from({ length: item.spicy_level }).map((_, idx) => (
+                            <span key={idx} className="text-red-500 text-xs">🌶️</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {item.description && (
+                      <p className="text-xs text-slate-500 line-clamp-2 mb-3">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-50">
+                    <span className="font-bold text-slate-900">
+                      {formatINR(item.price)}
+                    </span>
+                    {qty > 0 ? (
+                      <div className="flex items-center gap-3 bg-brand-50 rounded-full px-2 py-1">
+                        <button
+                          onClick={() => updateQuantity(item, -1)}
+                          className="w-7 h-7 flex items-center justify-center rounded-full bg-white text-brand-600 shadow-sm active:scale-95"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="font-bold text-brand-700 w-4 text-center">
+                          {qty}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item, 1)}
+                          className="w-7 h-7 flex items-center justify-center rounded-full bg-brand-600 text-white shadow-sm active:scale-95"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => updateQuantity(item, 1)}
+                        className="bg-brand-600 text-white p-2 px-4 rounded-full text-sm font-bold shadow-sm shadow-brand-500/20 active:scale-95 transition-transform"
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="text-center py-20 text-slate-400">
             <p>No items found.</p>

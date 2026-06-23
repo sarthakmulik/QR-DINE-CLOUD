@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
     > = {};
 
     typedSessions.forEach((s) => {
-      const tNum = s.table_number;
+      const tNum = s.table_number ?? 0;
       if (!tableMap[tNum]) {
         tableMap[tNum] = { tableNumber: tNum, sessions: 0, revenue: 0 };
       }

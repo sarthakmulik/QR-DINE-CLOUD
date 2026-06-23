@@ -145,7 +145,7 @@ export default async function BillPage({
             upiId={hotel.upi_id}
             hotelName={hotel.name}
             amount={Number(session.total)}
-            tableNumber={session.table_number}
+            tableNumber={session.table_number ?? 0}
             initialQrCodeUrl={qrCodeUrl}
           />
         </div>

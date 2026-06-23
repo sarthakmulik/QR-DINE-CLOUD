@@ -94,7 +94,7 @@ export async function GET(
 
     const result = sessions.map((session) => {
       const sessionItems = itemsBySessionId[session.id] || [];
-      const table = tablesMap.get(session.table_id);
+      const table = session.table_id ? tablesMap.get(session.table_id) : undefined;
 
       return {
         ...mapTableSession(session, sessionItems),
