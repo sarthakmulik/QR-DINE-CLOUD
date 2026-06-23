@@ -53,7 +53,7 @@ export async function POST(
       const options = {
         amount: Math.round(totalAmount * 100), // amount in smallest currency unit (paise)
         currency: "INR",
-        receipt: `receipt_${sessionId}`,
+        receipt: sessionId.slice(0, 36),
         notes: {
           hotelId: hotelId,
           sessionId: sessionId,
@@ -90,7 +90,7 @@ export async function POST(
       const payload = {
         merchantId: merchant_id,
         merchantTransactionId: transactionId,
-        merchantUserId: `U${sessionId}`,
+        merchantUserId: `U${sessionId.slice(0, 30)}`,
         amount: Math.round(totalAmount * 100), // in paise
         redirectUrl: callbackUrl,
         redirectMode: "POST",
@@ -133,6 +133,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid payment configuration" }, { status: 400 });
   } catch (err: any) {
     console.error("Payment initiation error:", err);
-    return NextResponse.json({ error: err.message || "Failed to initiate payment" }, { status: 500 });
+    const msg = err?.error?.description || err?.message || "Failed to initiate payment";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

@@ -10,7 +10,7 @@ async function test() {
     const options = {
       amount: 50000, // 500 INR
       currency: "INR",
-      receipt: "test_receipt_123"
+      receipt: "receipt_4baf3851-e331-494a-a8c5-4ee99be474bb",
     };
 
     const order = await instance.orders.create(options);

@@ -13,11 +13,12 @@ export async function middleware(request: NextRequest) {
   // Strict CSP to block malicious script execution (SSTI/XSS mitigations)
   const csp = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https:;
-    font-src 'self' data:;
+    font-src 'self' data: https://fonts.gstatic.com;
     connect-src 'self' https: wss:;
+    frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com;
     frame-ancestors 'none';
   `.replace(/\s{2,}/g, " ").trim();
 
@@ -28,6 +29,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
