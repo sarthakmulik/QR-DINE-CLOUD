@@ -605,7 +605,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                           try {
                             const res = await fetch(`/api/kitchen/${hotelId}/orders/${session.id}/confirm-payment`, {
                               method: "POST",
-                              headers: { "x-kitchen-token": kitchenToken || "" }
+                              headers: { "x-kitchen-token": sessionStorage.getItem(`kitchen_token_${hotelId}`) || "" }
                             });
                             if (res.ok) {
                               setSessions(prev => prev.map(s => s.id === session.id ? { ...s, status: "open" } : s));

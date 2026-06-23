@@ -175,11 +175,11 @@ export default function QuickServiceClient({
               </div>
             ) : activeOrder.status === "payment_pending" ? (
               <div className="text-amber-500">
-                {activeOrder.paymentMethod === "UPI" && hotel?.upiId ? (
+                {activeOrder.payment_method === "UPI" && hotel?.upi_id ? (
                   <>
                     <h3 className="text-2xl font-bold text-slate-800">Scan to Pay</h3>
                     <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-slate-100 inline-block my-4">
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upiId}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48" />
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upi_id}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48" />
                     </div>
                     <p className="text-slate-500 mb-6 font-semibold">Pay {formatINR(activeOrder.total)} via any UPI App</p>
                     <Button onClick={async () => {
