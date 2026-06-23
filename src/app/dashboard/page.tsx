@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePlan } from "@/lib/contexts/plan-context";
 import {
   DollarSign,
@@ -63,7 +64,14 @@ export default function TablesDashboardPage() {
   const checkoutPendingRef = useRef<Record<string, boolean>>({});
   const paymentPendingRef = useRef<Record<string, boolean>>({});
 
-  const { currentPlan, canAccess } = usePlan();
+  const { currentPlan, canAccess, serviceType } = usePlan();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (serviceType === "quick_service") {
+      router.push("/dashboard/orders");
+    }
+  }, [serviceType, router]);
 
   useEffect(() => {
     if (selected?.currentSession) {

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import { usePlan } from "@/lib/contexts/plan-context";
 
 export function DashboardSidebar({
   hotelName,
@@ -42,10 +43,12 @@ export function DashboardSidebar({
     setMounted(true);
   }, []);
 
+  const { serviceType } = usePlan();
+
   const links = [
-    { href: "/dashboard", label: "Tables & Orders", icon: LayoutGrid },
+    ...(serviceType !== "quick_service" ? [{ href: "/dashboard", label: "Tables & Orders", icon: LayoutGrid }] : []),
     { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed },
-    { href: "/dashboard/tables", label: "QR Codes", icon: QrCode },
+    { href: "/dashboard/tables", label: serviceType === "quick_service" ? "Store QR Code" : "QR Codes", icon: QrCode },
     { href: "/dashboard/orders", label: "Live Orders", icon: ClipboardList },
     { href: "/dashboard/history", label: "Order History", icon: BarChart3 },
     { href: "/dashboard/analytics", label: "Analytics", icon: TrendingUp },
@@ -58,10 +61,11 @@ export function DashboardSidebar({
 
   // Bottom nav shows a subset of most-used links (5 max for mobile)
   const bottomNavLinks = [
-    { href: "/dashboard", label: "Tables", icon: LayoutGrid },
+    ...(serviceType !== "quick_service" ? [{ href: "/dashboard", label: "Tables", icon: LayoutGrid }] : []),
     { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed },
     { href: "/dashboard/orders", label: "Orders", icon: ClipboardList },
     { href: "/dashboard/analytics", label: "Analytics", icon: TrendingUp },
+    ...(serviceType === "quick_service" ? [{ href: "/dashboard/settings", label: "Settings", icon: Settings }] : []),
   ];
 
   async function handleSignOut() {
