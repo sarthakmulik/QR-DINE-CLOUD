@@ -136,10 +136,10 @@ export default function LiveOrdersPage() {
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="columns-1 md:columns-2 xl:columns-3 gap-5 space-y-5">
         {loading && sessions.length === 0 ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm animate-pulse">
+            <div key={i} className="bg-white rounded-3xl border border-slate-100 p-6 space-y-4 shadow-sm animate-pulse break-inside-avoid">
               <div className="flex justify-between items-center">
                 <div className="h-6 bg-slate-200 rounded-md w-24" />
                 <div className="h-6 bg-slate-200 rounded-full w-20" />
@@ -152,106 +152,133 @@ export default function LiveOrdersPage() {
             </div>
           ))
         ) : sessions.length > 0 ? (
-          sessions.map((session) => (
-            <div key={session.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col shadow-sm hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                    {session.table?.label || `Quick Service`}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">
-                    <Clock size={11} />
-                    {formatDateTime(session.startTime)}
-                  </div>
-                </div>
-                <div className="text-right flex flex-col items-end gap-1.5">
-                  <Badge
-                    variant={session.status === "payment_pending" ? "checkout" : (session.status === "open" ? "occupied" : "checkout")}
-                    className="shadow-sm"
-                  >
-                    {session.status.replace("_", " ")}
-                  </Badge>
-                  <p className="font-bold text-lg text-brand-600 tracking-tight">
-                    {formatINR(session.total)}
-                  </p>
-                </div>
-              </div>
+          sessions.map((session) => {
+            const isPaymentPending = session.status === "payment_pending";
+            const isReady = session.status === "ready_for_pickup";
+            const isOpenQS = !session.table && session.status === "open";
 
-              {session.status === "payment_pending" && (
-                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2 text-center">
-                  <div className="text-xs font-bold text-amber-800">Payment Unverified</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button 
-                      onClick={() => handleCancelOrder(session.id)}
-                      className="w-full bg-white border border-slate-200 hover:bg-red-50 text-red-600 font-bold py-1.5 px-2 rounded-lg text-xs transition-colors"
+            let topBorder = "border-slate-200";
+            let glowColor = "";
+            if (isPaymentPending) {
+              topBorder = "border-amber-400";
+              glowColor = "shadow-amber-500/10";
+            } else if (isReady) {
+              topBorder = "border-emerald-500";
+              glowColor = "shadow-emerald-500/10";
+            } else if (isOpenQS) {
+              topBorder = "border-blue-500";
+              glowColor = "shadow-blue-500/10";
+            }
+
+            return (
+              <div key={session.id} className={`bg-white rounded-3xl p-5 flex flex-col shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 break-inside-avoid relative overflow-hidden group ${glowColor} border-t-[6px] ${topBorder}`}>
+                <div className="flex items-start justify-between mb-5">
+                  <div>
+                    <h3 className="font-black text-xl text-slate-900 tracking-tight flex items-center gap-2">
+                      {session.table?.label || `Quick Service`}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md inline-flex">
+                      <Clock size={11} />
+                      {formatDateTime(session.startTime)}
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col items-end gap-1.5">
+                    <Badge
+                      variant={isPaymentPending ? "checkout" : (session.status === "open" ? "occupied" : "checkout")}
+                      className="shadow-sm font-bold tracking-wide"
                     >
-                      Cancel Order
-                    </button>
-                    <button 
-                      onClick={() => handleConfirmPayment(session.id)}
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-2 rounded-lg text-xs transition-colors"
-                    >
-                      Confirm Paid
-                    </button>
+                      {session.status.replace("_", " ")}
+                    </Badge>
+                    <p className="font-black text-2xl text-brand-600 tracking-tight leading-none mt-1">
+                      {formatINR(session.total)}
+                    </p>
                   </div>
                 </div>
-              )}
 
-              {(session.status === "ready_for_pickup" || (!session.table && session.status === "open")) && (
-                <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex flex-col gap-2 items-center text-center">
-                  <div className="text-xs font-bold text-emerald-800">
-                    {session.status === "ready_for_pickup" ? "Ready to Collect" : "Quick Service (Cooking)"}
-                  </div>
-                  <button 
-                    onClick={() => session.status === "open" ? handleMarkReady(session.id) : handleMarkCollected(session.id)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors"
-                  >
-                    {session.status === "open" ? "Mark as Ready" : "Mark as Collected"}
-                  </button>
-                </div>
-              )}
-
-              <div className="flex-1 bg-slate-50 rounded-xl border border-slate-100 p-4 relative overflow-hidden group-hover:bg-slate-50/80 transition-colors">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.04] pointer-events-none">
-                  <ScrollText size={72} />
-                </div>
-
-                {session.items.length > 0 ? (
-                  <div className="space-y-2.5 relative z-10 max-h-[220px] overflow-y-auto scrollbar-none">
-                    {session.items.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm">
-                        <div className="flex gap-2 items-center min-w-0">
-                          <span className="font-bold text-slate-400 bg-slate-200/60 px-1.5 rounded text-xs min-w-[24px] text-center flex-shrink-0">
-                            {item.quantity}×
-                          </span>
-                          <span className="font-medium text-slate-800 leading-tight truncate">{item.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 pl-2">
-                          <span className="text-xs font-semibold text-slate-500">
-                            {formatINR(item.price * item.quantity)}
-                          </span>
-                          <span className="text-[10px] font-medium text-slate-400 hidden sm:block">
-                            {formatDateTime(item.addedAt).split(",")[1]}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-400 py-6">
-                    <ChefHat size={28} className="opacity-20 mb-2" />
-                    <p className="text-xs font-semibold uppercase tracking-wider">No items ordered yet</p>
+                {isPaymentPending && (
+                  <div className="mb-5 bg-amber-50 border border-amber-200/60 rounded-2xl p-4 flex flex-col gap-3 text-center shadow-inner">
+                    <div className="text-[11px] font-black uppercase tracking-widest text-amber-800 flex items-center justify-center gap-1.5">
+                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
+                      Awaiting Payment
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        onClick={() => handleCancelOrder(session.id)}
+                        className="w-full bg-white border border-red-200 hover:bg-red-50 text-red-600 font-black py-2.5 px-2 rounded-xl text-xs transition-all active:scale-95 shadow-sm hover:shadow-red-500/10 hover:border-red-300"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={() => handleConfirmPayment(session.id)}
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-2.5 px-2 rounded-xl text-xs transition-all active:scale-95 shadow-sm shadow-amber-500/20"
+                      >
+                        Confirm Paid
+                      </button>
+                    </div>
                   </div>
                 )}
+
+                {(isReady || isOpenQS) && (
+                  <div className={`mb-5 border rounded-2xl p-4 flex flex-col gap-3 text-center shadow-inner ${isReady ? 'bg-emerald-50 border-emerald-200/60' : 'bg-blue-50 border-blue-200/60'}`}>
+                    <div className={`text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 ${isReady ? 'text-emerald-800' : 'text-blue-800'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isReady ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
+                      {isReady ? "Ready to Collect" : "Cooking Now"}
+                    </div>
+                    <button 
+                      onClick={() => isOpenQS ? handleMarkReady(session.id) : handleMarkCollected(session.id)}
+                      className={`w-full font-black py-3 px-3 rounded-xl text-sm transition-all active:scale-95 shadow-sm ${
+                        isOpenQS 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20" 
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                      }`}
+                    >
+                      {isOpenQS ? "Mark as Ready" : "Mark as Collected"}
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex-1 bg-slate-50/50 rounded-2xl border border-slate-100 p-4 relative overflow-hidden group-hover:bg-slate-50 transition-colors">
+                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] group-hover:scale-110 transition-all duration-500">
+                    <ScrollText size={80} />
+                  </div>
+
+                  {session.items.length > 0 ? (
+                    <div className="space-y-3 relative z-10 max-h-[220px] overflow-y-auto scrollbar-none">
+                      {session.items.map((item, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm">
+                          <div className="flex gap-3 items-center min-w-0">
+                            <span className="font-black text-slate-500 bg-white border border-slate-200/60 px-1.5 py-0.5 rounded-md text-[11px] min-w-[28px] text-center flex-shrink-0 shadow-sm">
+                              {item.quantity}×
+                            </span>
+                            <span className="font-bold text-slate-800 leading-tight truncate">{item.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 pl-2">
+                            <span className="text-xs font-black text-slate-500">
+                              {formatINR(item.price * item.quantity)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-400 py-6">
+                      <ChefHat size={32} className="opacity-20 mb-3" />
+                      <p className="text-[11px] font-bold uppercase tracking-widest">No items ordered</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          <div className="col-span-full bg-white rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center py-20 text-slate-400">
-            <ChefHat size={56} className="opacity-20 mb-4" />
-            <h3 className="text-lg font-bold text-slate-600 mb-1">No Active Orders</h3>
-            <p className="text-sm font-medium text-center max-w-xs">
-              When guests place orders from their tables, they will appear here instantly.
+          <div className="col-span-full w-full bg-gradient-to-br from-white to-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center py-24 text-slate-400 shadow-sm">
+            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 relative">
+              <div className="absolute inset-0 bg-slate-200 rounded-full animate-ping opacity-20"></div>
+              <ChefHat size={48} className="text-slate-300 relative z-10" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Kitchen is Quiet</h3>
+            <p className="text-sm font-medium text-slate-500 max-w-sm text-center leading-relaxed">
+              When guests place orders, they will instantly stream into this dashboard. Grab a coffee!
             </p>
           </div>
         )}
