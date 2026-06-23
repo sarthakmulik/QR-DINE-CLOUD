@@ -152,7 +152,7 @@ export default function QuickServiceClient({
             amount: initData.amount,
             currency: initData.currency,
             name: initData.hotel_name,
-            description: `Order #${sessionToPay.order_number}`,
+            description: `Order #${(sessionToPay as any).orderNumber || sessionToPay.order_number}`,
             order_id: initData.order_id,
             handler: async function (response: any) {
               // Verify payment
@@ -265,7 +265,7 @@ export default function QuickServiceClient({
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className={`p-8 w-full max-w-md relative overflow-hidden ${t.card}`}>
             <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 ${t.textSub}`}>Order Number</h2>
-            <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>#{activeOrder.order_number}</div>
+            <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>#{(activeOrder as any).orderNumber || activeOrder.order_number}</div>
 
             {isClosed ? (
               <div className="text-emerald-500 animate-success-pop flex flex-col items-center">
@@ -290,7 +290,7 @@ export default function QuickServiceClient({
               </div>
             ) : activeOrder.status === "payment_pending" ? (
               <div className="flex flex-col items-center w-full animate-fade-in">
-                {(hotel as any)?.paymentSettings?.active_pg && (hotel as any).paymentSettings.active_pg !== "none" && (activeOrder.payment_method === "UPI" || activeOrder.payment_method === "Card") ? (
+                {(hotel as any)?.paymentSettings?.active_pg && (hotel as any).paymentSettings.active_pg !== "none" && ((activeOrder as any).paymentMethod === "UPI" || activeOrder.payment_method === "UPI" || (activeOrder as any).paymentMethod === "Card" || activeOrder.payment_method === "Card") ? (
                   <>
                     <div className="w-20 h-20 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mb-6">
                       <Banknote className="w-10 h-10" />
@@ -319,7 +319,7 @@ export default function QuickServiceClient({
                       </button>
                     )}
                   </>
-                ) : activeOrder.payment_method === "UPI" && hotel?.upi_id ? (
+                ) : ((activeOrder as any).paymentMethod === "UPI" || activeOrder.payment_method === "UPI") && hotel?.upi_id ? (
                   <>
                     <h3 className={`text-2xl font-black tracking-tight mb-4 ${t.textMain}`}>Scan to Pay</h3>
                     <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 inline-block mb-6 relative group">
