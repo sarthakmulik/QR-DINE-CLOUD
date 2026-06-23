@@ -24,7 +24,7 @@ export default function QuickServiceClient({
 }) {
   const { hotelId } = use(params);
   const [loading, setLoading] = useState(true);
-  const [hotel, setHotel] = useState<Partial<Hotel> | null>(initialHotel);
+  const [hotel, setHotel] = useState<Partial<Hotel> | null>(initialHotel || null);
   const [categories, setCategories] = useState<CategoryWithItems[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   
