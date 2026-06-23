@@ -75,9 +75,11 @@ export default function QuickServiceClient({
     load();
   }, [hotelId, token]);
 
-  // Realtime subscription for order status
+  // Realtime subscription & Fallback polling for order status
   useEffect(() => {
     if (!activeOrder?.id) return;
+
+    // 1. Setup Supabase Realtime Subscription
     const channel = supabase
       .channel(`quick-service-session-${activeOrder.id}`)
       .on(
@@ -95,10 +97,29 @@ export default function QuickServiceClient({
         }
       )
       .subscribe();
+
+    // 2. Setup Fallback Polling (every 5 seconds)
+    // This guarantees UI sync even if WebSockets are blocked or RLS prevents unauthenticated listeners.
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data } = await supabase
+          .from("table_sessions")
+          .select("*")
+          .eq("id", activeOrder.id)
+          .single();
+        if (data && data.status !== activeOrder.status) {
+          setActiveOrder((prev) => ({ ...prev, ...(data as TableSession) }));
+        }
+      } catch (err) {
+        // Ignore polling errors to prevent console spam
+      }
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
-  }, [activeOrder?.id, supabase]);
+  }, [activeOrder?.id, activeOrder?.status, supabase]);
 
   const updateQuantity = (item: MenuItem, delta: number) => {
     setCart((prev) => {

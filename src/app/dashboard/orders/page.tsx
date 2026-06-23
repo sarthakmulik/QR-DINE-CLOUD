@@ -55,6 +55,21 @@ export default function LiveOrdersPage() {
     }
   }
 
+  async function handleMarkCollected(sessionId: string) {
+    try {
+      const res = await fetch(`/api/hotel/sessions/${sessionId}/force-close`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Collected by customer" })
+      });
+      if (res.ok) {
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   useEffect(() => {
     const cached = sessionStorage.getItem("admin_live_orders");
     if (cached) {
@@ -145,6 +160,20 @@ export default function LiveOrdersPage() {
                     className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors"
                   >
                     Confirm Received
+                  </button>
+                </div>
+              )}
+
+              {(session.status === "ready_for_pickup" || (!session.table && session.status === "open")) && (
+                <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex flex-col gap-2 items-center text-center">
+                  <div className="text-xs font-bold text-emerald-800">
+                    {session.status === "ready_for_pickup" ? "Ready to Collect" : "Quick Service Open"}
+                  </div>
+                  <button 
+                    onClick={() => handleMarkCollected(session.id)}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors"
+                  >
+                    Mark as Collected
                   </button>
                 </div>
               )}
