@@ -75,40 +75,22 @@ export default function QuickServiceClient({
     load();
   }, [hotelId, token]);
 
-  // Realtime subscription & Fallback polling for order status
+  // Fallback polling for order status
   useEffect(() => {
     if (!activeOrder?.id) return;
 
-    // 1. Setup Supabase Realtime Subscription
-    const channel = supabase
-      .channel(`quick-service-session-${activeOrder.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "table_sessions",
-          filter: `id=eq.${activeOrder.id}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            setActiveOrder((prev) => ({ ...prev, ...(payload.new as TableSession) }));
-          }
-        }
-      )
-      .subscribe();
-
-    // 2. Setup Fallback Polling (every 5 seconds)
-    // This guarantees UI sync even if WebSockets are blocked or RLS prevents unauthenticated listeners.
+    // We removed Supabase Realtime because anonymous users trigger RLS policies
+    // which silently blocks updates from reaching the customer UI.
+    
+    // Setup Fallback Polling (every 5 seconds) via secure API
     const pollInterval = setInterval(async () => {
       try {
-        const { data } = await supabase
-          .from("table_sessions")
-          .select("*")
-          .eq("id", activeOrder.id)
-          .single();
-        if (data && data.status !== activeOrder.status) {
-          setActiveOrder((prev) => ({ ...prev, ...(data as TableSession) }));
+        const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/status`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.status && data.status !== activeOrder.status) {
+            setActiveOrder((prev) => prev ? { ...prev, status: data.status } : null);
+          }
         }
       } catch (err) {
         // Ignore polling errors to prevent console spam
@@ -116,10 +98,9 @@ export default function QuickServiceClient({
     }, 5000);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
-  }, [activeOrder?.id, activeOrder?.status, supabase]);
+  }, [activeOrder?.id, activeOrder?.status, hotelId]);
 
   const updateQuantity = (item: MenuItem, delta: number) => {
     setCart((prev) => {
