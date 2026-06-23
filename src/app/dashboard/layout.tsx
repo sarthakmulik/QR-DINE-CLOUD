@@ -32,7 +32,7 @@ export default async function DashboardLayout({
 
   return (
     <PlanProvider hotelId={user.hotelId} initialPlan={hotel?.plan} initialServiceType={hotel?.service_type}>
-      <div className="h-screen bg-gray-50 flex overflow-hidden">
+      <div className="h-screen bg-gray-50 dark:bg-[#0F0F13] flex overflow-hidden transition-colors duration-200">
         <DashboardSidebar hotelName={hotel?.name || "Restaurant"} hotelId={user.hotelId} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {hotel && (hotel.status === "paused" || hotel.status === "suspended") && (

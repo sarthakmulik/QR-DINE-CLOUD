@@ -116,13 +116,13 @@ export default function LiveOrdersPage() {
     <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Live Orders</h1>
-          <p className="text-slate-500 text-sm mt-1">Real-time view of all active table sessions</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Live Orders</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Real-time view of all active table sessions</p>
         </div>
         <button
           onClick={() => load(true)}
           disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold shadow-sm hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all disabled:opacity-50 text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-[#1C1C21] hover:border-slate-300 dark:hover:border-white/20 active:scale-95 transition-all disabled:opacity-50 text-sm"
         >
           <RefreshCw size={15} className={isRefreshing ? "animate-spin text-brand-500" : "text-slate-400"} />
           {isRefreshing ? "Syncing…" : "Sync"}
@@ -136,23 +136,25 @@ export default function LiveOrdersPage() {
         </div>
       )}
 
-      <div className="columns-1 md:columns-2 xl:columns-3 gap-5 space-y-5">
-        {loading && sessions.length === 0 ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-3xl border border-slate-100 p-6 space-y-4 shadow-sm animate-pulse break-inside-avoid">
+      {loading && sessions.length === 0 ? (
+        <div className="columns-1 md:columns-2 xl:columns-3 gap-5 space-y-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white dark:bg-[#16161A] rounded-3xl border border-slate-100 dark:border-white/5 p-6 space-y-4 shadow-sm animate-pulse break-inside-avoid">
               <div className="flex justify-between items-center">
-                <div className="h-6 bg-slate-200 rounded-md w-24" />
-                <div className="h-6 bg-slate-200 rounded-full w-20" />
+                <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-md w-24" />
+                <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-full w-20" />
               </div>
-              <div className="space-y-2 pt-4 border-t border-slate-100">
-                <div className="h-4 bg-slate-100 rounded w-full" />
-                <div className="h-4 bg-slate-100 rounded w-5/6" />
-                <div className="h-4 bg-slate-100 rounded w-4/6" />
+              <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-white/5">
+                <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-5/6" />
+                <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-4/6" />
               </div>
             </div>
-          ))
-        ) : sessions.length > 0 ? (
-          sessions.map((session) => {
+          ))}
+        </div>
+      ) : sessions.length > 0 ? (
+        <div className="columns-1 md:columns-2 xl:columns-3 gap-5 space-y-5">
+          {sessions.map((session) => {
             const isPaymentPending = session.status === "payment_pending";
             const isReady = session.status === "ready_for_pickup";
             const isOpenQS = !session.table && session.status === "open";
@@ -171,13 +173,13 @@ export default function LiveOrdersPage() {
             }
 
             return (
-              <div key={session.id} className={`bg-white rounded-3xl p-5 flex flex-col shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 break-inside-avoid relative overflow-hidden group ${glowColor} border-t-[6px] ${topBorder}`}>
+              <div key={session.id} className={`bg-white dark:bg-[#16161A] rounded-3xl p-5 flex flex-col shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-xl dark:hover:shadow-black/50 transition-all duration-300 break-inside-avoid relative overflow-hidden group ${glowColor} border-t-[6px] ${topBorder}`}>
                 <div className="flex items-start justify-between mb-5">
                   <div>
-                    <h3 className="font-black text-xl text-slate-900 tracking-tight flex items-center gap-2">
+                    <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                       {session.table?.label || `Quick Service`}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md inline-flex">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded-md inline-flex">
                       <Clock size={11} />
                       {formatDateTime(session.startTime)}
                     </div>
@@ -237,8 +239,8 @@ export default function LiveOrdersPage() {
                   </div>
                 )}
 
-                <div className="flex-1 bg-slate-50/50 rounded-2xl border border-slate-100 p-4 relative overflow-hidden group-hover:bg-slate-50 transition-colors">
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] group-hover:scale-110 transition-all duration-500">
+                <div className="flex-1 bg-slate-50/50 dark:bg-white/[0.02] rounded-2xl border border-slate-100 dark:border-white/5 p-4 relative overflow-hidden group-hover:bg-slate-50 dark:group-hover:bg-white/[0.04] transition-colors">
+                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-[0.05] pointer-events-none group-hover:opacity-[0.05] dark:group-hover:opacity-[0.1] group-hover:scale-110 transition-all duration-500">
                     <ScrollText size={80} />
                   </div>
 
@@ -247,10 +249,10 @@ export default function LiveOrdersPage() {
                       {session.items.map((item, i) => (
                         <div key={i} className="flex justify-between items-center text-sm">
                           <div className="flex gap-3 items-center min-w-0">
-                            <span className="font-black text-slate-500 bg-white border border-slate-200/60 px-1.5 py-0.5 rounded-md text-[11px] min-w-[28px] text-center flex-shrink-0 shadow-sm">
+                            <span className="font-black text-slate-500 dark:text-slate-400 bg-white dark:bg-[#16161A] border border-slate-200/60 dark:border-white/10 px-1.5 py-0.5 rounded-md text-[11px] min-w-[28px] text-center flex-shrink-0 shadow-sm">
                               {item.quantity}×
                             </span>
-                            <span className="font-bold text-slate-800 leading-tight truncate">{item.name}</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{item.name}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 pl-2">
                             <span className="text-xs font-black text-slate-500">
@@ -269,20 +271,20 @@ export default function LiveOrdersPage() {
                 </div>
               </div>
             );
-          })
-        ) : (
-          <div className="col-span-full w-full bg-gradient-to-br from-white to-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center py-24 text-slate-400 shadow-sm">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 relative">
-              <div className="absolute inset-0 bg-slate-200 rounded-full animate-ping opacity-20"></div>
-              <ChefHat size={48} className="text-slate-300 relative z-10" />
-            </div>
-            <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Kitchen is Quiet</h3>
-            <p className="text-sm font-medium text-slate-500 max-w-sm text-center leading-relaxed">
-              When guests place orders, they will instantly stream into this dashboard. Grab a coffee!
-            </p>
+          })}
+        </div>
+      ) : (
+        <div className="w-full bg-gradient-to-br from-white to-slate-50 dark:from-[#16161A] dark:to-[#0F0F13] rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center py-24 text-slate-400 dark:text-slate-500 shadow-sm">
+          <div className="w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 relative">
+            <div className="absolute inset-0 bg-slate-200 dark:bg-white/10 rounded-full animate-ping opacity-20"></div>
+            <ChefHat size={48} className="text-slate-300 dark:text-slate-600 relative z-10" />
           </div>
-        )}
-      </div>
+          <h3 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-2">Kitchen is Quiet</h3>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm text-center leading-relaxed">
+            When guests place orders, they will instantly stream into this dashboard. Grab a coffee!
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -330,16 +330,16 @@ export default function MenuPage() {
     <div className="space-y-6 animate-page-entrance">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Menu Management</h1>
-          <p className="text-slate-500 font-medium mt-1 text-sm flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Menu Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1 text-sm flex items-center gap-2">
             Organize categories and items
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 mx-2" />
-            <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-slate-600"}`}>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mx-2" />
+            <span className={`font-semibold ${limitReached ? "text-amber-600 dark:text-amber-500" : "text-slate-600 dark:text-slate-400"}`}>
               {totalItems} / {maxItems === "unlimited" ? "∞" : maxItems} items used
             </span>
           </p>
         </div>
-        <Button onClick={() => setShowCatModal(true)} className="font-bold flex items-center gap-2 shadow-sm bg-slate-900 hover:bg-black text-white rounded-xl px-4 py-2">
+        <Button onClick={() => setShowCatModal(true)} className="font-bold flex items-center gap-2 shadow-sm bg-brand-600 hover:bg-brand-700 text-white dark:bg-brand-500 dark:hover:bg-brand-600 rounded-xl px-4 py-2 transition-colors">
           <Plus size={16} /> Add Category
         </Button>
       </div>
@@ -357,12 +357,12 @@ export default function MenuPage() {
       )}
 
       {categories.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 py-24 flex flex-col items-center justify-center text-center px-4">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-            <Plus size={32} className="text-slate-400" />
+        <div className="bg-white dark:bg-[#16161A] rounded-3xl border border-dashed border-slate-300 dark:border-white/10 py-24 flex flex-col items-center justify-center text-center px-4 transition-colors duration-200">
+          <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
+            <Plus size={32} className="text-slate-400 dark:text-slate-500" />
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">No Categories Yet</h3>
-          <p className="text-slate-500 max-w-sm mb-6 text-sm">
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">No Categories Yet</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-6 text-sm">
             Start building your menu by adding your first category (e.g., Starters, Main Course, Beverages).
           </p>
           <Button onClick={() => setShowCatModal(true)} className="font-bold rounded-xl">
@@ -372,25 +372,25 @@ export default function MenuPage() {
       ) : (
         <div className="space-y-8">
           {categories.map((category) => (
-            <div key={category.id} className="bg-white border border-slate-200 rounded-[1.5rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] overflow-hidden group/cat transition-all duration-300">
-              <div className="flex justify-between items-center p-5 bg-slate-50/50 border-b border-slate-100">
+            <div key={category.id} className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-[1.5rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] overflow-hidden group/cat transition-colors duration-200">
+              <div className="flex justify-between items-center p-5 bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5">
                 <div className="flex items-center gap-3 min-w-0">
-                  <h2 className="text-xl font-black text-slate-800 tracking-tight break-words">{category.name}</h2>
-                  <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-xs font-bold shrink-0">
+                  <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight break-words">{category.name}</h2>
+                  <span className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded text-xs font-bold shrink-0">
                     {category.items?.length || 0} items
                   </span>
                 </div>
                 <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover/cat:opacity-100 transition-opacity">
                   <button
                     onClick={() => openEditCategory(category)}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-brand-600 dark:hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors"
                     title="Edit Category"
                   >
                     <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => deleteCategory(category.id, category.name)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Delete Category"
                   >
                     <Trash2 size={14} />
@@ -408,83 +408,78 @@ export default function MenuPage() {
 
               <div className="p-5">
                 {(!category.items || category.items.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 border-2 border-dashed border-slate-100 rounded-xl">
+                  <div className="text-center py-8 text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-xl">
                     <p className="text-sm font-medium">No items in this category.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="flex flex-col gap-3">
                     {category.items.map((item) => (
                       <div
                         key={item.id}
-                        className={`flex gap-4 p-4 border border-slate-100 rounded-2xl group transition-all duration-300 hover:shadow-md hover:border-slate-200 ${
-                          !item.isAvailable ? "opacity-60 bg-slate-50/50 grayscale-[50%]" : "bg-white"
+                        className={`flex items-center justify-between p-4 border border-slate-100 dark:border-white/5 rounded-2xl group transition-all duration-300 hover:border-slate-200 dark:hover:border-white/10 ${
+                          !item.isAvailable ? "opacity-60 bg-slate-50/50 dark:bg-[#1A1A1F] grayscale-[50%]" : "bg-white dark:bg-[#16161A]"
                         }`}
                       >
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200 relative">
-                          {item.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.imageUrl}
-                              alt={item.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-2xl">
-                              🍽️
-                            </div>
-                          )}
-                          {!item.isAvailable && (
-                            <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center backdrop-blur-[1px]">
-                              <span className="text-[9px] font-black uppercase text-white bg-black/60 px-1.5 py-0.5 rounded">Out</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start gap-2">
-                              <h3 className="font-bold text-slate-900 leading-tight break-words min-w-0 flex-1" title={item.name}>
-                                {item.name}
-                              </h3>
-                              <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-slate-100">
-                                <button
-                                  onClick={() => openEditItem(item, category.id)}
-                                  className="p-1 text-slate-400 hover:text-brand-600 rounded transition-colors"
-                                  title="Edit Item"
-                                >
-                                  <Pencil size={12} />
-                                </button>
-                                <button
-                                  onClick={() => deleteItem(item.id)}
-                                  className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
-                                  title="Delete Item"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 shrink-0 relative">
+                            {item.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600 text-xl">
+                                🍽️
                               </div>
-                            </div>
-                            {item.description && (
-                              <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-snug">
-                                {item.description}
-                              </p>
                             )}
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {item.isVegetarian && <span className="w-3 h-3 border border-emerald-600 rounded flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div></span>}
-                              {!item.isVegetarian && <span className="w-3 h-3 border border-red-600 rounded flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-red-600"></div></span>}
-                              {item.isRecommended && <span className="text-xs">⭐</span>}
-                              {(item.spicyLevel !== null && item.spicyLevel !== undefined) && (
-                                <span className="text-[10px]">
-                                  {[...Array(item.spicyLevel + 1)].map((_, i) => "🌶️").join("")}
-                                </span>
-                              )}
+                          </div>
+                          
+                          <div className="flex flex-col justify-center min-w-0 flex-1">
+                            <h3 className="font-bold text-slate-900 dark:text-white leading-tight truncate" title={item.name}>
+                              {item.name}
+                            </h3>
+                            <div className="font-black text-brand-600 mt-0.5 text-sm">
+                              {formatINR(item.price)}
                             </div>
                           </div>
-                          <div className="font-black text-brand-600 mt-2">
-                            {formatINR(item.price)}
+                        </div>
+
+                        <div className="flex items-center gap-6 shrink-0 pl-4 border-l border-slate-100 dark:border-white/5 ml-4">
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${item.isAvailable ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                              {item.isAvailable ? 'In Stock' : 'Out'}
+                            </span>
+                            <button
+                              onClick={() => toggleAvailable(item)}
+                              className={`w-10 h-5 rounded-full relative transition-colors ${item.isAvailable ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                            >
+                              <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow-sm ${item.isAvailable ? 'left-5' : 'left-0.5'}`} />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => openEditItem(item, category.id)}
+                              className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-brand-600 dark:hover:text-brand-500 rounded-lg transition-colors"
+                              title="Edit Item"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => deleteItem(item.id)}
+                              className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
+                              title="Delete Item"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
+
                 )}
               </div>
             </div>

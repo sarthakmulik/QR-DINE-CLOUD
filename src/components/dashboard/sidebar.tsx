@@ -19,8 +19,11 @@ import {
   ChefHat,
   Menu,
   X,
+  Moon,
+  Sun,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 
 export function DashboardSidebar({
   hotelName,
@@ -32,6 +35,12 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const links = [
     { href: "/dashboard", label: "Tables & Orders", icon: LayoutGrid },
@@ -65,15 +74,15 @@ export function DashboardSidebar({
   return (
     <>
       {/* ===== DESKTOP SIDEBAR (md and above) ===== */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col">
+      <aside className="hidden md:flex w-64 bg-white dark:bg-[#0B0B0C] border-r border-gray-200 dark:border-white/5 flex-col transition-colors duration-200">
         <div className="p-5 border-b">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
               QR
             </div>
             <div>
-              <p className="font-semibold text-sm truncate">{hotelName}</p>
-              <p className="text-xs text-gray-500">Owner Panel</p>
+              <p className="font-semibold text-sm truncate dark:text-white">{hotelName}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-500">Owner Panel</p>
             </div>
           </div>
         </div>
@@ -93,8 +102,8 @@ export function DashboardSidebar({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                   active
-                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-950"
+                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/10 dark:text-brand-500 dark:border-brand-500/20"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                 )}
               >
                 <link.icon className="w-4 h-4" />
@@ -104,10 +113,24 @@ export function DashboardSidebar({
           })}
         </nav>
 
-        <div className="p-3 border-t">
+        <div className="p-3 border-t dark:border-white/5 space-y-1">
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white w-full transition duration-150 ease-in-out"
+            >
+              <div className="flex items-center gap-3">
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </div>
+              <div className={`w-8 h-4 rounded-full flex items-center p-0.5 transition-colors ${theme === "dark" ? "bg-brand-500" : "bg-slate-300"}`}>
+                <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`} />
+              </div>
+            </button>
+          )}
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 w-full active:scale-[0.98] transition duration-150 ease-in-out"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-red-400 w-full active:scale-[0.98] transition duration-150 ease-in-out"
           >
             <LogOut className="w-4 h-4" />
             Sign out
@@ -116,20 +139,20 @@ export function DashboardSidebar({
       </aside>
 
       {/* ===== MOBILE TOP HEADER (below md) ===== */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 flex items-center justify-between px-4 h-14 shadow-sm">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#0B0B0C] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 h-14 shadow-sm transition-colors duration-200">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
             QR
           </div>
           <div>
-            <p className="font-semibold text-sm truncate max-w-[150px]">{hotelName}</p>
-            <p className="text-[10px] text-gray-500">Owner Panel</p>
+            <p className="font-semibold text-sm truncate max-w-[150px] dark:text-white">{hotelName}</p>
+            <p className="text-[10px] text-gray-500 dark:text-slate-500">Owner Panel</p>
           </div>
         </div>
         {/* Hamburger for full menu sheet */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+          className="p-2 rounded-lg text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
@@ -145,15 +168,15 @@ export function DashboardSidebar({
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sheet */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl flex flex-col">
-            <div className="p-4 border-b flex items-center justify-between">
+          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#0B0B0C] z-50 shadow-2xl flex flex-col transition-colors duration-200">
+            <div className="p-4 border-b dark:border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
                   QR
                 </div>
                 <div>
-                  <p className="font-semibold text-sm truncate max-w-[160px]">{hotelName}</p>
-                  <p className="text-[10px] text-gray-500">Owner Panel</p>
+                  <p className="font-semibold text-sm truncate max-w-[160px] dark:text-white">{hotelName}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-slate-500">Owner Panel</p>
                 </div>
               </div>
               <button
@@ -179,8 +202,8 @@ export function DashboardSidebar({
                     className={cn(
                       "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                       active
-                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-950"
+                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/10 dark:text-brand-500 dark:border-brand-500/20"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                     )}
                   >
                     <link.icon className="w-4 h-4 flex-shrink-0" />
@@ -190,10 +213,24 @@ export function DashboardSidebar({
               })}
             </nav>
 
-            <div className="p-3 border-t">
+            <div className="p-3 border-t dark:border-white/5 space-y-2">
+              {mounted && (
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="flex items-center justify-between px-3 py-3 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white w-full transition duration-150 ease-in-out"
+                >
+                  <div className="flex items-center gap-3">
+                    {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  </div>
+                  <div className={`w-8 h-4 rounded-full flex items-center p-0.5 transition-colors ${theme === "dark" ? "bg-brand-500" : "bg-slate-300"}`}>
+                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`} />
+                  </div>
+                </button>
+              )}
               <button
                 onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 w-full transition"
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-red-400 w-full transition"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out
