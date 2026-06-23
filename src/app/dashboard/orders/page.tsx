@@ -274,12 +274,12 @@ export default function LiveOrdersPage() {
           })}
         </div>
       ) : (
-        <div className="w-full bg-gradient-to-br from-white to-slate-50 dark:from-[#16161A] dark:to-[#0F0F13] rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center py-24 text-slate-400 dark:text-slate-500 shadow-sm">
-          <div className="w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 relative">
-            <div className="absolute inset-0 bg-slate-200 dark:bg-white/10 rounded-full animate-ping opacity-20"></div>
+        <div className="w-full bg-white/60 dark:bg-[#141416]/60 backdrop-blur-sm rounded-[2rem] border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center py-24 text-slate-400 dark:text-slate-500 shadow-sm">
+          <div className="w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 relative shadow-inner">
+            <div className="absolute inset-0 bg-slate-200 dark:bg-white/5 rounded-full animate-ping opacity-20"></div>
             <ChefHat size={48} className="text-slate-300 dark:text-slate-600 relative z-10" />
           </div>
-          <h3 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-2">Kitchen is Quiet</h3>
+          <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight mb-2">Kitchen is Quiet</h3>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm text-center leading-relaxed">
             When guests place orders, they will instantly stream into this dashboard. Grab a coffee!
           </p>

@@ -102,7 +102,7 @@ export function DashboardSidebar({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                   active
-                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/20"
+                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-white/10 dark:text-brand-400 dark:border-white/5"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                 )}
               >
@@ -202,7 +202,7 @@ export function DashboardSidebar({
                     className={cn(
                       "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                       active
-                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/20"
+                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-white/10 dark:text-brand-400 dark:border-white/5"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                     )}
                   >
