@@ -505,22 +505,22 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                     } ${viewMode === "timeline" ? "border-b-0 bg-transparent flex-col justify-center items-start p-0 flex-shrink-0 w-32" : ""}`}
                   >
                     <div>
-                      {session.tableNumber !== null ? (
+                      {session.tableNumber === 0 ? (
                         <>
-                          <h3 className="text-xl font-extrabold text-white tracking-tight">
-                            Table {session.tableNumber}
+                          <h3 className="text-xl font-extrabold text-emerald-400 tracking-tight">
+                            Order #{session.orderNumber}
                           </h3>
-                          <p className="text-slate-400 text-xs font-semibold mt-0.5">
-                            Order #{session.id.substring(session.id.length - 4).toUpperCase()}
+                          <p className="text-emerald-500/70 text-xs font-bold uppercase tracking-widest mt-0.5">
+                            Quick Service
                           </p>
                         </>
                       ) : (
                         <>
                           <h3 className="text-xl font-extrabold text-white tracking-tight">
-                            Order #{session.orderNumber}
+                            Table {session.tableNumber}
                           </h3>
-                          <p className="text-slate-400 text-xs font-semibold mt-0.5 uppercase">
-                            Quick Service
+                          <p className="text-slate-400 text-xs font-semibold mt-0.5">
+                            Order #{session.orderNumber || session.id.substring(session.id.length - 4).toUpperCase()}
                           </p>
                         </>
                       )}

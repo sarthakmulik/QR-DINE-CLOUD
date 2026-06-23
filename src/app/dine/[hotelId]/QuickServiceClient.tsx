@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, use, useRef } from "react";
+import Script from "next/script";
 import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, FileText, Smartphone, Banknote, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -59,15 +60,26 @@ export default function QuickServiceClient({
           alert(data.error);
         }
 
-        if (sessionIdParam) {
-          // Restore the session after a payment gateway redirect
+        let sessionToRestore = sessionIdParam;
+        if (!sessionToRestore) {
+          const stored = localStorage.getItem(`qr_dine_qs_session_${hotelId}`);
+          if (stored) sessionToRestore = stored;
+        }
+
+        if (sessionToRestore) {
+          // Restore the session after a payment gateway redirect or local storage
           const { data: sessionData } = await supabase
             .from("table_sessions")
             .select("*")
-            .eq("id", sessionIdParam)
+            .eq("id", sessionToRestore)
             .single();
           if (sessionData) {
-            setActiveOrder(sessionData as TableSession);
+            if (sessionData.status !== "closed") {
+              setActiveOrder(sessionData as TableSession);
+              localStorage.setItem(`qr_dine_qs_session_${hotelId}`, sessionData.id);
+            } else {
+              localStorage.removeItem(`qr_dine_qs_session_${hotelId}`);
+            }
           }
         }
       } catch (err) {
@@ -197,6 +209,7 @@ export default function QuickServiceClient({
       setShowCart(false);
       setShowPayment(false);
       setActiveOrder(session);
+      localStorage.setItem(`qr_dine_qs_session_${hotelId}`, session.id);
 
       // If payment is UPI/Card and a gateway is configured, auto-initiate
       const pg = (hotel as any)?.paymentSettings?.active_pg;
@@ -261,7 +274,7 @@ export default function QuickServiceClient({
                 </div>
                 <h3 className={`text-3xl font-black tracking-tight ${t.textMain}`}>Order Complete</h3>
                 <p className="text-slate-500 mt-3 text-lg font-medium">Thank you for dining with us!</p>
-                <Button className={`mt-8 w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => setActiveOrder(null)}>Start New Order</Button>
+                <Button className={`mt-8 w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => { localStorage.removeItem(`qr_dine_qs_session_${hotelId}`); window.location.href = window.location.pathname; }}>Start New Order</Button>
               </div>
             ) : isReady ? (
               <div className="text-brand-600 flex flex-col items-center">
@@ -369,7 +382,9 @@ export default function QuickServiceClient({
   });
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={qsStyleVars}>
+    <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={qsStyleVars}>
       <header className={`sticky top-0 z-40 shadow-sm pt-safe ${t.header}`}>
         <div className="px-5 py-4 flex items-center justify-between">
           <div className="flex flex-col">
@@ -636,5 +651,6 @@ export default function QuickServiceClient({
         )}
       </Modal>
     </div>
+    </>
   );
 }

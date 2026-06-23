@@ -8,6 +8,7 @@ import { Clock, RefreshCw, ChefHat, ScrollText, AlertCircle } from "lucide-react
 interface Session {
   id: string;
   tableNumber: number;
+  orderNumber?: number;
   status: string;
   startTime: string;
   subtotal: number;
@@ -177,7 +178,8 @@ export default function LiveOrdersPage() {
                 <div className="flex items-start justify-between mb-5">
                   <div>
                     <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                      {session.table?.label || `Quick Service`}
+                      {session.table?.label ? `Table ${session.table.label}` : `Quick Service`}
+                      {session.orderNumber && <span className="text-brand-600 ml-1">#{session.orderNumber}</span>}
                     </h3>
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded-md inline-flex">
                       <Clock size={11} />
