@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   // Strict CSP to block malicious script execution (SSTI/XSS mitigations)
   const csp = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https:;
     font-src 'self' data: https://fonts.gstatic.com;

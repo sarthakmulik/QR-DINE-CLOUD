@@ -383,7 +383,6 @@ export default function QuickServiceClient({
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={qsStyleVars}>
       <header className={`sticky top-0 z-40 shadow-sm pt-safe ${t.header}`}>
         <div className="px-5 py-4 flex items-center justify-between">
