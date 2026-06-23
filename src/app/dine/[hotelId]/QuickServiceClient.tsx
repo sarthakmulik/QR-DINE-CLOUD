@@ -77,7 +77,7 @@ export default function QuickServiceClient({
 
   // Realtime subscription for order status
   useEffect(() => {
-    if (!activeOrder) return;
+    if (!activeOrder?.id) return;
     const channel = supabase
       .channel(`quick-service-session-${activeOrder.id}`)
       .on(
@@ -90,7 +90,7 @@ export default function QuickServiceClient({
         },
         (payload) => {
           if (payload.new) {
-            setActiveOrder(payload.new as TableSession);
+            setActiveOrder((prev) => ({ ...prev, ...(payload.new as TableSession) }));
           }
         }
       )
@@ -98,7 +98,7 @@ export default function QuickServiceClient({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeOrder, supabase]);
+  }, [activeOrder?.id, supabase]);
 
   const updateQuantity = (item: MenuItem, delta: number) => {
     setCart((prev) => {
@@ -137,7 +137,7 @@ export default function QuickServiceClient({
       const session = data.session;
       
       // If payment is UPI/Card and a gateway is configured, auto-initiate
-      const pg = hotel?.payment_settings?.active_pg;
+      const pg = (hotel as any)?.paymentSettings?.active_pg;
       if ((paymentMethod === "UPI" || paymentMethod === "Card") && pg && pg !== "none") {
         const initRes = await fetch(`/api/quick-service/${hotelId}/order/${session.id}/initiate-payment`, {
           method: "POST"
