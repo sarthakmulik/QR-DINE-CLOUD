@@ -147,6 +147,20 @@ export default function QuickServiceClient({
         alert(initData.error || "Failed to initiate payment");
       } else {
         if (initData.gateway === "razorpay") {
+          // Dynamically load Razorpay script to guarantee it's available
+          if (!(window as any).Razorpay) {
+            await new Promise((resolve) => {
+              const script = document.createElement("script");
+              script.src = "https://checkout.razorpay.com/v1/checkout.js";
+              script.onload = resolve;
+              script.onerror = resolve;
+              document.body.appendChild(script);
+            });
+          }
+          if (!(window as any).Razorpay) {
+            throw new Error("Razorpay SDK failed to load. Please check your connection or ad blocker.");
+          }
+
           const options = {
             key: initData.key_id,
             amount: initData.amount,
@@ -319,12 +333,12 @@ export default function QuickServiceClient({
                       </button>
                     )}
                   </>
-                ) : ((activeOrder as any).paymentMethod === "UPI" || activeOrder.payment_method === "UPI") && hotel?.upi_id ? (
+                ) : ((activeOrder as any).paymentMethod === "UPI" || activeOrder.payment_method === "UPI") && (hotel as any)?.upiId ? (
                   <>
                     <h3 className={`text-2xl font-black tracking-tight mb-4 ${t.textMain}`}>Scan to Pay</h3>
                     <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 inline-block mb-6 relative group">
                       <div className="absolute inset-0 bg-brand-500 blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl"></div>
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upi_id}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${(hotel as any).upiId}&pn=${hotel?.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
                     </div>
                     <p className="text-slate-500 mb-8 font-semibold text-lg">Pay <span className="text-slate-800 font-bold">{formatINR(activeOrder.total)}</span> via any UPI App</p>
                     <Button onClick={async () => {
