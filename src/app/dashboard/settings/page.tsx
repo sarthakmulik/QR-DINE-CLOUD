@@ -24,7 +24,7 @@ export default function SettingsPage() {
     serviceType: "dine_in",
     customizations: {
       theme: "default",
-      qsTheme: "bento",
+      qsTheme: "neo_brutalism",
       primaryColor: "#ea580c",
       secondaryColor: "#ffedd5",
       textColor: "#ffffff",
@@ -157,7 +157,7 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
-          serviceType: data.service_type || "dine_in",
+          serviceType: data.serviceType || data.service_type || "dine_in",
           customizations: data.customizations ? {
             theme: data.customizations.theme || "default",
             primaryColor: data.customizations.primaryColor || "#ea580c",
@@ -204,7 +204,7 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
-          serviceType: data.service_type || "dine_in",
+          serviceType: data.serviceType || data.service_type || "dine_in",
           customizations: data.customizations ? {
             theme: data.customizations.theme || "default",
             primaryColor: data.customizations.primaryColor || "#ea580c",
@@ -215,10 +215,10 @@ export default function SettingsPage() {
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
             printerSize: data.customizations.printerSize || "80mm",
-            qsTheme: data.customizations.qsTheme || "bento",
+            qsTheme: data.customizations.qsTheme || "neo_brutalism",
           } : {
             theme: "default",
-            qsTheme: "bento",
+            qsTheme: "neo_brutalism",
             primaryColor: "#ea580c",
             secondaryColor: "#ffedd5",
             textColor: "#ffffff",
@@ -1029,7 +1029,7 @@ export default function SettingsPage() {
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {qsThemePresets.map((preset) => {
-                    const isSelected = form.customizations?.qsTheme === preset.id || (!form.customizations?.qsTheme && preset.id === "bento");
+                    const isSelected = form.customizations?.qsTheme === preset.id || (!form.customizations?.qsTheme && preset.id === "neo_brutalism");
                     return (
                       <button
                         key={preset.id}

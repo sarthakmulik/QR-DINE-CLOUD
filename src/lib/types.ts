@@ -144,7 +144,9 @@ export interface AuthUser {
 export function mapHotel(h: Hotel) {
   const plan = (h.plan || "basic").toLowerCase();
   let customizations = h.customizations ?? null;
-  if (customizations) {
+  if (!customizations) {
+    customizations = { qsTheme: "neo_brutalism" };
+  } else {
     let layout = customizations.layout || "default";
     if (plan === "basic") {
       layout = "default";
@@ -156,6 +158,7 @@ export function mapHotel(h: Hotel) {
     customizations = {
       ...customizations,
       layout,
+      qsTheme: customizations.qsTheme || "neo_brutalism",
     };
   }
 

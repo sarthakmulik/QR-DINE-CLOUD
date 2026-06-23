@@ -226,7 +226,7 @@ export default function QuickServiceClient({
     return <WelcomeAnimation restaurantName={initialHotel.name || "Restaurant"} preset={initialHotel.welcome_animation_preset as any || "elegant"} onComplete={() => setShowWelcome(false)} />;
   }
 
-  const qsTheme = hotel?.customizations?.qsTheme || "bento";
+  const qsTheme = hotel?.customizations?.qsTheme || "neo_brutalism";
 
   const themes = {
     neo_brutalism: {
