@@ -137,3 +137,47 @@
     margin: 0 !important;
   }
 }
+
+/* Tracking Screen Animations */
+@keyframes rippleGlow {
+  0% { box-shadow: 0 0 0 0 rgba(var(--brand-rgb), 0.4); }
+  70% { box-shadow: 0 0 0 30px rgba(var(--brand-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--brand-rgb), 0); }
+}
+
+@keyframes floatSmooth {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulseGlowFilter {
+  0%, 100% { filter: drop-shadow(0 0 15px rgba(var(--brand-rgb), 0.4)); }
+  50% { filter: drop-shadow(0 0 35px rgba(var(--brand-rgb), 0.8)); }
+}
+
+@keyframes successPopBounce {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spinnerOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-ripple-glow {
+  animation: rippleGlow 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+.animate-float-smooth {
+  animation: floatSmooth 3.5s ease-in-out infinite;
+}
+.animate-pulse-glow-filter {
+  animation: pulseGlowFilter 2.5s ease-in-out infinite;
+}
+.animate-success-pop {
+  animation: successPopBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.animate-orbit {
+  animation: spinnerOrbit 3s linear infinite;
+}

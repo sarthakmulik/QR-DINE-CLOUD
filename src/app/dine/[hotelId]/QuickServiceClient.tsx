@@ -224,49 +224,85 @@ export default function QuickServiceClient({
     const isReady = activeOrder.status === "ready_for_pickup";
     const isClosed = activeOrder.status === "closed";
 
+    const customColor = hotel?.customizations?.primaryColor || "#ea580c";
+    const hexToRgb = (hex: string) => {
+      const bigint = parseInt(hex.replace('#', ''), 16);
+      return `${(bigint >> 16) & 255}, ${(bigint >> 8) & 255}, ${bigint & 255}`;
+    };
+    const customStyles = { "--brand-rgb": hexToRgb(customColor) } as React.CSSProperties;
+
     return (
-      <div className="min-h-[100dvh] bg-slate-50 flex flex-col relative animate-fade-in pb-safe">
+      <div className="min-h-[100dvh] bg-slate-50 flex flex-col relative animate-fade-in pb-safe" style={customStyles}>
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm pt-safe px-4 py-4 text-center">
           <h1 className="font-black text-xl text-slate-800 tracking-tight">{hotel?.name}</h1>
-          <p className="text-xs text-slate-500 font-medium">Quick Service</p>
+          <p className="text-xs text-slate-500 font-medium tracking-widest uppercase mt-0.5">Quick Service</p>
         </header>
         
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 w-full max-w-md">
-            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Order Number</h2>
-            <div className="text-6xl font-black text-brand-600 mb-8">#{activeOrder.order_number}</div>
+          <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 w-full max-w-md relative overflow-hidden">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Order Number</h2>
+            <div className="text-6xl font-black text-slate-800 mb-10 tracking-tighter">#{activeOrder.order_number}</div>
 
             {isClosed ? (
-              <div className="text-emerald-600">
-                <ShieldCheck className="w-16 h-16 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold">Order Complete</h3>
-                <p className="text-slate-500 mt-2">Thank you for dining with us!</p>
-                <Button className="mt-6 w-full" onClick={() => setActiveOrder(null)}>Start New Order</Button>
+              <div className="text-emerald-500 animate-success-pop flex flex-col items-center">
+                <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+                  <ShieldCheck className="w-12 h-12" />
+                </div>
+                <h3 className="text-3xl font-black text-slate-800 tracking-tight">Order Complete</h3>
+                <p className="text-slate-500 mt-3 text-lg font-medium">Thank you for dining with us!</p>
+                <Button className="mt-8 w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98]" onClick={() => setActiveOrder(null)}>Start New Order</Button>
               </div>
             ) : isReady ? (
-              <div className="text-brand-600 animate-pulse-slow">
-                <ShoppingBag className="w-16 h-16 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold">Ready for Pickup!</h3>
-                <p className="text-slate-500 mt-2">Please collect your order from the counter.</p>
+              <div className="text-brand-600 flex flex-col items-center">
+                <div className="relative w-32 h-32 mb-8 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-brand-500 rounded-full animate-ripple-glow opacity-20"></div>
+                  <div className="absolute inset-4 bg-brand-500 rounded-full animate-pulse-glow-filter opacity-40"></div>
+                  <div className="relative z-10 w-20 h-20 bg-brand-600 text-white rounded-full flex items-center justify-center shadow-xl animate-success-pop">
+                    <ShoppingBag className="w-10 h-10 animate-float-smooth" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Ready for Pickup!</h3>
+                <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order is hot and ready. Please collect it from the counter.</p>
               </div>
             ) : activeOrder.status === "payment_pending" ? (
-              <div className="text-amber-500 flex flex-col items-center w-full">
+              <div className="flex flex-col items-center w-full animate-fade-in">
                 {(hotel as any)?.paymentSettings?.active_pg && (hotel as any).paymentSettings.active_pg !== "none" && (activeOrder.payment_method === "UPI" || activeOrder.payment_method === "Card") ? (
                   <>
-                    <Banknote className="w-16 h-16 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-slate-800">Complete Payment</h3>
-                    <p className="text-slate-500 mt-2 mb-6">Please complete your payment to send the order to the kitchen.</p>
-                    <Button onClick={() => triggerOnlinePayment(activeOrder)} disabled={isProcessing} className="w-full h-14 text-lg bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-xl shadow-brand-500/20 active:scale-[0.98] transition-transform">
-                      {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Processing...</> : `Pay ${formatINR(activeOrder.total)} Online Now`}
-                    </Button>
+                    <div className="w-20 h-20 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mb-6">
+                      <Banknote className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Complete Payment</h3>
+                    <p className="text-slate-500 font-medium mb-8">Please complete your payment to send the order to the kitchen.</p>
+                    
+                    {isProcessing ? (
+                      <div className="w-full flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="w-12 h-12 relative mb-4">
+                          <div className="absolute inset-0 rounded-full border-4 border-brand-200"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-brand-600 border-t-transparent animate-orbit"></div>
+                        </div>
+                        <p className="font-bold text-slate-700 animate-pulse">Connecting to Secure Gateway...</p>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => triggerOnlinePayment(activeOrder)} 
+                        className="w-full relative group overflow-hidden rounded-xl bg-brand-600 text-white font-bold h-16 shadow-[0_8px_30px_rgba(var(--brand-rgb),0.3)] transition-all active:scale-[0.98]"
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        <span className="relative z-10 text-lg flex items-center justify-center gap-2">
+                          Pay {formatINR(activeOrder.total)} Online Now
+                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </span>
+                      </button>
+                    )}
                   </>
                 ) : activeOrder.payment_method === "UPI" && hotel?.upi_id ? (
                   <>
-                    <h3 className="text-2xl font-bold text-slate-800">Scan to Pay</h3>
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-slate-100 inline-block my-4">
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upi_id}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48" />
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-4">Scan to Pay</h3>
+                    <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 inline-block mb-6 relative group">
+                      <div className="absolute inset-0 bg-brand-500 blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl"></div>
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upi_id}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
                     </div>
-                    <p className="text-slate-500 mb-6 font-semibold">Pay {formatINR(activeOrder.total)} via any UPI App</p>
+                    <p className="text-slate-500 mb-8 font-semibold text-lg">Pay <span className="text-slate-800 font-bold">{formatINR(activeOrder.total)}</span> via any UPI App</p>
                     <Button onClick={async () => {
                       setIsProcessing(true);
                       try {
@@ -279,23 +315,30 @@ export default function QuickServiceClient({
                       } finally {
                         setIsProcessing(false);
                       }
-                    }} disabled={isProcessing} className="w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">
-                      {isProcessing ? "Verifying..." : "I have paid"}
+                    }} disabled={isProcessing} className="w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-transform active:scale-[0.98]">
+                      {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Verifying...</> : "I have paid successfully"}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Banknote className="w-16 h-16 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-slate-800">Awaiting Payment</h3>
-                    <p className="text-slate-500 mt-2">Please pay {formatINR(activeOrder.total)} in cash at the counter to start cooking.</p>
+                    <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                      <Banknote className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-3">Awaiting Payment</h3>
+                    <p className="text-slate-500 font-medium text-lg leading-relaxed">Please pay <strong className="text-slate-800">{formatINR(activeOrder.total)}</strong> in cash at the counter to start cooking.</p>
                   </>
                 )}
               </div>
             ) : (
-              <div className="text-brand-500">
-                <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" />
-                <h3 className="text-2xl font-bold">Cooking...</h3>
-                <p className="text-slate-500 mt-2">Your order has been sent to the kitchen. We will notify you here when it is ready.</p>
+              <div className="flex flex-col items-center">
+                <div className="relative w-32 h-32 mb-8 flex items-center justify-center">
+                  <div className="absolute inset-0 border-4 border-brand-100 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-brand-500 border-t-transparent rounded-full animate-orbit"></div>
+                  <div className="absolute inset-2 bg-brand-50 rounded-full animate-pulse opacity-50"></div>
+                  <Loader2 className="w-10 h-10 text-brand-600 animate-spin relative z-10" />
+                </div>
+                <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-3">Cooking...</h3>
+                <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order has been sent to the kitchen. We will notify you here when it&apos;s ready.</p>
               </div>
             )}
           </div>
