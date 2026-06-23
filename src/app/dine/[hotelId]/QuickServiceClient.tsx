@@ -42,6 +42,9 @@ export default function QuickServiceClient({
   useEffect(() => {
     async function load() {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionIdParam = urlParams.get("session");
+
         const url = token ? `/api/quick-service/${hotelId}?t=${token}` : `/api/quick-service/${hotelId}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -50,6 +53,18 @@ export default function QuickServiceClient({
           setCategories(data.categories || []);
         } else {
           alert(data.error);
+        }
+
+        if (sessionIdParam) {
+          // Restore the session after a payment gateway redirect
+          const { data: sessionData } = await supabase
+            .from("table_sessions")
+            .select("*")
+            .eq("id", sessionIdParam)
+            .single();
+          if (sessionData) {
+            setActiveOrder(sessionData as TableSession);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -114,14 +129,65 @@ export default function QuickServiceClient({
         }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setCart([]);
-        setShowCart(false);
-        setShowPayment(false);
-        setActiveOrder(data.session);
-      } else {
+      if (!res.ok) {
         alert(data.error);
+        return;
       }
+      
+      const session = data.session;
+      
+      // If payment is UPI/Card and a gateway is configured, auto-initiate
+      const pg = hotel?.payment_settings?.active_pg;
+      if ((paymentMethod === "UPI" || paymentMethod === "Card") && pg && pg !== "none") {
+        const initRes = await fetch(`/api/quick-service/${hotelId}/order/${session.id}/initiate-payment`, {
+          method: "POST"
+        });
+        const initData = await initRes.json();
+        
+        if (initRes.ok) {
+          if (initData.gateway === "razorpay") {
+            const options = {
+              key: initData.key_id,
+              amount: initData.amount,
+              currency: initData.currency,
+              name: initData.hotel_name,
+              description: `Order #${session.order_number}`,
+              order_id: initData.order_id,
+              handler: async function (response: any) {
+                // Verify payment
+                await fetch(`/api/quick-service/${hotelId}/order/${session.id}/verify-payment`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    gateway: "razorpay",
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                  })
+                });
+                setActiveOrder({ ...session, status: "open" });
+              },
+              prefill: {
+                name: "Customer",
+                contact: "9999999999"
+              },
+              theme: {
+                color: hotel?.customizations?.primaryColor || "#ea580c"
+              }
+            };
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+          } else if (initData.gateway === "phonepe") {
+            window.location.href = initData.redirect_url;
+            return;
+          }
+        }
+      }
+
+      setCart([]);
+      setShowCart(false);
+      setShowPayment(false);
+      setActiveOrder(session);
     } catch (err) {
       alert("Failed to place order. Please try again.");
     } finally {

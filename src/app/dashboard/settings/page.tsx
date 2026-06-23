@@ -32,7 +32,12 @@ export default function SettingsPage() {
       layout: "default",
     },
     welcomeAnimationEnabled: false,
-    welcomeAnimationPreset: "elegant"
+    welcomeAnimationPreset: "elegant",
+    paymentSettings: {
+      active_pg: "none",
+      razorpay: { key_id: "", key_secret: "" },
+      phonepe: { merchant_id: "", salt_key: "", salt_index: "", env: "TEST" }
+    }
   });
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -219,7 +224,30 @@ export default function SettingsPage() {
           welcomeAnimationPreset: data.welcomeAnimationPreset || "elegant"
         });
         sessionStorage.setItem("admin_profile", JSON.stringify(data));
-      });
+      })
+      .catch(console.error);
+
+    fetch("/api/hotel/payment-settings")
+      .then((r) => r.json())
+      .then((ps) => {
+        setForm((prev: any) => ({
+          ...prev,
+          paymentSettings: {
+            active_pg: ps?.active_pg || "none",
+            razorpay: {
+              key_id: ps?.razorpay?.key_id || "",
+              key_secret: ps?.razorpay?.key_secret || "",
+            },
+            phonepe: {
+              merchant_id: ps?.phonepe?.merchant_id || "",
+              salt_key: ps?.phonepe?.salt_key || "",
+              salt_index: ps?.phonepe?.salt_index || "",
+              env: ps?.phonepe?.env || "TEST",
+            }
+          }
+        }));
+      })
+      .catch(console.error);
   }, []);
 
   async function handleSave(e: React.FormEvent) {
@@ -238,6 +266,18 @@ export default function SettingsPage() {
         setSaveError(d.error || "Failed to save settings");
         return;
       }
+      
+      const psRes = await fetch("/api/hotel/payment-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form.paymentSettings),
+      });
+      
+      if (!psRes.ok) {
+        setSaveError("Profile saved, but failed to save Payment Gateway settings.");
+        return;
+      }
+
       setForm((prev: any) => ({ ...prev, password: "" }));
       setSaved(true);
       const updatedProfile = {
@@ -395,20 +435,159 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                UPI ID for Payments
-              </label>
-              <input
-                type="text"
-                value={form.upiId}
-                onChange={(e) => setForm({ ...form, upiId: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2"
-                placeholder="e.g. restaurant@okaxis"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Used to dynamically generate payment QR codes on digital bills.
-              </p>
+            {/* Payment Integrations */}
+            <div className="border border-gray-200 rounded-xl p-4 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                  💳 Payment Integration
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Configure how your customers pay for their orders online.
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Active Payment Gateway</label>
+                <select
+                  value={form.paymentSettings?.active_pg || "none"}
+                  onChange={(e) => setForm({
+                    ...form,
+                    paymentSettings: { ...form.paymentSettings, active_pg: e.target.value }
+                  })}
+                  className="w-full border rounded-lg px-3 py-2 bg-slate-50"
+                >
+                  <option value="none">Direct UPI (Static QR - No auto verification)</option>
+                  <option value="razorpay">Razorpay (Auto verification)</option>
+                  <option value="phonepe">PhonePe PG (Auto verification)</option>
+                </select>
+              </div>
+
+              {form.paymentSettings?.active_pg === "none" && (
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <label className="block text-sm font-medium mb-1">
+                    UPI ID for Direct Payments
+                  </label>
+                  <input
+                    type="text"
+                    value={form.upiId}
+                    onChange={(e) => setForm({ ...form, upiId: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                    placeholder="e.g. restaurant@okaxis"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Generates a direct UPI QR. Customers must show payment proof to staff.
+                  </p>
+                </div>
+              )}
+
+              {form.paymentSettings?.active_pg === "razorpay" && (
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Razorpay Key ID</label>
+                    <input
+                      type="text"
+                      value={form.paymentSettings.razorpay?.key_id || ""}
+                      onChange={(e) => setForm({
+                        ...form,
+                        paymentSettings: {
+                          ...form.paymentSettings,
+                          razorpay: { ...form.paymentSettings.razorpay, key_id: e.target.value }
+                        }
+                      })}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      placeholder="rzp_live_..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Razorpay Key Secret</label>
+                    <input
+                      type="password"
+                      value={form.paymentSettings.razorpay?.key_secret || ""}
+                      onChange={(e) => setForm({
+                        ...form,
+                        paymentSettings: {
+                          ...form.paymentSettings,
+                          razorpay: { ...form.paymentSettings.razorpay, key_secret: e.target.value }
+                        }
+                      })}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      placeholder="••••••••••••••••"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {form.paymentSettings?.active_pg === "phonepe" && (
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-3">
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium mb-1">Environment</label>
+                      <select
+                        value={form.paymentSettings.phonepe?.env || "TEST"}
+                        onChange={(e) => setForm({
+                          ...form,
+                          paymentSettings: {
+                            ...form.paymentSettings,
+                            phonepe: { ...form.paymentSettings.phonepe, env: e.target.value }
+                          }
+                        })}
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      >
+                        <option value="TEST">UAT / Test Mode</option>
+                        <option value="PROD">Live Production</option>
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium mb-1">Salt Index</label>
+                      <input
+                        type="text"
+                        value={form.paymentSettings.phonepe?.salt_index || ""}
+                        onChange={(e) => setForm({
+                          ...form,
+                          paymentSettings: {
+                            ...form.paymentSettings,
+                            phonepe: { ...form.paymentSettings.phonepe, salt_index: e.target.value }
+                          }
+                        })}
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                        placeholder="e.g. 1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Merchant ID</label>
+                    <input
+                      type="text"
+                      value={form.paymentSettings.phonepe?.merchant_id || ""}
+                      onChange={(e) => setForm({
+                        ...form,
+                        paymentSettings: {
+                          ...form.paymentSettings,
+                          phonepe: { ...form.paymentSettings.phonepe, merchant_id: e.target.value }
+                        }
+                      })}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      placeholder="Enter PhonePe Merchant ID"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Salt Key</label>
+                    <input
+                      type="password"
+                      value={form.paymentSettings.phonepe?.salt_key || ""}
+                      onChange={(e) => setForm({
+                        ...form,
+                        paymentSettings: {
+                          ...form.paymentSettings,
+                          phonepe: { ...form.paymentSettings.phonepe, salt_key: e.target.value }
+                        }
+                      })}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      placeholder="••••••••••••••••"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Thermal Printer Size */}

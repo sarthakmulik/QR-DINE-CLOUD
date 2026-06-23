@@ -48,6 +48,19 @@ export interface Hotel {
     welcomeMessage?: string;
     layout?: string;
   } | null;
+  payment_settings?: {
+    active_pg?: "none" | "razorpay" | "phonepe";
+    razorpay?: {
+      key_id: string;
+      key_secret: string;
+    };
+    phonepe?: {
+      merchant_id: string;
+      salt_key: string;
+      salt_index: string;
+      env?: "TEST" | "PROD";
+    };
+  } | null;
   welcome_animation_enabled?: boolean | null;
   welcome_animation_preset?: string | null;
 }
@@ -75,6 +88,7 @@ export interface TableSession {
   tax_amount: number;
   total: number;
   payment_method: PaymentMethod | null;
+  payment_reference: string | null;
   closed_at: string | null;
   customer_count: number;
   coupon_code: string | null;
@@ -169,6 +183,11 @@ export function mapHotel(h: Hotel) {
     welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
     quickServiceToken: h.quick_service_token ?? null,
     customizations,
+    paymentSettings: h.payment_settings ? {
+      active_pg: h.payment_settings.active_pg || "none",
+      razorpay: h.payment_settings.razorpay ? { key_id: h.payment_settings.razorpay.key_id } : undefined,
+      phonepe: h.payment_settings.phonepe ? { env: h.payment_settings.phonepe.env } : undefined,
+    } : null,
   };
 }
 
@@ -205,6 +224,7 @@ export function mapTableSession(
     taxAmount: Number(s.tax_amount),
     total: Number(s.total),
     paymentMethod: s.payment_method,
+    paymentReference: s.payment_reference ?? null,
     closedAt: s.closed_at,
     customerCount: s.customer_count,
     couponCode: s.coupon_code ?? null,

@@ -42,6 +42,19 @@ export default function LiveOrdersPage() {
     }
   }
 
+  async function handleConfirmPayment(sessionId: string) {
+    try {
+      const res = await fetch(`/api/hotel/sessions/${sessionId}/confirm-payment`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: "open" } : s));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   useEffect(() => {
     const cached = sessionStorage.getItem("admin_live_orders");
     if (cached) {
@@ -104,7 +117,7 @@ export default function LiveOrdersPage() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                    {session.table?.label || `Table ${session.tableNumber}`}
+                    {session.table?.label || `Quick Service`}
                   </h3>
                   <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">
                     <Clock size={11} />
@@ -113,7 +126,7 @@ export default function LiveOrdersPage() {
                 </div>
                 <div className="text-right flex flex-col items-end gap-1.5">
                   <Badge
-                    variant={session.status === "open" ? "occupied" : "checkout"}
+                    variant={session.status === "payment_pending" ? "checkout" : (session.status === "open" ? "occupied" : "checkout")}
                     className="shadow-sm"
                   >
                     {session.status.replace("_", " ")}
@@ -123,6 +136,18 @@ export default function LiveOrdersPage() {
                   </p>
                 </div>
               </div>
+
+              {session.status === "payment_pending" && (
+                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2 items-center text-center">
+                  <div className="text-xs font-bold text-amber-800">Payment Unverified</div>
+                  <button 
+                    onClick={() => handleConfirmPayment(session.id)}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors"
+                  >
+                    Confirm Received
+                  </button>
+                </div>
+              )}
 
               <div className="flex-1 bg-slate-50 rounded-xl border border-slate-100 p-4 relative overflow-hidden group-hover:bg-slate-50/80 transition-colors">
                 <div className="absolute top-0 right-0 p-4 opacity-[0.04] pointer-events-none">
