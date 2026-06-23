@@ -490,13 +490,13 @@ Thank you for dining with us!`;
       {/* HEADER SECTION */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
             Tables & Orders
-            <span className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+            <span className="text-xs bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
               {currentPlan}
             </span>
           </h1>
-          <p className="text-gray-500 text-sm">Real-time table status and orders</p>
+          <p className="text-gray-500 dark:text-slate-400 text-sm">Real-time table status and orders</p>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
           {hotelProfile?.id && hasKdsAccess && (
@@ -524,10 +524,10 @@ Thank you for dining with us!`;
 
       {/* STATS OVERVIEW CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today&apos;s Revenue</p>
-            <h3 className="text-xl font-extrabold text-gray-900 mt-1">
+            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Today&apos;s Revenue</p>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
               {isSkeletons ? (
                 <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
               ) : (
@@ -540,10 +540,10 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Orders</p>
-            <h3 className="text-xl font-extrabold text-gray-900 mt-1">
+            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Total Orders</p>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
               {isSkeletons ? (
                 <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
               ) : (
@@ -556,10 +556,10 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Tables</p>
-            <h3 className="text-xl font-extrabold text-gray-900 mt-1">
+            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Active Tables</p>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
               {isSkeletons ? (
                 <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
               ) : (
@@ -572,11 +572,11 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
+        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Average Rating</p>
+            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Average Rating</p>
             {hasFeedbackAccess ? (
-              <h3 className="text-xl font-extrabold text-gray-900 mt-1 flex items-center gap-1">
+              <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1 flex items-center gap-1">
                 {isSkeletons ? (
                   <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
                 ) : stats.avgRating > 0 ? (
@@ -600,9 +600,9 @@ Thank you for dining with us!`;
       </div>
 
       {/* HOURLY SALES CHART SECTION */}
-      <div className="bg-white border rounded-xl p-5 shadow-sm">
+      <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-5 shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
+          <h2 className="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
           {!hasFeedbackAccess && (
             <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1">
               <Lock size={10} /> Requires Pro
@@ -669,7 +669,7 @@ Thank you for dining with us!`;
           [...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border-2 border-slate-100 p-4 text-left h-24 bg-white animate-pulse"
+              className="rounded-xl border-2 border-slate-100 dark:border-white/5 p-4 text-left h-24 bg-white dark:bg-[#16161A] animate-pulse"
             >
               <div className="h-5 bg-slate-200 rounded w-16 mb-2" />
               <div className="h-4 bg-slate-200 rounded w-10" />
@@ -686,9 +686,11 @@ Thank you for dining with us!`;
                   setSelected(table);
                 }
               }}
-              className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md cursor-pointer ${statusColors[table.status]}`}
+              className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md cursor-pointer ${
+                table.status === 'free' ? 'bg-white dark:bg-[#16161A] border-slate-200 dark:border-white/5 hover:border-brand-500' : statusColors[table.status]
+              }`}
             >
-              <div className="font-bold text-lg">{table.label}</div>
+              <div className="font-bold text-lg dark:text-white">{table.label}</div>
               <Badge variant={table.status} className="mt-2">
                 {table.status === "free"
                   ? "Free"
