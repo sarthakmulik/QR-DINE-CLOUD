@@ -1,7 +1,8 @@
 export type UserRole = "superadmin" | "hotel_owner" | "staff";
 export type HotelPlan = "basic" | "pro" | "elite";
 export type HotelStatus = "active" | "paused" | "suspended";
-export type SessionStatus = "open" | "checkout_initiated" | "bill_printed" | "closed";
+export type ServiceType = "dine_in" | "quick_service";
+export type SessionStatus = "draft" | "open" | "checkout_initiated" | "bill_printed" | "closed" | "ready_for_pickup";
 export type PaymentMethod = "Cash" | "UPI" | "Card";
 
 export interface Profile {
@@ -22,7 +23,10 @@ export interface Hotel {
   login_email: string;
   plan: HotelPlan;
   status: HotelStatus;
+  service_type: ServiceType;
   billing_amount: number;
+  daily_order_sequence: number;
+  last_sequence_reset: string | null;
   last_payment_date: string | null;
   next_due_date: string | null;
   gst_number: string | null;
@@ -59,8 +63,9 @@ export interface RestaurantTable {
 export interface TableSession {
   id: string;
   hotel_id: string;
-  table_id: string;
-  table_number: number;
+  table_id: string | null;
+  table_number: number | null;
+  order_number: number | null;
   start_time: string;
   end_time: string | null;
   status: SessionStatus;
@@ -147,6 +152,7 @@ export function mapHotel(h: Hotel) {
     loginEmail: h.login_email,
     plan: h.plan,
     status: h.status,
+    serviceType: h.service_type || 'dine_in',
     billingAmount: Number(h.billing_amount),
     lastPaymentDate: h.last_payment_date,
     nextDueDate: h.next_due_date,
@@ -188,6 +194,7 @@ export function mapTableSession(
     hotelId: s.hotel_id,
     tableId: s.table_id,
     tableNumber: s.table_number,
+    orderNumber: s.order_number,
     startTime: s.start_time,
     endTime: s.end_time,
     status: s.status,

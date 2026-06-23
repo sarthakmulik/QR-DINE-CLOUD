@@ -1,21 +1,30 @@
-import { Client } from "pg";
-
+import { readFileSync } from "fs";
+import { join } from "path";
+import pg from "pg";
 
 async function main() {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error("DATABASE_URL not set.");
+    process.exit(1);
+  }
+
+  const sql = readFileSync(
+    join(process.cwd(), "supabase", "migrations", "20260623_quick_service_mode.sql"),
+    "utf-8"
+  );
+
+  const client = new pg.Client({ connectionString: databaseUrl });
   await client.connect();
   try {
-    await client.query(`
-      ALTER TABLE hotels 
-      ADD COLUMN IF NOT EXISTS welcome_animation_enabled BOOLEAN NOT NULL DEFAULT true,
-      ADD COLUMN IF NOT EXISTS welcome_animation_preset TEXT NOT NULL DEFAULT 'elegant' CHECK (welcome_animation_preset IN ('elegant', 'vibrant', 'minimal'));
-    `);
+    await client.query(sql);
     console.log("Migration applied successfully.");
-  } catch (error) {
-    console.error("Migration failed:", error);
   } finally {
     await client.end();
   }
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

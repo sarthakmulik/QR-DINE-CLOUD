@@ -20,6 +20,7 @@ interface Hotel {
   ownerEmail: string;
   ownerPhone: string;
   plan: string;
+  serviceType: string;
   status: string;
   billingAmount: number;
   lastPaymentDate: string | null;
@@ -46,6 +47,7 @@ export default function AdminPage() {
     ownerEmail: "",
     ownerPhone: "",
     plan: "basic",
+    serviceType: "dine_in",
     billingAmount: "",
     useGoogleOAuth: false,
   });
@@ -92,6 +94,7 @@ export default function AdminPage() {
         ownerEmail: "",
         ownerPhone: "",
         plan: "basic",
+        serviceType: "dine_in",
         billingAmount: "",
         useGoogleOAuth: false,
       });
@@ -179,6 +182,9 @@ export default function AdminPage() {
                 Plan
               </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">
+                Type
+              </th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">
                 Status
               </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">
@@ -235,6 +241,9 @@ export default function AdminPage() {
                     <option value="pro">Pro</option>
                     <option value="elite">Elite</option>
                   </select>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-600">
+                  {hotel.serviceType === "quick_service" ? "Quick Service" : "Dine In"}
                 </td>
                 <td className="px-4 py-3">
                   <Badge
@@ -295,6 +304,17 @@ export default function AdminPage() {
               <option value="basic">Basic</option>
               <option value="pro">Pro</option>
               <option value="elite">Elite</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Service Type</label>
+            <select
+              value={form.serviceType}
+              onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2"
+            >
+              <option value="dine_in">Dine In (Table Based)</option>
+              <option value="quick_service">Quick Service (Pay First)</option>
             </select>
           </div>
           <Input label="Monthly Billing (INR)" type="number" value={form.billingAmount} onChange={(v) => setForm({ ...form, billingAmount: v })} required />

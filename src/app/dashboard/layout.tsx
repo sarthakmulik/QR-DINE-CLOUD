@@ -31,7 +31,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <PlanProvider hotelId={user.hotelId} initialPlan={hotel?.plan}>
+    <PlanProvider hotelId={user.hotelId} initialPlan={hotel?.plan} initialServiceType={hotel?.service_type}>
       <div className="h-screen bg-gray-50 flex overflow-hidden">
         <DashboardSidebar hotelName={hotel?.name || "Restaurant"} hotelId={user.hotelId} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

@@ -14,7 +14,8 @@ interface SessionItem {
 
 interface TableSession {
   id: string;
-  tableNumber: number;
+  tableNumber: number | null;
+  orderNumber: number | null;
   startTime: string;
   status: string;
   items: SessionItem[];
@@ -504,12 +505,25 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                     } ${viewMode === "timeline" ? "border-b-0 bg-transparent flex-col justify-center items-start p-0 flex-shrink-0 w-32" : ""}`}
                   >
                     <div>
-                      <h3 className="text-xl font-extrabold text-white tracking-tight">
-                        Table {session.tableNumber}
-                      </h3>
-                      <p className="text-slate-400 text-xs font-semibold mt-0.5">
-                        Order #{session.id.substring(session.id.length - 4).toUpperCase()}
-                      </p>
+                      {session.tableNumber !== null ? (
+                        <>
+                          <h3 className="text-xl font-extrabold text-white tracking-tight">
+                            Table {session.tableNumber}
+                          </h3>
+                          <p className="text-slate-400 text-xs font-semibold mt-0.5">
+                            Order #{session.id.substring(session.id.length - 4).toUpperCase()}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="text-xl font-extrabold text-white tracking-tight">
+                            Order #{session.orderNumber}
+                          </h3>
+                          <p className="text-slate-400 text-xs font-semibold mt-0.5 uppercase">
+                            Quick Service
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     <div className={viewMode === "timeline" ? "mt-2" : "text-right"}>

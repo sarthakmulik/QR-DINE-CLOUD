@@ -7,6 +7,8 @@ export type PlanType = "basic" | "pro" | "elite";
 
 interface PlanContextType {
   currentPlan: PlanType;
+  serviceType: string;
+  hotelId: string;
   canAccess: (feature: string) => boolean;
   planLimit: (limit: string) => number | "unlimited";
   loading: boolean;
@@ -18,13 +20,18 @@ export function PlanProvider({
   children,
   hotelId,
   initialPlan,
+  initialServiceType,
 }: {
   children: React.ReactNode;
   hotelId: string;
   initialPlan?: string;
+  initialServiceType?: string;
 }) {
   const [plan, setPlan] = useState<PlanType>(
     (initialPlan?.toLowerCase() as PlanType) || "basic"
+  );
+  const [serviceType, setServiceType] = useState<string>(
+    initialServiceType || "dine_in"
   );
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
@@ -40,6 +47,9 @@ export function PlanProvider({
           const data = await res.json();
           if (data && data.plan) {
             setPlan(data.plan.toLowerCase() as PlanType);
+          }
+          if (data && data.serviceType) {
+            setServiceType(data.serviceType);
           }
         }
       } catch (err) {
@@ -65,6 +75,9 @@ export function PlanProvider({
         (payload) => {
           if (payload.new && payload.new.plan) {
             setPlan(payload.new.plan.toLowerCase() as PlanType);
+          }
+          if (payload.new && payload.new.service_type) {
+            setServiceType(payload.new.service_type);
           }
         }
       )
@@ -116,7 +129,7 @@ export function PlanProvider({
   };
 
   return (
-    <PlanContext.Provider value={{ currentPlan: plan, canAccess, planLimit, loading }}>
+    <PlanContext.Provider value={{ currentPlan: plan, serviceType, hotelId, canAccess, planLimit, loading }}>
       {children}
     </PlanContext.Provider>
   );

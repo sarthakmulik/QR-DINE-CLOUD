@@ -61,7 +61,8 @@ export async function PATCH(
     }
 
     // Verify session belongs to this hotel
-    const sessionHotelId = (item.table_sessions as any)?.hotel_id;
+    const sessionData = item.table_sessions as any;
+    const sessionHotelId = sessionData?.hotel_id;
     if (sessionHotelId !== hotelId) {
       return NextResponse.json({ error: "Access Denied" }, { status: 403 });
     }
@@ -75,6 +76,35 @@ export async function PATCH(
       .single();
 
     if (updateError) throw updateError;
+
+    // Auto-update session status to ready_for_pickup if applicable
+    if (status === "ready" || status === "served") {
+      const sessionId = item.session_id;
+      // Get all items in the session
+      const { data: allItems } = await sb
+        .from("session_items")
+        .select("status")
+        .eq("session_id", sessionId);
+
+      if (allItems && allItems.length > 0) {
+        const allReady = allItems.every(i => i.status === "ready" || i.status === "served");
+        if (allReady) {
+          // Check if it's quick service (table_number is null)
+          const { data: session } = await sb
+            .from("table_sessions")
+            .select("table_number, status")
+            .eq("id", sessionId)
+            .single();
+
+          if (session && session.table_number === null && session.status === "open") {
+            await sb
+              .from("table_sessions")
+              .update({ status: "ready_for_pickup" })
+              .eq("id", sessionId);
+          }
+        }
+      }
+    }
 
     return NextResponse.json(updated);
   } catch (err: any) {

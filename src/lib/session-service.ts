@@ -186,7 +186,7 @@ export async function addItemToSession(
     hotel = (sessionData as any).hotels as Hotel | null;
   }
 
-  if (session.status !== "open") throw new Error("SESSION_NOT_OPEN");
+  if (session.status !== "open" && session.status !== "draft") throw new Error("SESSION_NOT_OPEN");
 
   const { error } = await sb.from("session_items").insert({
     session_id: sessionId,
@@ -340,3 +340,79 @@ export function getTableStatus(
   if (currentSession.status === "checkout_initiated" || currentSession.status === "bill_printed") return "checkout";
   return "free";
 }
+
+export async function getOrCreateQuickServiceSession(hotelId: string, expectedSessionId?: string | null) {
+  const sb = admin();
+  const hotelRes = await sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>();
+  const hotel = hotelRes.data;
+  if (!hotel) throw new Error("Hotel not found");
+
+  if (hotel.status === "paused" || hotel.status === "suspended") {
+    return { error: "paused" as const, hotel };
+  }
+
+  if (expectedSessionId) {
+    const { data: currentSession } = await sb
+      .from("table_sessions")
+      .select("*")
+      .eq("id", expectedSessionId)
+      .maybeSingle<TableSession>();
+
+    if (currentSession) {
+      if (currentSession.status === "closed" || currentSession.status === "ready_for_pickup") {
+        return { error: "session_closed" as const, hotel };
+      }
+      const items = await getSessionItems(currentSession.id);
+      return { session: mapTableSession(currentSession, items), hotel, created: false };
+    }
+  }
+
+  // Create new draft session
+  const { data: newSession, error: sessionError } = await sb
+    .from("table_sessions")
+    .insert({ hotel_id: hotelId, status: "draft", customer_count: 1 })
+    .select("*")
+    .single<TableSession>();
+
+  if (!newSession) throw new Error(sessionError?.message || "Failed to create quick service session");
+  return { session: mapTableSession(newSession, []), hotel, created: true };
+}
+
+export async function confirmQuickServiceOrder(sessionId: string, paymentMethod: "Cash" | "UPI" | "Card") {
+  const sb = admin();
+  const { data: sessionData, error } = await sb.from("table_sessions").select("*, hotels(*)").eq("id", sessionId).single();
+  if (error || !sessionData) throw new Error("Session not found");
+  
+  if (sessionData.status !== "draft") throw new Error("Session is not in draft status");
+
+  // Call the RPC to get the daily order number
+  const { data: orderNumber, error: rpcError } = await sb.rpc("generate_daily_order_number", { p_hotel_id: sessionData.hotel_id });
+  if (rpcError || orderNumber === null) throw new Error("Failed to generate order number: " + rpcError?.message);
+
+  const hotel = (sessionData as any).hotels as Hotel;
+  const items = await getSessionItems(sessionId);
+  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  const discountPercent = Number(sessionData.discount_percent || 0);
+  const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+  const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
+  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
+  const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
+
+  const { data: updated, error: updateErr } = await sb
+    .from("table_sessions")
+    .update({ 
+      status: "open", 
+      order_number: orderNumber, 
+      payment_method: paymentMethod,
+      subtotal, 
+      discount_amount: discountAmount, 
+      tax_amount: taxAmount, 
+      total 
+    })
+    .eq("id", sessionId).select("*").single<TableSession>();
+    
+  if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to confirm order");
+  return mapTableSession(updated, items, hotel);
+}
+

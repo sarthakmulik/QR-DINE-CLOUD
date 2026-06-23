@@ -36,11 +36,12 @@ export async function POST(req: NextRequest) {
       ownerEmail,
       ownerPhone,
       plan,
+      serviceType,
       billingAmount,
       useGoogleOAuth,
     } = body;
 
-    if (!name || !ownerName || !ownerEmail || !ownerPhone || !plan) {
+    if (!name || !ownerName || !ownerEmail || !ownerPhone || !plan || !serviceType) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
         owner_phone: ownerPhone,
         login_email: loginEmail,
         plan: plan as HotelPlan,
+        service_type: serviceType,
         billing_amount: parseFloat(billingAmount) || 0,
         next_due_date: nextDueDate.toISOString(),
       })

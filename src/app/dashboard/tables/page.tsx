@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Plus, Download, RefreshCw, Copy, Check, ShieldAlert, Pencil, Trash2 } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
+import QRCode from "qrcode";
 
 interface TableData {
   id: string;
@@ -27,12 +28,23 @@ export default function TablesPage() {
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const { currentPlan, planLimit } = usePlan();
+  const { currentPlan, planLimit, serviceType, hotelId } = usePlan();
   const maxTables = planLimit("max_tables");
   const totalTables = tables.length;
   const limitReached = typeof maxTables === "number" && totalTables >= maxTables;
 
+  const [genericQrCode, setGenericQrCode] = useState<string | null>(null);
+  const genericDineUrl = typeof window !== "undefined" ? `${window.location.origin}/dine/${hotelId}` : "";
+
   const isSkeletons = loading && tables.length === 0;
+
+  useEffect(() => {
+    if (serviceType === "quick_service" && hotelId) {
+      QRCode.toDataURL(genericDineUrl, { width: 400, margin: 2 })
+        .then((url) => setGenericQrCode(url))
+        .catch(console.error);
+    }
+  }, [serviceType, hotelId, genericDineUrl]);
 
   async function loadTables() {
     try {
@@ -59,8 +71,12 @@ export default function TablesPage() {
         console.error("Failed to parse cached tables list:", e);
       }
     }
+    if (serviceType === "quick_service") {
+      setLoading(false);
+      return;
+    }
     loadTables();
-  }, []);
+  }, [serviceType]);
 
   async function createTable(e: React.FormEvent) {
     e.preventDefault();
@@ -232,6 +248,55 @@ export default function TablesPage() {
 
   // getDineUrl is intentionally removed — use table.dineUrl from the API response
   // which is pre-generated with the correct hotel ID by the server.
+
+  if (serviceType === "quick_service") {
+    return (
+      <div className="space-y-6 animate-page-entrance">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Store QR Code</h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm">
+            Your restaurant is set to Quick Service mode. Use this generic QR code for all orders.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 flex flex-col items-center justify-center max-w-lg mx-auto mt-10">
+          <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-6">
+            {genericQrCode ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={genericQrCode} alt="Store QR Code" className="w-64 h-64 object-contain rounded-lg" />
+            ) : (
+              <div className="w-64 h-64 flex items-center justify-center text-slate-400">
+                <RefreshCw className="animate-spin" size={32} />
+              </div>
+            )}
+          </div>
+          <div className="flex gap-4 w-full">
+            <Button
+              className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold h-12"
+              onClick={() => {
+                if (genericQrCode) {
+                  const link = document.createElement("a");
+                  link.href = genericQrCode;
+                  link.download = `store-qr-code.png`;
+                  link.click();
+                }
+              }}
+            >
+              <Download size={18} className="mr-2" /> Download QR
+            </Button>
+            <Button
+              variant="secondary"
+              className="flex-1 font-bold h-12"
+              onClick={() => copyUrl(genericDineUrl, "generic")}
+            >
+              {copied === "generic" ? <Check size={18} className="mr-2 text-emerald-600" /> : <Copy size={18} className="mr-2" />}
+              {copied === "generic" ? "Copied!" : "Copy Link"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-page-entrance">
