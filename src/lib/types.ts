@@ -40,6 +40,7 @@ export interface Hotel {
   quick_service_token?: string | null;
   customizations?: {
     theme?: string;
+    qsTheme?: string;
     primaryColor?: string;
     secondaryColor?: string;
     textColor?: string;

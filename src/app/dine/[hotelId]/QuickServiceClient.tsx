@@ -226,6 +226,118 @@ export default function QuickServiceClient({
     return <WelcomeAnimation restaurantName={initialHotel.name || "Restaurant"} preset={initialHotel.welcome_animation_preset as any || "elegant"} onComplete={() => setShowWelcome(false)} />;
   }
 
+  const qsTheme = hotel?.customizations?.qsTheme || "bento";
+
+  const themes = {
+    neo_brutalism: {
+      appBg: "bg-[#F4F4F0]",
+      textMain: "text-black",
+      textSub: "text-slate-800",
+      header: "bg-[#F4F4F0] border-b-4 border-black",
+      searchWrap: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] focus-within:shadow-[6px_6px_0_0_#000] rounded-none",
+      searchInput: "bg-transparent text-black placeholder:text-slate-500 font-bold",
+      pillActive: "bg-brand-500 text-black border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none font-black",
+      pillInactive: "bg-white text-black border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none font-bold hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000]",
+      card: "bg-white border-4 border-black rounded-none shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]",
+      imgWrap: "border-r-4 border-black bg-[#F4F4F0] rounded-none",
+      btnPrimary: "bg-brand-500 text-black border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none font-black uppercase hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000]",
+      btnAction: "bg-black text-white border-4 border-black rounded-none",
+      qtyControl: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none",
+      qtyBtn: "bg-white text-black hover:bg-slate-200",
+      cartPopup: "bg-brand-500 text-black border-4 border-black shadow-[8px_8px_0_0_#000] rounded-none",
+      modal: "bg-[#F4F4F0] border-4 border-black rounded-none",
+      modalHeader: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none",
+      methodCard: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000]",
+      methodActive: "bg-brand-500 border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none scale-[1.02]",
+    },
+    y2k: {
+      appBg: "bg-gradient-to-br from-fuchsia-100 via-pink-50 to-cyan-100",
+      textMain: "text-slate-800",
+      textSub: "text-slate-500",
+      header: "bg-white/40 backdrop-blur-2xl border-b border-white/60",
+      searchWrap: "bg-white/50 border border-white/80 rounded-full shadow-inner focus-within:ring-2 focus-within:ring-fuchsia-300",
+      searchInput: "bg-transparent text-slate-800 placeholder:text-slate-400 font-medium",
+      pillActive: "bg-gradient-to-r from-fuchsia-400 to-cyan-400 text-white rounded-full shadow-[0_4px_20px_rgba(232,121,249,0.5)] font-bold",
+      pillInactive: "bg-white/50 text-slate-600 border border-white/80 rounded-full font-medium hover:bg-white/80 backdrop-blur-sm",
+      card: "bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] shadow-[0_8px_32px_rgba(255,255,255,0.4)] hover:shadow-[0_12px_40px_rgba(255,255,255,0.6)] hover:-translate-y-1",
+      imgWrap: "rounded-2xl border-2 border-white/60 bg-white/50",
+      btnPrimary: "bg-gradient-to-r from-fuchsia-400 to-cyan-400 text-white rounded-full shadow-[0_8px_20px_rgba(232,121,249,0.4)] font-bold hover:scale-105",
+      btnAction: "bg-gradient-to-r from-fuchsia-400 to-cyan-400 text-white rounded-xl shadow-md",
+      qtyControl: "bg-white/60 border border-white/80 rounded-2xl shadow-inner backdrop-blur-sm",
+      qtyBtn: "bg-white/80 text-slate-700 hover:bg-white rounded-xl",
+      cartPopup: "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white rounded-[2rem] shadow-[0_20px_40px_rgba(217,70,239,0.4)] backdrop-blur-xl",
+      modal: "bg-white/80 backdrop-blur-3xl rounded-t-[3rem] border-t border-white",
+      modalHeader: "bg-white/60 border border-white/80 rounded-2xl",
+      methodCard: "bg-white/50 border border-white/80 rounded-2xl backdrop-blur-md hover:bg-white/80",
+      methodActive: "bg-gradient-to-r from-fuchsia-50 to-cyan-50 border-fuchsia-300 shadow-[0_4px_20px_rgba(232,121,249,0.2)] rounded-2xl",
+    },
+    streetwear: {
+      appBg: "bg-zinc-50",
+      textMain: "text-zinc-900 tracking-tighter",
+      textSub: "text-zinc-500",
+      header: "bg-zinc-50 border-b border-zinc-200",
+      searchWrap: "bg-zinc-100 rounded-none border-none focus-within:ring-2 focus-within:ring-black",
+      searchInput: "bg-transparent text-black placeholder:text-zinc-400 font-medium",
+      pillActive: "bg-black text-white rounded-none font-bold uppercase tracking-widest text-xs",
+      pillInactive: "bg-zinc-100 text-zinc-600 rounded-none font-medium uppercase tracking-widest text-xs hover:bg-zinc-200",
+      card: "bg-white border border-zinc-200 rounded-none shadow-sm hover:shadow-xl hover:-translate-y-1",
+      imgWrap: "rounded-none bg-zinc-100",
+      btnPrimary: "bg-brand-500 text-white rounded-none font-black uppercase tracking-widest shadow-lg hover:bg-brand-600",
+      btnAction: "bg-black text-white rounded-none",
+      qtyControl: "bg-zinc-100 rounded-none border border-zinc-200",
+      qtyBtn: "bg-zinc-200 text-black hover:bg-zinc-300 rounded-none",
+      cartPopup: "bg-black text-white rounded-none shadow-2xl",
+      modal: "bg-white rounded-none border-t border-zinc-200",
+      modalHeader: "bg-zinc-50 border border-zinc-200 rounded-none",
+      methodCard: "bg-zinc-50 border border-zinc-200 rounded-none hover:bg-zinc-100",
+      methodActive: "bg-black text-white border-black rounded-none",
+    },
+    playful: {
+      appBg: "bg-[#FFF9F0]",
+      textMain: "text-slate-800",
+      textSub: "text-amber-600/80",
+      header: "bg-[#FFF9F0]/90 backdrop-blur-md",
+      searchWrap: "bg-amber-50 border-2 border-amber-100 rounded-full focus-within:ring-4 focus-within:ring-amber-200 focus-within:border-amber-400",
+      searchInput: "bg-transparent text-amber-900 placeholder:text-amber-400 font-bold",
+      pillActive: "bg-amber-400 text-amber-950 rounded-full font-black shadow-[0_4px_15px_rgba(251,191,36,0.4)]",
+      pillInactive: "bg-white text-amber-600 border-2 border-amber-100 rounded-full font-bold hover:bg-amber-50",
+      card: "bg-white border-2 border-amber-100 rounded-[2.5rem] shadow-[0_8px_30px_rgba(251,191,36,0.15)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.25)] hover:-translate-y-1",
+      imgWrap: "rounded-[2rem] border-2 border-amber-50 bg-amber-50",
+      btnPrimary: "bg-brand-400 text-white rounded-full font-black shadow-[0_8px_20px_rgba(251,146,60,0.3)] hover:scale-105",
+      btnAction: "bg-amber-100 text-amber-700 rounded-full font-bold",
+      qtyControl: "bg-amber-50 border-2 border-amber-100 rounded-[1.5rem]",
+      qtyBtn: "bg-white text-amber-700 hover:bg-amber-100 rounded-[1rem]",
+      cartPopup: "bg-brand-500 text-white rounded-[2.5rem] shadow-[0_20px_40px_rgba(249,115,22,0.3)]",
+      modal: "bg-white rounded-t-[3rem]",
+      modalHeader: "bg-amber-50 border border-amber-100 rounded-[1.5rem]",
+      methodCard: "bg-white border-2 border-amber-100 rounded-[2rem] hover:bg-amber-50",
+      methodActive: "bg-amber-50 border-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.3)] rounded-[2rem] scale-[1.02]",
+    },
+    bento: {
+      appBg: "bg-slate-50",
+      textMain: "text-slate-900",
+      textSub: "text-slate-500",
+      header: "bg-white/80 backdrop-blur-xl border-b border-slate-100",
+      searchWrap: "bg-slate-100 rounded-2xl border border-transparent focus-within:bg-white focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-500/20 shadow-sm",
+      searchInput: "bg-transparent text-slate-900 placeholder:text-slate-400 font-medium",
+      pillActive: "bg-slate-900 text-white rounded-xl font-bold shadow-md",
+      pillInactive: "bg-white text-slate-600 border border-slate-200 rounded-xl font-medium hover:bg-slate-50 shadow-sm",
+      card: "bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow",
+      imgWrap: "rounded-2xl bg-slate-100",
+      btnPrimary: "bg-brand-500 text-white rounded-xl font-bold shadow-sm hover:bg-brand-600 active:scale-95",
+      btnAction: "bg-slate-100 text-slate-700 rounded-xl font-medium",
+      qtyControl: "bg-slate-50 border border-slate-200 rounded-xl",
+      qtyBtn: "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-lg shadow-sm",
+      cartPopup: "bg-slate-900 text-white rounded-2xl shadow-2xl",
+      modal: "bg-white rounded-t-3xl border-t border-slate-200",
+      modalHeader: "bg-slate-50 border border-slate-100 rounded-2xl",
+      methodCard: "bg-white border border-slate-200 rounded-2xl shadow-sm hover:bg-slate-50",
+      methodActive: "bg-brand-50 border-brand-500 ring-1 ring-brand-500 shadow-md rounded-2xl",
+    }
+  };
+
+  const t = themes[qsTheme as keyof typeof themes] || themes.bento;
+
   if (activeOrder) {
     // Show order tracking screen
     const isReady = activeOrder.status === "ready_for_pickup";
@@ -239,25 +351,25 @@ export default function QuickServiceClient({
     const customStyles = { "--brand-rgb": hexToRgb(customColor) } as React.CSSProperties;
 
     return (
-      <div className="min-h-[100dvh] bg-slate-50 flex flex-col relative animate-fade-in pb-safe" style={customStyles}>
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm pt-safe px-4 py-4 text-center">
-          <h1 className="font-black text-xl text-slate-800 tracking-tight">{hotel?.name}</h1>
+      <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe ${t.appBg}`} style={customStyles}>
+        <header className={`sticky top-0 z-40 shadow-sm pt-safe px-4 py-4 text-center ${t.header}`}>
+          <h1 className={`font-black text-xl tracking-tight ${t.textMain}`}>{hotel?.name}</h1>
           <p className="text-xs text-slate-500 font-medium tracking-widest uppercase mt-0.5">Quick Service</p>
         </header>
         
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 w-full max-w-md relative overflow-hidden">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Order Number</h2>
-            <div className="text-6xl font-black text-slate-800 mb-10 tracking-tighter">#{activeOrder.order_number}</div>
+          <div className={`p-8 w-full max-w-md relative overflow-hidden ${t.card}`}>
+            <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 ${t.textSub}`}>Order Number</h2>
+            <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>#{activeOrder.order_number}</div>
 
             {isClosed ? (
               <div className="text-emerald-500 animate-success-pop flex flex-col items-center">
                 <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
                   <ShieldCheck className="w-12 h-12" />
                 </div>
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight">Order Complete</h3>
+                <h3 className={`text-3xl font-black tracking-tight ${t.textMain}`}>Order Complete</h3>
                 <p className="text-slate-500 mt-3 text-lg font-medium">Thank you for dining with us!</p>
-                <Button className="mt-8 w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98]" onClick={() => setActiveOrder(null)}>Start New Order</Button>
+                <Button className={`mt-8 w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => setActiveOrder(null)}>Start New Order</Button>
               </div>
             ) : isReady ? (
               <div className="text-brand-600 flex flex-col items-center">
@@ -268,7 +380,7 @@ export default function QuickServiceClient({
                     <ShoppingBag className="w-10 h-10 animate-float-smooth" />
                   </div>
                 </div>
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Ready for Pickup!</h3>
+                <h3 className={`text-3xl font-black tracking-tight mb-2 ${t.textMain}`}>Ready for Pickup!</h3>
                 <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order is hot and ready. Please collect it from the counter.</p>
               </div>
             ) : activeOrder.status === "payment_pending" ? (
@@ -278,7 +390,7 @@ export default function QuickServiceClient({
                     <div className="w-20 h-20 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mb-6">
                       <Banknote className="w-10 h-10" />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Complete Payment</h3>
+                    <h3 className={`text-2xl font-black tracking-tight mb-2 ${t.textMain}`}>Complete Payment</h3>
                     <p className="text-slate-500 font-medium mb-8">Please complete your payment to send the order to the kitchen.</p>
                     
                     {isProcessing ? (
@@ -292,7 +404,7 @@ export default function QuickServiceClient({
                     ) : (
                       <button 
                         onClick={() => triggerOnlinePayment(activeOrder)} 
-                        className="w-full relative group overflow-hidden rounded-xl bg-brand-600 text-white font-bold h-16 shadow-[0_8px_30px_rgba(var(--brand-rgb),0.3)] transition-all active:scale-[0.98]"
+                        className={`w-full relative group overflow-hidden h-16 transition-all active:scale-[0.98] ${t.btnPrimary}`}
                       >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                         <span className="relative z-10 text-lg flex items-center justify-center gap-2">
@@ -304,7 +416,7 @@ export default function QuickServiceClient({
                   </>
                 ) : activeOrder.payment_method === "UPI" && hotel?.upi_id ? (
                   <>
-                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-4">Scan to Pay</h3>
+                    <h3 className={`text-2xl font-black tracking-tight mb-4 ${t.textMain}`}>Scan to Pay</h3>
                     <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 inline-block mb-6 relative group">
                       <div className="absolute inset-0 bg-brand-500 blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl"></div>
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upi_id}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
@@ -331,7 +443,7 @@ export default function QuickServiceClient({
                     <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
                       <Banknote className="w-10 h-10" />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-3">Awaiting Payment</h3>
+                    <h3 className={`text-2xl font-black tracking-tight mb-3 ${t.textMain}`}>Awaiting Payment</h3>
                     <p className="text-slate-500 font-medium text-lg leading-relaxed">Please pay <strong className="text-slate-800">{formatINR(activeOrder.total)}</strong> in cash at the counter to start cooking.</p>
                   </>
                 )}
@@ -344,7 +456,7 @@ export default function QuickServiceClient({
                   <div className="absolute inset-2 bg-brand-50 rounded-full animate-pulse opacity-50"></div>
                   <Loader2 className="w-10 h-10 text-brand-600 animate-spin relative z-10" />
                 </div>
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-3">Cooking...</h3>
+                <h3 className={`text-3xl font-black tracking-tight mb-3 ${t.textMain}`}>Cooking...</h3>
                 <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order has been sent to the kitchen. We will notify you here when it&apos;s ready.</p>
               </div>
             )}
@@ -354,6 +466,9 @@ export default function QuickServiceClient({
     );
   }
 
+
+  
+
   const allItems = categories.flatMap((c) => c.items);
   const filteredItems = allItems.filter((i) => {
     if (activeCategory !== "all" && i.category_id !== activeCategory) return false;
@@ -362,27 +477,27 @@ export default function QuickServiceClient({
   });
 
   return (
-    <div className="min-h-[100dvh] bg-[#0A0A0B] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white" style={{"--brand-rgb": hexToRgb(hotel?.customizations?.primaryColor || "#ff7b00")} as React.CSSProperties}>
-      <header className="sticky top-0 z-40 bg-[#0A0A0B]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl pt-safe">
+    <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={{"--brand-rgb": hexToRgb(hotel?.customizations?.primaryColor || "#ff7b00")} as React.CSSProperties}>
+      <header className={`sticky top-0 z-40 shadow-sm pt-safe ${t.header}`}>
         <div className="px-5 py-4 flex items-center justify-between">
           <div className="flex flex-col">
-            <h1 className="font-black text-2xl text-white tracking-tight leading-none">{hotel?.name}</h1>
+            <h1 className={`font-black text-2xl tracking-tight leading-none ${t.textMain}`}>{hotel?.name}</h1>
             <p className="text-[11px] text-brand-500 font-bold uppercase tracking-widest mt-1">Quick Service</p>
           </div>
           {hotel?.logo && (
-            <img src={hotel.logo} alt="Logo" className="h-10 w-10 rounded-full object-cover shadow-sm ring-1 ring-white/10" />
+            <img src={hotel.logo} alt="Logo" className="h-10 w-10 rounded-full object-cover shadow-sm ring-1 ring-black/5" />
           )}
         </div>
 
         <div className="px-5 pb-4">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-500 transition-colors" size={18} />
+          <div className={`relative group flex items-center transition-all overflow-hidden px-4 ${t.searchWrap}`}>
+            <Search className="text-slate-400 group-focus-within:text-brand-500 transition-colors flex-shrink-0" size={18} />
             <input
               type="text"
               placeholder="Search delicious food..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1A1A1D] border border-white/5 text-white rounded-2xl pl-12 pr-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-[#202024] transition-all placeholder:text-slate-500 shadow-inner"
+              className={`w-full py-3.5 pl-3 pr-2 text-sm focus:outline-none transition-all ${t.searchInput}`}
             />
           </div>
         </div>
@@ -391,11 +506,7 @@ export default function QuickServiceClient({
           <div className="overflow-x-auto hide-scrollbar px-5 pb-4 flex gap-2.5 scroll-smooth">
             <button
               onClick={() => setActiveCategory("all")}
-              className={`whitespace-nowrap px-5 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                activeCategory === "all" 
-                  ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20" 
-                  : "bg-[#1A1A1D] text-slate-300 border border-white/5 shadow-sm hover:bg-[#222226]"
-              }`}
+              className={`whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === "all" ? t.pillActive : t.pillInactive}`}
             >
               All Items
             </button>
@@ -403,11 +514,7 @@ export default function QuickServiceClient({
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`whitespace-nowrap px-5 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                  activeCategory === cat.id 
-                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20" 
-                    : "bg-[#1A1A1D] text-slate-300 border border-white/5 shadow-sm hover:bg-[#222226]"
-                }`}
+                className={`whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === cat.id ? t.pillActive : t.pillInactive}`}
               >
                 {cat.name}
               </button>
@@ -420,7 +527,7 @@ export default function QuickServiceClient({
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div className="relative w-12 h-12">
-              <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-black/5"></div>
               <div className="absolute inset-0 rounded-full border-4 border-brand-500 border-t-transparent animate-spin"></div>
             </div>
           </div>
@@ -430,17 +537,17 @@ export default function QuickServiceClient({
               const qty = getQty(item.id);
               const hasImage = !!item.image_url;
               return (
-                <div key={item.id} className="bg-[#141416] rounded-2xl p-3 shadow-lg border border-white/5 flex items-center gap-4 group hover:-translate-y-0.5 hover:shadow-2xl transition-all duration-300">
-                  <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-[#1A1A1D]">
+                <div key={item.id} className={`p-3 flex items-center gap-4 group transition-all duration-300 ${t.card}`}>
+                  <div className={`relative w-24 h-24 flex-shrink-0 overflow-hidden ${t.imgWrap}`}>
                     {hasImage ? (
                       <img src={item.image_url!} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-2xl font-black text-slate-700 uppercase tracking-tighter">{item.name.substring(0, 2)}</span>
+                        <span className="text-2xl font-black text-slate-300 uppercase tracking-tighter">{item.name.substring(0, 2)}</span>
                       </div>
                     )}
                     {item.is_vegetarian !== null && item.is_vegetarian !== undefined && (
-                      <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md p-1 rounded-md">
+                      <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-md p-1 rounded-md shadow-sm">
                         <div className={`w-3 h-3 border-2 rounded-[3px] flex items-center justify-center ${item.is_vegetarian ? "border-emerald-500" : "border-red-500"}`}>
                           <div className={`w-1.5 h-1.5 rounded-full ${item.is_vegetarian ? "bg-emerald-500" : "bg-red-500"}`} />
                         </div>
@@ -450,9 +557,9 @@ export default function QuickServiceClient({
                   
                   <div className="flex-1 min-w-0 py-1 flex flex-col justify-between h-full">
                     <div>
-                      <h3 className="font-bold text-white text-base leading-tight tracking-tight truncate">{item.name}</h3>
+                      <h3 className={`font-bold text-base leading-tight truncate ${t.textMain}`}>{item.name}</h3>
                       {item.description ? (
-                        <p className="text-[12px] text-slate-400 line-clamp-1 mt-0.5">
+                        <p className={`text-[12px] line-clamp-1 mt-0.5 ${t.textSub}`}>
                           {item.description}
                         </p>
                       ) : (
@@ -466,27 +573,27 @@ export default function QuickServiceClient({
                       </span>
                       
                       {qty > 0 ? (
-                        <div className="flex items-center bg-[#1A1A1D] border border-white/5 rounded-lg p-1 animate-fade-in">
+                        <div className={`flex items-center p-1 animate-fade-in ${t.qtyControl}`}>
                           <button
                             onClick={() => updateQuantity(item, -1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-md bg-[#25252A] text-white hover:bg-[#303036] active:scale-95 transition-all"
+                            className={`w-8 h-8 flex items-center justify-center active:scale-95 transition-all ${t.qtyBtn}`}
                           >
-                            <Minus size={14} />
+                            <Minus size={14} strokeWidth={3} />
                           </button>
-                          <span className="font-bold text-white w-8 text-center text-sm">
+                          <span className={`font-bold w-8 text-center text-sm ${t.textMain}`}>
                             {qty}
                           </span>
                           <button
                             onClick={() => updateQuantity(item, 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-md bg-brand-500 text-white shadow-sm hover:bg-brand-400 active:scale-95 transition-all"
+                            className={`w-8 h-8 flex items-center justify-center active:scale-95 transition-all ${t.qtyBtn}`}
                           >
-                            <Plus size={14} />
+                            <Plus size={14} strokeWidth={3} />
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => updateQuantity(item, 1)}
-                          className="bg-brand-500 text-white hover:bg-brand-400 px-4 py-1.5 rounded-lg text-sm font-bold transition-all active:scale-95 shadow-sm shadow-brand-500/20"
+                          className={`px-4 py-1.5 text-sm transition-all ${t.btnPrimary}`}
                         >
                           + Add
                         </button>
@@ -498,12 +605,12 @@ export default function QuickServiceClient({
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-slate-500 animate-fade-in">
-            <div className="w-20 h-20 bg-[#141416] border border-white/5 rounded-full flex items-center justify-center mb-6">
-              <Search className="w-8 h-8 text-slate-600" />
+          <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+            <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mb-6">
+              <Search className="w-8 h-8 text-slate-400" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2 tracking-tight">Nothing found</h3>
-            <p className="text-slate-500">Try searching for something else.</p>
+            <h3 className={`text-xl font-bold mb-2 tracking-tight ${t.textMain}`}>Nothing found</h3>
+            <p className={t.textSub}>Try searching for something else.</p>
           </div>
         )}
       </main>
@@ -513,7 +620,7 @@ export default function QuickServiceClient({
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-50 animate-slide-up">
           <button
             onClick={() => setShowCart(true)}
-            className="w-full bg-brand-500 text-white rounded-2xl p-4 pl-5 flex items-center justify-between shadow-[0_20px_40px_rgba(0,0,0,0.5)] active:scale-[0.98] transition-all group overflow-hidden relative"
+            className={`w-full p-4 pl-5 flex items-center justify-between active:scale-[0.98] transition-all group overflow-hidden relative ${t.cartPopup}`}
           >
             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center gap-4 relative z-10">
@@ -521,7 +628,7 @@ export default function QuickServiceClient({
                 {cart.reduce((s, i) => s + i.quantity, 0)} Items
               </div>
               <div className="flex flex-col items-start border-l border-white/20 pl-4">
-                <span className="font-black text-xl tracking-tight leading-none">{formatINR(cartTotal)}</span>
+                <span className="font-black text-xl tracking-tight leading-none text-white">{formatINR(cartTotal)}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 font-bold bg-white text-brand-600 px-4 py-2.5 rounded-xl relative z-10 shadow-sm">
@@ -531,52 +638,52 @@ export default function QuickServiceClient({
         </div>
       )}
 
-      {/* Modern Cart & Payment Modal (Dark Mode overrides) */}
-      <Modal open={showCart} onClose={() => setShowCart(false)} title="" className="bg-[#141416] border border-white/10 text-white !shadow-[0_0_60px_rgba(0,0,0,0.8)]">
+      {/* Modern Cart & Payment Modal */}
+      <Modal open={showCart} onClose={() => setShowCart(false)} title="" className={`!shadow-[0_0_60px_rgba(0,0,0,0.15)] ${t.modal}`}>
         {!showPayment ? (
           <div className="flex flex-col h-[70dvh]">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-[#1A1A1D] border border-white/5 rounded-xl flex items-center justify-center text-brand-500">
+              <div className={`w-12 h-12 flex items-center justify-center text-brand-500 ${t.modalHeader}`}>
                 <ShoppingBag className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-black text-2xl text-white tracking-tight">Your Order</h3>
-                <p className="text-sm font-medium text-slate-400">{cart.reduce((s, i) => s + i.quantity, 0)} items selected</p>
+                <h3 className={`font-black text-2xl tracking-tight ${t.textMain}`}>Your Order</h3>
+                <p className={`text-sm font-medium ${t.textSub}`}>{cart.reduce((s, i) => s + i.quantity, 0)} items selected</p>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 pb-4 scroll-smooth">
               {cart.map((item) => (
-                <div key={item.id} className="flex justify-between items-center py-3 bg-[#1A1A1D] rounded-xl p-4 border border-white/5">
+                <div key={item.id} className={`flex justify-between items-center py-3 p-4 ${t.card}`}>
                   <div className="flex-1 min-w-0 pr-4">
-                    <h4 className="font-bold text-white text-base truncate">{item.name}</h4>
+                    <h4 className={`font-bold text-base truncate ${t.textMain}`}>{item.name}</h4>
                     <p className="text-brand-500 font-black tracking-tight">{formatINR(Number(item.price))}</p>
                   </div>
-                  <div className="flex items-center bg-[#141416] border border-white/5 rounded-lg p-1 shadow-inner">
-                    <button onClick={() => updateQuantity(item, -1)} className="w-8 h-8 flex items-center justify-center bg-[#25252A] rounded-md text-white active:scale-95 transition-all hover:bg-[#303036]">
-                      <Minus size={14} strokeWidth={2.5} />
+                  <div className={`flex items-center p-1 ${t.qtyControl}`}>
+                    <button onClick={() => updateQuantity(item, -1)} className={`w-8 h-8 flex items-center justify-center active:scale-95 transition-all ${t.qtyBtn}`}>
+                      <Minus size={14} strokeWidth={3} />
                     </button>
-                    <span className="w-8 text-center font-black text-white text-sm">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item, 1)} className="w-8 h-8 flex items-center justify-center bg-[#25252A] rounded-md text-white active:scale-95 transition-all hover:bg-[#303036]">
-                      <Plus size={14} strokeWidth={2.5} />
+                    <span className={`w-8 text-center font-black text-sm ${t.textMain}`}>{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item, 1)} className={`w-8 h-8 flex items-center justify-center active:scale-95 transition-all ${t.qtyBtn}`}>
+                      <Plus size={14} strokeWidth={3} />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="pt-6 mt-2 border-t border-white/10">
-              <div className="bg-[#1A1A1D] rounded-xl p-5 mb-4 border border-white/5">
-                <div className="flex justify-between font-medium text-slate-400 mb-2 text-sm">
+            <div className="pt-6 mt-2">
+              <div className={`p-5 mb-4 ${t.modalHeader}`}>
+                <div className={`flex justify-between font-medium mb-2 text-sm ${t.textSub}`}>
                   <span>Subtotal</span>
-                  <span className="text-white">{formatINR(cartTotal)}</span>
+                  <span className={t.textMain}>{formatINR(cartTotal)}</span>
                 </div>
-                <div className="flex justify-between font-black text-2xl text-white tracking-tight mt-3 pt-3 border-t border-white/10">
+                <div className={`flex justify-between font-black text-2xl tracking-tight mt-3 pt-3 border-t border-black/5 ${t.textMain}`}>
                   <span>Total</span>
                   <span className="text-brand-500">{formatINR(cartTotal)}</span>
                 </div>
               </div>
-              <Button onClick={() => setShowPayment(true)} className="w-full h-14 text-lg font-black rounded-xl bg-brand-500 hover:bg-brand-600 text-white shadow-xl shadow-brand-500/20 active:scale-[0.98] transition-all" disabled={cart.length === 0}>
+              <Button onClick={() => setShowPayment(true)} className={`w-full h-14 text-lg transition-all ${t.btnPrimary}`} disabled={cart.length === 0}>
                 Proceed to Payment
               </Button>
             </div>
@@ -584,28 +691,24 @@ export default function QuickServiceClient({
         ) : (
           <div className="flex flex-col h-[70dvh] animate-slide-in-right">
              <div className="flex items-center gap-3 mb-8">
-              <button onClick={() => setShowPayment(false)} className="w-12 h-12 bg-[#1A1A1D] border border-white/5 hover:bg-[#25252A] text-white rounded-xl flex items-center justify-center transition-colors active:scale-95">
-                <ArrowLeft size={24} />
+              <button onClick={() => setShowPayment(false)} className={`w-12 h-12 flex items-center justify-center transition-colors active:scale-95 ${t.qtyBtn} ${t.qtyControl}`}>
+                <ArrowLeft size={24} className={t.textMain} />
               </button>
               <div>
-                <h3 className="font-black text-2xl text-white tracking-tight">Payment</h3>
-                <p className="text-sm font-medium text-slate-400">Choose how you want to pay</p>
+                <h3 className={`font-black text-2xl tracking-tight ${t.textMain}`}>Payment</h3>
+                <p className={`text-sm font-medium ${t.textSub}`}>Choose how you want to pay</p>
               </div>
             </div>
 
             <div className="space-y-3 flex-1 overflow-y-auto pb-4">
                {([
-                { id: "UPI", icon: <Smartphone strokeWidth={2.5} />, title: "UPI / QR Code", desc: "GPay, PhonePe, Paytm", color: "bg-purple-500/20 text-purple-400" },
-                { id: "Card", icon: <CreditCard strokeWidth={2.5} />, title: "Credit / Debit Card", desc: "Visa, Mastercard, RuPay", color: "bg-blue-500/20 text-blue-400" },
-                { id: "Cash", icon: <Banknote strokeWidth={2.5} />, title: "Pay at Counter", desc: "Cash on delivery", color: "bg-emerald-500/20 text-emerald-400" },
+                { id: "UPI", icon: <Smartphone strokeWidth={2.5} />, title: "UPI / QR Code", desc: "GPay, PhonePe, Paytm", color: "bg-purple-100 text-purple-600" },
+                { id: "Card", icon: <CreditCard strokeWidth={2.5} />, title: "Credit / Debit Card", desc: "Visa, Mastercard, RuPay", color: "bg-blue-100 text-blue-600" },
+                { id: "Cash", icon: <Banknote strokeWidth={2.5} />, title: "Pay at Counter", desc: "Cash on delivery", color: "bg-emerald-100 text-emerald-600" },
               ] as const).map((method) => (
                 <label
                   key={method.id}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer active:scale-[0.98] ${
-                    paymentMethod === method.id
-                      ? "border-brand-500 bg-brand-500/10 shadow-lg shadow-brand-500/10"
-                      : "border-white/5 bg-[#1A1A1D] hover:border-white/10"
-                  }`}
+                  className={`flex items-center gap-4 p-4 transition-all cursor-pointer ${paymentMethod === method.id ? t.methodActive : t.methodCard}`}
                 >
                   <input
                     type="radio"
@@ -619,21 +722,21 @@ export default function QuickServiceClient({
                     {method.icon}
                   </div>
                   <div className="flex-1">
-                    <h4 className={`font-bold text-base tracking-tight ${paymentMethod === method.id ? "text-white" : "text-slate-200"}`}>{method.title}</h4>
-                    <p className="text-xs font-medium text-slate-500 mt-0.5">{method.desc}</p>
+                    <h4 className={`font-bold text-base tracking-tight ${t.textMain}`}>{method.title}</h4>
+                    <p className={`text-xs font-medium mt-0.5 ${t.textSub}`}>{method.desc}</p>
                   </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method.id ? "border-brand-500 bg-brand-500" : "border-slate-600"}`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method.id ? "border-brand-500 bg-brand-500" : "border-slate-300 bg-white"}`}>
                     {paymentMethod === method.id && <div className="w-2 h-2 bg-white rounded-full"></div>}
                   </div>
                 </label>
               ))}
             </div>
 
-            <div className="pt-6 mt-2 border-t border-white/10">
-              <Button onClick={handleConfirmOrder} className="w-full h-14 text-lg font-black rounded-xl bg-brand-500 hover:bg-brand-600 text-white shadow-xl shadow-brand-500/20 active:scale-[0.98] transition-all relative overflow-hidden group" disabled={isProcessing || !paymentMethod}>
+            <div className="pt-6 mt-2">
+              <Button onClick={handleConfirmOrder} className={`w-full h-14 text-lg transition-all relative overflow-hidden group ${t.btnPrimary}`} disabled={isProcessing || !paymentMethod}>
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                <span className="relative flex items-center justify-center">
-                  {isProcessing ? <><Loader2 className="w-6 h-6 mr-3 animate-spin" /> Processing Securely...</> : `Confirm & Pay ${formatINR(cartTotal)}`}
+                <span className="relative flex items-center justify-center text-white">
+                  {isProcessing ? <><Loader2 className="w-6 h-6 mr-3 animate-spin" /> Processing...</> : `Confirm & Pay ${formatINR(cartTotal)}`}
                 </span>
               </Button>
             </div>

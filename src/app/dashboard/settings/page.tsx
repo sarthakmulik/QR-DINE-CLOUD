@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { compressImage } from "@/lib/image";
 import { usePlan } from "@/lib/contexts/plan-context";
-import { themePresets, generateBrandColors } from "@/lib/theme";
+import { themePresets, qsThemePresets, generateBrandColors } from "@/lib/theme";
 import { WelcomeAnimationSettings } from "@/components/admin/WelcomeAnimationSettings";
 
 export default function SettingsPage() {
@@ -21,8 +21,10 @@ export default function SettingsPage() {
     password: "",
     status: "active",
     secureQr: false,
+    serviceType: "dine_in",
     customizations: {
       theme: "default",
+      qsTheme: "bento",
       primaryColor: "#ea580c",
       secondaryColor: "#ffedd5",
       textColor: "#ffffff",
@@ -155,6 +157,7 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
+          serviceType: data.service_type || "dine_in",
           customizations: data.customizations ? {
             theme: data.customizations.theme || "default",
             primaryColor: data.customizations.primaryColor || "#ea580c",
@@ -165,8 +168,10 @@ export default function SettingsPage() {
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
             printerSize: data.customizations.printerSize || "80mm",
+            qsTheme: data.customizations.qsTheme || "bento",
           } : {
             theme: "default",
+            qsTheme: "bento",
             primaryColor: "#ea580c",
             secondaryColor: "#ffedd5",
             textColor: "#ffffff",
@@ -199,6 +204,7 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
+          serviceType: data.service_type || "dine_in",
           customizations: data.customizations ? {
             theme: data.customizations.theme || "default",
             primaryColor: data.customizations.primaryColor || "#ea580c",
@@ -209,8 +215,10 @@ export default function SettingsPage() {
             welcomeMessage: data.customizations.welcomeMessage || "Welcome to our Restaurant",
             layout: data.customizations.layout || "default",
             printerSize: data.customizations.printerSize || "80mm",
+            qsTheme: data.customizations.qsTheme || "bento",
           } : {
             theme: "default",
+            qsTheme: "bento",
             primaryColor: "#ea580c",
             secondaryColor: "#ffedd5",
             textColor: "#ffffff",
@@ -840,8 +848,53 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
+                  {/* Quick Service Themes */}
+                  {(form.serviceType === "quick_service" || form.serviceType === "both") && (
+                    <div className="mt-6 border-t border-gray-200 pt-6">
+                      <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        Quick Service Aesthetic
+                        <span className="text-[9px] bg-sky-100 text-sky-600 px-2 py-0.5 rounded-full font-black tracking-normal uppercase">
+                          Gen Z Designed
+                        </span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {qsThemePresets.map((preset) => {
+                          const isSelected = form.customizations?.qsTheme === preset.id || (!form.customizations?.qsTheme && preset.id === "bento");
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() => {
+                                setForm({
+                                  ...form,
+                                  customizations: {
+                                    ...form.customizations,
+                                    qsTheme: preset.id,
+                                  }
+                                });
+                              }}
+                              className={`p-3 rounded-xl border text-left text-xs transition-all ${
+                                isSelected
+                                  ? "border-sky-500 bg-sky-50 shadow-sm ring-1 ring-sky-500/20"
+                                  : "border-gray-200 hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex justify-between items-start mb-1">
+                                <p className={`font-bold ${isSelected ? "text-sky-900" : "text-gray-900"}`}>{preset.name}</p>
+                                {isSelected && (
+                                  <div className="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
+                                )}
+                              </div>
+                              <p className={`text-[10px] ${isSelected ? "text-sky-700/80" : "text-gray-500"}`}>{preset.desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Custom Colors */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 mt-6">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                         Primary Color

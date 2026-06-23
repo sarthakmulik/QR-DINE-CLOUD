@@ -51,6 +51,14 @@ export const themePresets = [
   }
 ];
 
+export const qsThemePresets = [
+  { id: "bento", name: "Bento Box Grid", desc: "Clean, Apple-inspired grid with soft corners." },
+  { id: "neo_brutalism", name: "Neo-Brutalism", desc: "High contrast, harsh shadows, retro-web aesthetic." },
+  { id: "y2k", name: "Y2K / Holographic", desc: "Vibrant pastel colors with bubbly floating elements." },
+  { id: "streetwear", name: "Streetwear Minimalist", desc: "Monochromatic with bold typography and electric accents." },
+  { id: "playful", name: "Playful & Soft", desc: "Warm, rounded corners, soft shadows, cute doodles." }
+];
+
 export function hexToHsl(hex: string) {
   hex = hex.replace(/^#/, "");
   if (hex.length === 3) {
