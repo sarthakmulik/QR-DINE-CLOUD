@@ -524,7 +524,7 @@ Thank you for dining with us!`;
 
       {/* STATS OVERVIEW CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Today&apos;s Revenue</p>
             <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
@@ -540,7 +540,7 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Total Orders</p>
             <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
@@ -556,7 +556,7 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Active Tables</p>
             <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
@@ -572,7 +572,7 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
+        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
           <div>
             <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Average Rating</p>
             {hasFeedbackAccess ? (
@@ -600,11 +600,11 @@ Thank you for dining with us!`;
       </div>
 
       {/* HOURLY SALES CHART SECTION */}
-      <div className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-white/5 rounded-xl p-5 shadow-sm">
+      <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
           {!hasFeedbackAccess && (
-            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1">
+            <span className="text-[10px] bg-slate-100/60 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1">
               <Lock size={10} /> Requires Pro
             </span>
           )}
@@ -669,7 +669,7 @@ Thank you for dining with us!`;
           [...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border-2 border-slate-100 dark:border-white/5 p-4 text-left h-24 bg-white dark:bg-[#16161A] animate-pulse"
+              className="rounded-xl border-2 border-slate-100 dark:border-white/5 p-4 text-left h-24 bg-white/60 dark:bg-[#141416]/60 animate-pulse"
             >
               <div className="h-5 bg-slate-200 rounded w-16 mb-2" />
               <div className="h-4 bg-slate-200 rounded w-10" />
@@ -687,7 +687,7 @@ Thank you for dining with us!`;
                 }
               }}
               className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md cursor-pointer ${
-                table.status === 'free' ? 'bg-white dark:bg-[#16161A] border-slate-200 dark:border-white/5 hover:border-brand-500' : statusColors[table.status]
+                table.status === 'free' ? 'bg-white/60 dark:bg-[#141416]/60 border-slate-200 dark:border-white/10 hover:border-brand-500' : statusColors[table.status]
               }`}
             >
               <div className="font-bold text-lg dark:text-white">{table.label}</div>

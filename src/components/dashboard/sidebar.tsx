@@ -74,7 +74,7 @@ export function DashboardSidebar({
   return (
     <>
       {/* ===== DESKTOP SIDEBAR (md and above) ===== */}
-      <aside className="hidden md:flex w-64 bg-white dark:bg-[#141416] border-r border-gray-200 dark:border-white/5 flex-col transition-colors duration-200">
+      <aside className="hidden md:flex w-64 bg-white/80 dark:bg-[#141416]/60 backdrop-blur-md border-r border-gray-200 dark:border-white/5 flex-col transition-colors duration-200">
         <div className="p-5 border-b">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
@@ -139,7 +139,7 @@ export function DashboardSidebar({
       </aside>
 
       {/* ===== MOBILE TOP HEADER (below md) ===== */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#141416] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 h-14 shadow-sm transition-colors duration-200">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-[#141416]/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 h-14 shadow-sm transition-colors duration-200">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
             QR
@@ -168,7 +168,7 @@ export function DashboardSidebar({
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sheet */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#141416] z-50 shadow-2xl flex flex-col transition-colors duration-200">
+          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white/95 dark:bg-[#141416]/95 backdrop-blur-xl z-50 shadow-2xl flex flex-col transition-colors duration-200">
             <div className="p-4 border-b dark:border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
@@ -241,7 +241,7 @@ export function DashboardSidebar({
       )}
 
       {/* ===== MOBILE BOTTOM NAV BAR (below md) ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#141416] border-t border-gray-200 dark:border-white/5 flex items-center justify-around h-16 shadow-lg px-1 transition-colors duration-200">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/80 dark:bg-[#141416]/80 backdrop-blur-md border-t border-gray-200 dark:border-white/5 flex items-center justify-around h-16 shadow-lg px-1 transition-colors duration-200">
         {bottomNavLinks.map((link) => {
           const active =
             link.href === "/dashboard"
