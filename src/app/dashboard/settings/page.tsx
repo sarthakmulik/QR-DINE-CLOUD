@@ -780,12 +780,14 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Elite Whitelabel Customization */}
-            <div className="border-t border-gray-200 pt-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                  Elite Whitelabel Customization
-                </h3>
+            {/* Elite Whitelabel Customization (Dine-In Only) */}
+            {form.serviceType !== "quick_service" && (
+              <>
+                <div className="border-t border-gray-200 pt-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                      Dine-In Elite Whitelabel
+                    </h3>
                 {!isElite && (
                   <span className="text-[9px] bg-brand-500 text-white px-2 py-0.5 rounded-full font-black tracking-normal uppercase animate-pulse">
                     Elite Feature
@@ -1054,6 +1056,8 @@ export default function SettingsPage() {
               onUpdate={handleWelcomeAnimationUpdate}
               restaurantName={form.name || "Your Restaurant"}
             />
+              </>
+            )}
 
             <div className="border-t border-gray-200 pt-4 space-y-4">
               <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>
