@@ -55,6 +55,17 @@ export default function LiveOrdersPage() {
     }
   }
 
+  async function handleMarkReady(sessionId: string) {
+    try {
+      const res = await fetch(`/api/hotel/sessions/${sessionId}/ready`, { method: "POST" });
+      if (res.ok) {
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: "ready_for_pickup" } : s));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async function handleMarkCollected(sessionId: string) {
     try {
       const res = await fetch(`/api/hotel/sessions/${sessionId}/force-close`, {
@@ -167,13 +178,13 @@ export default function LiveOrdersPage() {
               {(session.status === "ready_for_pickup" || (!session.table && session.status === "open")) && (
                 <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex flex-col gap-2 items-center text-center">
                   <div className="text-xs font-bold text-emerald-800">
-                    {session.status === "ready_for_pickup" ? "Ready to Collect" : "Quick Service Open"}
+                    {session.status === "ready_for_pickup" ? "Ready to Collect" : "Quick Service (Cooking)"}
                   </div>
                   <button 
-                    onClick={() => handleMarkCollected(session.id)}
+                    onClick={() => session.status === "open" ? handleMarkReady(session.id) : handleMarkCollected(session.id)}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors"
                   >
-                    Mark as Collected
+                    {session.status === "open" ? "Mark as Ready" : "Mark as Collected"}
                   </button>
                 </div>
               )}

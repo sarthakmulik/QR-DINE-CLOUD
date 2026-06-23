@@ -39,7 +39,7 @@ export async function POST(
       return NextResponse.json({ error: "No active payment gateway configured" }, { status: 400 });
     }
 
-    const totalAmount = session.total;
+    const totalAmount = Number(session.total);
 
     // 2. Razorpay Integration
     if (paymentSettings.active_pg === "razorpay" && paymentSettings.razorpay) {

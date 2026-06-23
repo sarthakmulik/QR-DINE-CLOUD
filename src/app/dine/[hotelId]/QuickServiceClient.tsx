@@ -118,6 +118,56 @@ export default function QuickServiceClient({
   const getQty = (id: string) => cart.find((i) => i.id === id)?.quantity || 0;
   const cartTotal = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
 
+  async function triggerOnlinePayment(sessionToPay: TableSession) {
+    setIsProcessing(true);
+    try {
+      const initRes = await fetch(`/api/quick-service/${hotelId}/order/${sessionToPay.id}/initiate-payment`, {
+        method: "POST"
+      });
+      const initData = await initRes.json();
+      
+      if (!initRes.ok) {
+        alert(initData.error || "Failed to initiate payment");
+      } else {
+        if (initData.gateway === "razorpay") {
+          const options = {
+            key: initData.key_id,
+            amount: initData.amount,
+            currency: initData.currency,
+            name: initData.hotel_name,
+            description: `Order #${sessionToPay.order_number}`,
+            order_id: initData.order_id,
+            handler: async function (response: any) {
+              // Verify payment
+              await fetch(`/api/quick-service/${hotelId}/order/${sessionToPay.id}/verify-payment`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  gateway: "razorpay",
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              setActiveOrder((prev) => prev ? { ...prev, status: "open" } : null);
+            },
+            prefill: { name: "Customer", contact: "9999999999" },
+            theme: { color: hotel?.customizations?.primaryColor || "#ea580c" }
+          };
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        } else if (initData.gateway === "phonepe") {
+          window.location.href = initData.redirect_url;
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Payment gateway error. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   async function handleConfirmOrder() {
     if (!paymentMethod) return alert("Please select a payment method");
     setIsProcessing(true);
@@ -138,58 +188,16 @@ export default function QuickServiceClient({
       
       const session = data.session;
       
-      // If payment is UPI/Card and a gateway is configured, auto-initiate
-      const pg = (hotel as any)?.paymentSettings?.active_pg;
-      if ((paymentMethod === "UPI" || paymentMethod === "Card") && pg && pg !== "none") {
-        const initRes = await fetch(`/api/quick-service/${hotelId}/order/${session.id}/initiate-payment`, {
-          method: "POST"
-        });
-        const initData = await initRes.json();
-        
-        if (initRes.ok) {
-          if (initData.gateway === "razorpay") {
-            const options = {
-              key: initData.key_id,
-              amount: initData.amount,
-              currency: initData.currency,
-              name: initData.hotel_name,
-              description: `Order #${session.order_number}`,
-              order_id: initData.order_id,
-              handler: async function (response: any) {
-                // Verify payment
-                await fetch(`/api/quick-service/${hotelId}/order/${session.id}/verify-payment`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    gateway: "razorpay",
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_signature: response.razorpay_signature
-                  })
-                });
-                setActiveOrder({ ...session, status: "open" });
-              },
-              prefill: {
-                name: "Customer",
-                contact: "9999999999"
-              },
-              theme: {
-                color: hotel?.customizations?.primaryColor || "#ea580c"
-              }
-            };
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-          } else if (initData.gateway === "phonepe") {
-            window.location.href = initData.redirect_url;
-            return;
-          }
-        }
-      }
-
       setCart([]);
       setShowCart(false);
       setShowPayment(false);
       setActiveOrder(session);
+
+      // If payment is UPI/Card and a gateway is configured, auto-initiate
+      const pg = (hotel as any)?.paymentSettings?.active_pg;
+      if ((paymentMethod === "UPI" || paymentMethod === "Card") && pg && pg !== "none") {
+        await triggerOnlinePayment(session);
+      }
     } catch (err) {
       alert("Failed to place order. Please try again.");
     } finally {
@@ -242,8 +250,17 @@ export default function QuickServiceClient({
                 <p className="text-slate-500 mt-2">Please collect your order from the counter.</p>
               </div>
             ) : activeOrder.status === "payment_pending" ? (
-              <div className="text-amber-500">
-                {activeOrder.payment_method === "UPI" && hotel?.upi_id ? (
+              <div className="text-amber-500 flex flex-col items-center w-full">
+                {hotel?.paymentSettings?.active_pg && hotel.paymentSettings.active_pg !== "none" && (activeOrder.payment_method === "UPI" || activeOrder.payment_method === "Card") ? (
+                  <>
+                    <Banknote className="w-16 h-16 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold text-slate-800">Complete Payment</h3>
+                    <p className="text-slate-500 mt-2 mb-6">Please complete your payment to send the order to the kitchen.</p>
+                    <Button onClick={() => triggerOnlinePayment(activeOrder)} disabled={isProcessing} className="w-full h-14 text-lg bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-xl shadow-brand-500/20 active:scale-[0.98] transition-transform">
+                      {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Processing...</> : `Pay ${formatINR(activeOrder.total)} Online Now`}
+                    </Button>
+                  </>
+                ) : activeOrder.payment_method === "UPI" && hotel?.upi_id ? (
                   <>
                     <h3 className="text-2xl font-bold text-slate-800">Scan to Pay</h3>
                     <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-slate-100 inline-block my-4">
@@ -269,7 +286,7 @@ export default function QuickServiceClient({
                 ) : (
                   <>
                     <Banknote className="w-16 h-16 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold">Awaiting Payment</h3>
+                    <h3 className="text-2xl font-bold text-slate-800">Awaiting Payment</h3>
                     <p className="text-slate-500 mt-2">Please pay {formatINR(activeOrder.total)} in cash at the counter to start cooking.</p>
                   </>
                 )}
