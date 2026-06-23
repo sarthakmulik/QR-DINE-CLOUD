@@ -2,7 +2,7 @@ export type UserRole = "superadmin" | "hotel_owner" | "staff";
 export type HotelPlan = "basic" | "pro" | "elite";
 export type HotelStatus = "active" | "paused" | "suspended";
 export type ServiceType = "dine_in" | "quick_service";
-export type SessionStatus = "draft" | "payment_pending" | "open" | "checkout_initiated" | "bill_printed" | "closed" | "ready_for_pickup";
+export type SessionStatus = "draft" | "payment_pending" | "open" | "checkout_initiated" | "bill_printed" | "closed" | "ready_for_pickup" | "cancelled";
 export type PaymentMethod = "Cash" | "UPI" | "Card";
 
 export interface Profile {

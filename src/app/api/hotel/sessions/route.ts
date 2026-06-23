@@ -12,6 +12,26 @@ export async function GET() {
     const { hotelId } = await requireHotelAccess();
     const sb = createAdminClient();
 
+    // --- AUTO-CLEANUP LOGIC (Quick Service) ---
+    const now = Date.now();
+    const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
+    const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
+
+    // 1. Auto-collect ready orders forgotten for 5 mins
+    await sb.from("table_sessions")
+      .update({ status: "closed", closed_at: new Date().toISOString() })
+      .eq("hotel_id", hotelId)
+      .eq("status", "ready_for_pickup")
+      .lt("updated_at", fiveMinsAgo);
+
+    // 2. Auto-discard unpaid orders abandoned for 10 mins
+    await sb.from("table_sessions")
+      .update({ status: "cancelled", closed_at: new Date().toISOString() })
+      .eq("hotel_id", hotelId)
+      .eq("status", "payment_pending")
+      .lt("updated_at", tenMinsAgo);
+    // ------------------------------------------
+
     // Single nested join — eliminates N+1 items and table fetches
     const { data: sessions } = await sb
       .from("table_sessions")
@@ -22,6 +42,7 @@ export async function GET() {
       `)
       .eq("hotel_id", hotelId)
       .neq("status", "closed")
+      .neq("status", "cancelled")
       .order("start_time", { ascending: false });
 
     const result = ((sessions || []) as any[]).map((session) => {

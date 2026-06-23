@@ -81,6 +81,20 @@ export default function LiveOrdersPage() {
     }
   }
 
+  async function handleCancelOrder(sessionId: string) {
+    if (!confirm("Are you sure you want to cancel this unpaid order?")) return;
+    try {
+      const res = await fetch(`/api/hotel/sessions/${sessionId}/cancel`, { method: "POST" });
+      if (res.ok) {
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+      } else {
+        alert("Failed to cancel order.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   useEffect(() => {
     const cached = sessionStorage.getItem("admin_live_orders");
     if (cached) {
@@ -164,14 +178,22 @@ export default function LiveOrdersPage() {
               </div>
 
               {session.status === "payment_pending" && (
-                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2 items-center text-center">
+                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2 text-center">
                   <div className="text-xs font-bold text-amber-800">Payment Unverified</div>
-                  <button 
-                    onClick={() => handleConfirmPayment(session.id)}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors"
-                  >
-                    Confirm Received
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => handleCancelOrder(session.id)}
+                      className="w-full bg-white border border-slate-200 hover:bg-red-50 text-red-600 font-bold py-1.5 px-2 rounded-lg text-xs transition-colors"
+                    >
+                      Cancel Order
+                    </button>
+                    <button 
+                      onClick={() => handleConfirmPayment(session.id)}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-2 rounded-lg text-xs transition-colors"
+                    >
+                      Confirm Paid
+                    </button>
+                  </div>
                 </div>
               )}
 
