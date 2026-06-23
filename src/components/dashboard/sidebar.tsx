@@ -74,7 +74,7 @@ export function DashboardSidebar({
   return (
     <>
       {/* ===== DESKTOP SIDEBAR (md and above) ===== */}
-      <aside className="hidden md:flex w-64 bg-white dark:bg-[#0B0B0C] border-r border-gray-200 dark:border-white/5 flex-col transition-colors duration-200">
+      <aside className="hidden md:flex w-64 bg-white dark:bg-[#141416] border-r border-gray-200 dark:border-white/5 flex-col transition-colors duration-200">
         <div className="p-5 border-b">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
@@ -102,7 +102,7 @@ export function DashboardSidebar({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                   active
-                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/10 dark:text-brand-500 dark:border-brand-500/20"
+                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/20"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                 )}
               >
@@ -139,7 +139,7 @@ export function DashboardSidebar({
       </aside>
 
       {/* ===== MOBILE TOP HEADER (below md) ===== */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#0B0B0C] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 h-14 shadow-sm transition-colors duration-200">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#141416] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 h-14 shadow-sm transition-colors duration-200">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
             QR
@@ -168,7 +168,7 @@ export function DashboardSidebar({
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sheet */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#0B0B0C] z-50 shadow-2xl flex flex-col transition-colors duration-200">
+          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#141416] z-50 shadow-2xl flex flex-col transition-colors duration-200">
             <div className="p-4 border-b dark:border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
@@ -202,7 +202,7 @@ export function DashboardSidebar({
                     className={cn(
                       "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
                       active
-                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/10 dark:text-brand-500 dark:border-brand-500/20"
+                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-brand-500/15 dark:text-brand-400 dark:border-brand-500/20"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                     )}
                   >
@@ -241,7 +241,7 @@ export function DashboardSidebar({
       )}
 
       {/* ===== MOBILE BOTTOM NAV BAR (below md) ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 flex items-center justify-around h-16 shadow-lg px-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#141416] border-t border-gray-200 dark:border-white/5 flex items-center justify-around h-16 shadow-lg px-1 transition-colors duration-200">
         {bottomNavLinks.map((link) => {
           const active =
             link.href === "/dashboard"
@@ -254,12 +254,12 @@ export function DashboardSidebar({
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition flex-1 max-w-[80px]",
                 active
-                  ? "text-brand-700"
-                  : "text-gray-400 hover:text-gray-700"
+                  ? "text-brand-700 dark:text-brand-400"
+                  : "text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
               )}
             >
-              <link.icon className={cn("w-5 h-5", active && "fill-brand-50 stroke-brand-700")} />
-              <span className={cn("text-[9px] font-bold uppercase tracking-wider", active ? "text-brand-700" : "text-gray-400")}>
+              <link.icon className={cn("w-5 h-5", active && "fill-brand-50 dark:fill-brand-500/20 stroke-brand-700 dark:stroke-brand-400")} />
+              <span className={cn("text-[9px] font-bold uppercase tracking-wider", active ? "text-brand-700 dark:text-brand-400" : "text-gray-400 dark:text-slate-500")}>
                 {link.label}
               </span>
             </Link>
@@ -268,7 +268,7 @@ export function DashboardSidebar({
         {/* More button triggers full sheet */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl text-gray-400 hover:text-gray-700 transition flex-1 max-w-[80px]"
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300 transition flex-1 max-w-[80px]"
         >
           <Menu className="w-5 h-5" />
           <span className="text-[9px] font-bold uppercase tracking-wider">More</span>

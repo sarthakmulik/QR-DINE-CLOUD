@@ -469,9 +469,9 @@ Thank you for dining with us!`;
   }
 
   const statusColors = {
-    free: "border-green-300 bg-green-50",
-    occupied: "border-orange-300 bg-orange-50",
-    checkout: "border-red-300 bg-red-50",
+    free: "border-green-300 bg-green-50 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400",
+    occupied: "border-orange-300 bg-orange-50 dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400",
+    checkout: "border-red-300 bg-red-50 dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400",
   };
 
   const hasFeedbackAccess = canAccess("customer_feedback");
@@ -503,20 +503,20 @@ Thank you for dining with us!`;
             <Link
               href={`/kitchen/${hotelProfile.id}`}
               target="_blank"
-              className="inline-flex items-center justify-center rounded-lg font-medium transition px-3 py-1.5 text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 shadow-sm"
+              className="inline-flex items-center justify-center rounded-lg font-medium transition px-3 py-1.5 text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-[#1E1E22] dark:border-white/10 dark:text-white dark:hover:bg-[#2A2A2E] shadow-sm"
             >
               Kitchen Screen
             </Link>
           )}
-          <div className="flex gap-3 text-xs">
+          <div className="flex gap-3 text-xs dark:text-slate-400">
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-green-500" /> Free
+              <span className="w-3 h-3 rounded-full bg-green-500 dark:bg-emerald-500" /> Free
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-orange-500" /> Occupied
+              <span className="w-3 h-3 rounded-full bg-orange-500 dark:bg-orange-500" /> Occupied
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-red-500" /> Checkout
+              <span className="w-3 h-3 rounded-full bg-red-500 dark:bg-red-500" /> Checkout
             </span>
           </div>
         </div>
@@ -535,7 +535,7 @@ Thank you for dining with us!`;
               )}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 flex items-center justify-center">
             <IndianRupee size={18} />
           </div>
         </div>
@@ -551,7 +551,7 @@ Thank you for dining with us!`;
               )}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
+          <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 border border-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20 flex items-center justify-center">
             <ShoppingBag size={18} />
           </div>
         </div>
@@ -567,7 +567,7 @@ Thank you for dining with us!`;
               )}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100">
+          <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20 flex items-center justify-center">
             <Activity size={18} />
           </div>
         </div>
@@ -593,8 +593,8 @@ Thank you for dining with us!`;
               </div>
             )}
           </div>
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-            <Star size={18} className={hasFeedbackAccess && stats.avgRating > 0 ? "fill-amber-500 text-amber-500" : ""} />
+          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 flex items-center justify-center">
+            <Star size={18} className={hasFeedbackAccess && stats.avgRating > 0 ? "fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400" : ""} />
           </div>
         </div>
       </div>
@@ -630,12 +630,12 @@ Thank you for dining with us!`;
 
                   return (
                     <div key={h.hour} className="flex-1 flex flex-col items-center group">
-                      <div className="w-full bg-slate-100 group-hover:bg-slate-200 transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
+                      <div className="w-full bg-slate-100 dark:bg-[#1E1E22] group-hover:bg-slate-200 dark:group-hover:bg-[#2A2A2E] transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
                         <div
                           className="w-full bg-brand-500 group-hover:bg-brand-600 rounded-t-md transition-all"
                           style={{ height: `${percentHeight}%` }}
                         />
-                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#2A2A2E] text-white dark:text-slate-200 text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
                           {h.count} orders
                         </div>
                       </div>
@@ -649,10 +649,10 @@ Thank you for dining with us!`;
             </div>
           )
         ) : (
-          <div className="h-28 bg-slate-50 rounded-lg flex flex-col items-center justify-center border border-dashed text-slate-400">
+          <div className="h-28 bg-slate-50 dark:bg-[#1E1E22] dark:border-white/10 rounded-lg flex flex-col items-center justify-center border border-dashed text-slate-400 dark:text-slate-500">
             <Zap size={20} className="mb-1 text-brand-400" />
-            <p className="text-xs font-bold text-slate-600">Upgrade to Pro or Elite Plan</p>
-            <p className="text-[10px] text-slate-400">To unlock hourly workload & order distribution charts.</p>
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Upgrade to Pro or Elite Plan</p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500">To unlock hourly workload & order distribution charts.</p>
           </div>
         )}
       </div>
