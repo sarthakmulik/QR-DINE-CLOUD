@@ -54,7 +54,7 @@ export async function GET(
         .from("table_sessions")
         .select("*")
         .eq("hotel_id", hotelId)
-        .eq("status", "open")
+        .in("status", ["open", "payment_pending"])
         .order("start_time", { ascending: true }),
     ]);
 

@@ -34,17 +34,28 @@ export default function TablesPage() {
   const limitReached = typeof maxTables === "number" && totalTables >= maxTables;
 
   const [genericQrCode, setGenericQrCode] = useState<string | null>(null);
-  const genericDineUrl = typeof window !== "undefined" ? `${window.location.origin}/dine/${hotelId}` : "";
+  const [genericDineUrl, setGenericDineUrl] = useState<string>("");
 
   const isSkeletons = loading && tables.length === 0;
 
   useEffect(() => {
     if (serviceType === "quick_service" && hotelId) {
-      QRCode.toDataURL(genericDineUrl, { width: 400, margin: 2 })
+      let baseDineUrl = typeof window !== "undefined" ? `${window.location.origin}/dine/${hotelId}` : "";
+      
+      // Fetch token if secure QR is enabled
+      fetch("/api/hotel/profile")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.secureQr && data.quickServiceToken) {
+            baseDineUrl += `?t=${data.quickServiceToken}`;
+          }
+          setGenericDineUrl(baseDineUrl);
+          return QRCode.toDataURL(baseDineUrl, { width: 400, margin: 2 });
+        })
         .then((url) => setGenericQrCode(url))
         .catch(console.error);
     }
-  }, [serviceType, hotelId, genericDineUrl]);
+  }, [serviceType, hotelId]);
 
   async function loadTables() {
     try {
@@ -292,6 +303,34 @@ export default function TablesPage() {
               {copied === "generic" ? <Check size={18} className="mr-2 text-emerald-600" /> : <Copy size={18} className="mr-2" />}
               {copied === "generic" ? "Copied!" : "Copy Link"}
             </Button>
+          </div>
+          <div className="mt-6 w-full pt-6 border-t border-slate-100 flex justify-between items-center">
+             <div>
+                <h4 className="font-bold text-slate-800 text-sm">Regenerate QR</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-[200px]">Invalidate old QR codes and generate a new one.</p>
+             </div>
+             <Button
+               variant="ghost"
+               onClick={async () => {
+                 if (!confirm("Are you sure? Old QR codes will stop working.")) return;
+                 try {
+                   const res = await fetch("/api/hotel/quick-service/regenerate-qr", { method: "POST" });
+                   if (res.ok) {
+                     const data = await res.json();
+                     setGenericQrCode(data.qrCodeUrl);
+                     setGenericDineUrl(data.dineUrl);
+                     alert("QR Code Regenerated successfully!");
+                   } else {
+                     alert("Failed to regenerate QR");
+                   }
+                 } catch (e) {
+                   alert("Error regenerating QR");
+                 }
+               }}
+               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+             >
+               Regenerate
+             </Button>
           </div>
         </div>
       </div>

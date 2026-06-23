@@ -402,7 +402,7 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
   const { data: updated, error: updateErr } = await sb
     .from("table_sessions")
     .update({ 
-      status: "open", 
+      status: "payment_pending", 
       order_number: orderNumber, 
       payment_method: paymentMethod,
       subtotal, 

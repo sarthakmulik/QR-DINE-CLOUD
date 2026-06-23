@@ -16,9 +16,11 @@ type CategoryWithItems = MenuCategory & { items: MenuItem[] };
 export default function QuickServiceClient({
   params,
   initialHotel,
+  token,
 }: {
   params: Promise<{ hotelId: string }>;
-  initialHotel: Partial<Hotel> | null;
+  initialHotel?: Partial<Hotel> | null;
+  token?: string;
 }) {
   const { hotelId } = use(params);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,8 @@ export default function QuickServiceClient({
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/quick-service/${hotelId}`);
+        const url = token ? `/api/quick-service/${hotelId}?t=${token}` : `/api/quick-service/${hotelId}`;
+        const res = await fetch(url);
         const data = await res.json();
         if (res.ok) {
           setHotel(data.hotel);
@@ -55,7 +58,7 @@ export default function QuickServiceClient({
       }
     }
     load();
-  }, [hotelId]);
+  }, [hotelId, token]);
 
   // Realtime subscription for order status
   useEffect(() => {
@@ -170,10 +173,43 @@ export default function QuickServiceClient({
                 <h3 className="text-2xl font-bold">Ready for Pickup!</h3>
                 <p className="text-slate-500 mt-2">Please collect your order from the counter.</p>
               </div>
-            ) : (
+            ) : activeOrder.status === "payment_pending" ? (
               <div className="text-amber-500">
+                {activeOrder.paymentMethod === "UPI" && hotel?.upiId ? (
+                  <>
+                    <h3 className="text-2xl font-bold text-slate-800">Scan to Pay</h3>
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-slate-100 inline-block my-4">
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${hotel.upiId}&pn=${hotel.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48" />
+                    </div>
+                    <p className="text-slate-500 mb-6 font-semibold">Pay {formatINR(activeOrder.total)} via any UPI App</p>
+                    <Button onClick={async () => {
+                      setIsProcessing(true);
+                      try {
+                        const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/mark-paid`, { method: "POST" });
+                        if (res.ok) {
+                          setActiveOrder({ ...activeOrder, status: "open" });
+                        } else {
+                          alert((await res.json()).error);
+                        }
+                      } finally {
+                        setIsProcessing(false);
+                      }
+                    }} disabled={isProcessing} className="w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">
+                      {isProcessing ? "Verifying..." : "I have paid"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Banknote className="w-16 h-16 mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold">Awaiting Payment</h3>
+                    <p className="text-slate-500 mt-2">Please pay {formatINR(activeOrder.total)} in cash at the counter to start cooking.</p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="text-brand-500">
                 <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" />
-                <h3 className="text-2xl font-bold">Preparing...</h3>
+                <h3 className="text-2xl font-bold">Cooking...</h3>
                 <p className="text-slate-500 mt-2">Your order has been sent to the kitchen. We will notify you here when it is ready.</p>
               </div>
             )}

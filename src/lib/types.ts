@@ -2,7 +2,7 @@ export type UserRole = "superadmin" | "hotel_owner" | "staff";
 export type HotelPlan = "basic" | "pro" | "elite";
 export type HotelStatus = "active" | "paused" | "suspended";
 export type ServiceType = "dine_in" | "quick_service";
-export type SessionStatus = "draft" | "open" | "checkout_initiated" | "bill_printed" | "closed" | "ready_for_pickup";
+export type SessionStatus = "draft" | "payment_pending" | "open" | "checkout_initiated" | "bill_printed" | "closed" | "ready_for_pickup";
 export type PaymentMethod = "Cash" | "UPI" | "Card";
 
 export interface Profile {
@@ -37,6 +37,7 @@ export interface Hotel {
   kitchen_pin: string | null;
   upi_id: string | null;
   secure_qr?: boolean | null;
+  quick_service_token?: string | null;
   customizations?: {
     theme?: string;
     primaryColor?: string;
@@ -166,6 +167,7 @@ export function mapHotel(h: Hotel) {
     secureQr: !!h.secure_qr,
     welcomeAnimationEnabled: h.welcome_animation_enabled ?? true,
     welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
+    quickServiceToken: h.quick_service_token ?? null,
     customizations,
   };
 }

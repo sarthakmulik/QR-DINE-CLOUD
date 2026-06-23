@@ -25,6 +25,16 @@ export async function GET(
     return NextResponse.json({ error: "paused", hotel: mapHotel(hotel) }, { status: 403 });
   }
 
+  // Cryptographic Anti-Tampering Check
+  if (hotel.secure_qr) {
+    const { searchParams } = new URL(_req.url);
+    const token = searchParams.get("t");
+    // If token is missing or doesn't match the hotel's token, reject.
+    if (!token || token !== hotel.quick_service_token) {
+      return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
+    }
+  }
+
   const categories = (categoriesRes.data || []) as MenuCategory[];
   const items = (itemsRes.data || []) as MenuItem[];
   const itemsByCategoryId: Record<string, MenuItem[]> = {};

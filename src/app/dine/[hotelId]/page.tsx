@@ -4,10 +4,14 @@ import type { Hotel } from "@/lib/types";
 
 export default async function QuickServicePageServer({
   params,
+  searchParams,
 }: {
   params: Promise<{ hotelId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { hotelId } = await params;
+  const resolvedSearchParams = await searchParams;
+  const token = typeof resolvedSearchParams.t === 'string' ? resolvedSearchParams.t : undefined;
 
   // Fetch hotel profile for Welcome Animation
   const sb = createAdminClient();
@@ -23,6 +27,7 @@ export default async function QuickServicePageServer({
     <QuickServiceClient
       params={params}
       initialHotel={hotel}
+      token={token}
     />
   );
 }

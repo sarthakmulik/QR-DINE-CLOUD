@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, use } from "react";
-import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap } from "lucide-react";
+import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote } from "lucide-react";
 
 interface SessionItem {
   id: string;
@@ -594,7 +594,36 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                   </div>
 
                   {/* Card Badge / Status Banner */}
-                  {isReady && (
+                  {session.status === "payment_pending" && (
+                    <div className="bg-amber-500/20 text-amber-400 border-t border-amber-500/20 px-4 py-3 flex flex-col items-center justify-center gap-2 rounded-b-2xl">
+                      <div className="flex items-center gap-1.5 text-xs font-black tracking-widest uppercase">
+                        <Banknote size={14} />
+                        Awaiting Payment
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/kitchen/${hotelId}/orders/${session.id}/confirm-payment`, {
+                              method: "POST",
+                              headers: { "x-kitchen-token": kitchenToken || "" }
+                            });
+                            if (res.ok) {
+                              setSessions(prev => prev.map(s => s.id === session.id ? { ...s, status: "open" } : s));
+                            } else {
+                              alert((await res.json()).error);
+                            }
+                          } catch (e) {
+                            alert("Failed to confirm payment");
+                          }
+                        }}
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold px-4 py-1.5 rounded-lg text-xs w-full transition-colors shadow-sm"
+                      >
+                        Confirm Received
+                      </button>
+                    </div>
+                  )}
+
+                  {isReady && session.status !== "payment_pending" && (
                     <div
                       className={`bg-emerald-500 text-slate-950 px-4 py-2 text-center text-xs font-black tracking-widest uppercase rounded-b-2xl flex items-center justify-center gap-1.5 animate-pulse ${
                         viewMode === "timeline" ? "rounded-b-none rounded-r-2xl h-full flex-col w-32 border-l border-emerald-500" : ""
