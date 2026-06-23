@@ -251,7 +251,7 @@ export default function QuickServiceClient({
               </div>
             ) : activeOrder.status === "payment_pending" ? (
               <div className="text-amber-500 flex flex-col items-center w-full">
-                {hotel?.paymentSettings?.active_pg && hotel.paymentSettings.active_pg !== "none" && (activeOrder.payment_method === "UPI" || activeOrder.payment_method === "Card") ? (
+                {(hotel as any)?.paymentSettings?.active_pg && (hotel as any).paymentSettings.active_pg !== "none" && (activeOrder.payment_method === "UPI" || activeOrder.payment_method === "Card") ? (
                   <>
                     <Banknote className="w-16 h-16 mx-auto mb-4" />
                     <h3 className="text-2xl font-bold text-slate-800">Complete Payment</h3>
