@@ -44,6 +44,7 @@ export interface Hotel {
     qsPrimaryColor?: string;
     qsBgColor?: string;
     qsTextColor?: string;
+    qsCardBgColor?: string;
     primaryColor?: string;
     secondaryColor?: string;
     textColor?: string;

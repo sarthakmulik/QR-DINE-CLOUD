@@ -11,6 +11,7 @@ export interface CustomizationSettings {
   qsPrimaryColor?: string;
   qsBgColor?: string;
   qsTextColor?: string;
+  qsCardBgColor?: string;
 }
 
 export const defaultCustomization: CustomizationSettings = {
