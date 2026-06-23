@@ -44,21 +44,21 @@ export function QSPreview({ form }: { form: any }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-none custom-scrollbar">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none custom-scrollbar">
              <div className={`px-4 py-1.5 whitespace-nowrap text-sm flex-shrink-0 ${t.pillActive}`}>Popular</div>
              <div className={`px-4 py-1.5 whitespace-nowrap text-sm flex-shrink-0 ${t.pillInactive}`}>Drinks</div>
              <div className={`px-4 py-1.5 whitespace-nowrap text-sm flex-shrink-0 ${t.pillInactive}`}>Snacks</div>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-             <div className={`flex overflow-hidden relative ${t.card}`}>
-               <div className={`w-28 relative flex-shrink-0 ${t.imgWrap}`}>
-                 <div className="absolute inset-0 flex items-center justify-center text-xl">🍕</div>
+             <div className={`p-3 flex items-center gap-4 transition-all duration-300 ${t.card}`}>
+               <div className={`relative w-24 h-24 flex-shrink-0 overflow-hidden ${t.imgWrap}`}>
+                 <div className="absolute inset-0 flex items-center justify-center text-3xl">🍕</div>
                </div>
-               <div className="flex-1 p-3 flex flex-col justify-between">
+               <div className="flex-1 min-w-0 py-1 flex flex-col justify-between h-full">
                  <div>
-                   <h3 className={`font-bold text-sm leading-tight ${t.textMain}`}>Margherita Pizza</h3>
+                   <h3 className={`font-bold text-sm leading-tight truncate ${t.textMain}`}>Margherita Pizza</h3>
                    <p className={`text-[10px] line-clamp-1 mt-0.5 ${t.textSub}`}>Classic cheese and tomato</p>
                  </div>
                  <div className="flex items-center justify-between mt-2">
@@ -68,13 +68,13 @@ export function QSPreview({ form }: { form: any }) {
                </div>
              </div>
 
-             <div className={`flex overflow-hidden relative ${t.card}`}>
-               <div className={`w-28 relative flex-shrink-0 ${t.imgWrap}`}>
-                 <div className="absolute inset-0 flex items-center justify-center text-xl">🍔</div>
+             <div className={`p-3 flex items-center gap-4 transition-all duration-300 ${t.card}`}>
+               <div className={`relative w-24 h-24 flex-shrink-0 overflow-hidden ${t.imgWrap}`}>
+                 <div className="absolute inset-0 flex items-center justify-center text-3xl">🍔</div>
                </div>
-               <div className="flex-1 p-3 flex flex-col justify-between">
+               <div className="flex-1 min-w-0 py-1 flex flex-col justify-between h-full">
                  <div>
-                   <h3 className={`font-bold text-sm leading-tight ${t.textMain}`}>Veg Burger</h3>
+                   <h3 className={`font-bold text-sm leading-tight truncate ${t.textMain}`}>Veg Burger</h3>
                    <p className={`text-[10px] line-clamp-1 mt-0.5 ${t.textSub}`}>Crispy patty with fresh lettuce</p>
                  </div>
                  <div className="flex items-center justify-between mt-2">
