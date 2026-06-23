@@ -7,6 +7,10 @@ export interface CustomizationSettings {
   announcementText: string;
   welcomeMessage: string;
   layout: string;
+  qsTheme?: string;
+  qsPrimaryColor?: string;
+  qsBgColor?: string;
+  qsTextColor?: string;
 }
 
 export const defaultCustomization: CustomizationSettings = {

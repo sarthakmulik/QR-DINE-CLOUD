@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Copy, Plus, Trash2, HelpCircle } from "lucide-react";
 import { compressImage } from "@/lib/image";
+import { QSPreview } from "@/components/dashboard/QSPreview";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { themePresets, qsThemePresets, generateBrandColors } from "@/lib/theme";
 import { WelcomeAnimationSettings } from "@/components/admin/WelcomeAnimationSettings";
@@ -45,6 +47,7 @@ export default function SettingsPage() {
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
   const [logoError, setLogoError] = useState("");
+  const [previewTab, setPreviewTab] = useState<"dine_in" | "quick_service">("dine_in");
 
   async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1060,6 +1063,49 @@ export default function SettingsPage() {
                     );
                   })}
                 </div>
+
+                <div className="mt-6 pt-4 border-t border-sky-100/50">
+                  <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3">Custom Colors (Overrides Theme Defaults)</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Primary Color</label>
+                      <input
+                        type="color"
+                        value={form.customizations?.qsPrimaryColor || "#ea580c"}
+                        onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsPrimaryColor: e.target.value } })}
+                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Background</label>
+                      <input
+                        type="color"
+                        value={form.customizations?.qsBgColor || "#f4f4f0"}
+                        onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsBgColor: e.target.value } })}
+                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Text Color</label>
+                      <input
+                        type="color"
+                        value={form.customizations?.qsTextColor || "#000000"}
+                        onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsTextColor: e.target.value } })}
+                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Card / Element</label>
+                      <input
+                        type="color"
+                        value={form.customizations?.qsCardBgColor || "#ffffff"}
+                        onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsCardBgColor: e.target.value } })}
+                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-2">Leave blank or default if you want to use the theme&apos;s native colors.</p>
+                </div>
               </div>
             )}
 
@@ -1110,13 +1156,35 @@ export default function SettingsPage() {
           </form>
         </div>
 
-        {/* Live Preview Column (Dine-In Only) */}
-        {form.serviceType !== "quick_service" && (
+        {/* Live Preview Column */}
+        {form.serviceType !== "none" && (
           <div className="lg:col-span-5 sticky top-6 space-y-3">
+          
           <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Live Mobile Menu Preview
-            </span>
+            <div className="flex gap-2">
+              {form.serviceType === "both" ? (
+                <>
+                  <button 
+                    type="button"
+                    onClick={() => setPreviewTab("dine_in")}
+                    className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-colors ${previewTab === "dine_in" ? "border-brand-500 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                  >
+                    Dine-In
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setPreviewTab("quick_service")}
+                    className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-colors ${previewTab === "quick_service" ? "border-brand-500 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                  >
+                    Quick Service
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Live Mobile Menu Preview
+                </span>
+              )}
+            </div>
             {isElite && (
               <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase tracking-wider">
                 Live Rendering
@@ -1132,6 +1200,9 @@ export default function SettingsPage() {
             </div>
 
             {/* Inner Phone Screen */}
+            {(form.serviceType === "quick_service" || (form.serviceType === "both" && previewTab === "quick_service")) ? (
+              <QSPreview form={form} />
+            ) : (
             <div
               className={`flex-1 rounded-[32px] overflow-hidden flex flex-col relative pt-3 transition-colors duration-300 ${
                 form.customizations?.layout === "dark_slider" ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"
@@ -1321,6 +1392,7 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
         )}

@@ -41,6 +41,9 @@ export interface Hotel {
   customizations?: {
     theme?: string;
     qsTheme?: string;
+    qsPrimaryColor?: string;
+    qsBgColor?: string;
+    qsTextColor?: string;
     primaryColor?: string;
     secondaryColor?: string;
     textColor?: string;

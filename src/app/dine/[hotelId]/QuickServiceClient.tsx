@@ -9,6 +9,8 @@ import { formatINR } from "@/lib/utils";
 import type { Hotel, MenuCategory, MenuItem, TableSession } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
+import { qsThemes } from "@/lib/qs-themes";
+import { hexToRgb } from "@/lib/theme";
 
 type CartItem = MenuItem & { quantity: number };
 
@@ -228,130 +230,24 @@ export default function QuickServiceClient({
 
   const qsTheme = hotel?.customizations?.qsTheme || "neo_brutalism";
 
-  const themes = {
-    neo_brutalism: {
-      appBg: "bg-[#F4F4F0]",
-      textMain: "text-black",
-      textSub: "text-slate-800",
-      header: "bg-[#F4F4F0] border-b-4 border-black",
-      searchWrap: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] focus-within:shadow-[6px_6px_0_0_#000] rounded-none",
-      searchInput: "bg-transparent text-black placeholder:text-slate-500 font-bold",
-      pillActive: "bg-brand-500 text-black border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none font-black",
-      pillInactive: "bg-white text-black border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none font-bold hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000]",
-      card: "bg-white border-4 border-black rounded-none shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]",
-      imgWrap: "border-r-4 border-black bg-[#F4F4F0] rounded-none",
-      btnPrimary: "bg-brand-500 text-black border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none font-black uppercase hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000]",
-      btnAction: "bg-black text-white border-4 border-black rounded-none",
-      qtyControl: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none",
-      qtyBtn: "bg-white text-black hover:bg-slate-200",
-      cartPopup: "bg-brand-500 text-black border-4 border-black shadow-[8px_8px_0_0_#000] rounded-none",
-      modal: "bg-[#F4F4F0] border-4 border-black rounded-none",
-      modalHeader: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none",
-      methodCard: "bg-white border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000]",
-      methodActive: "bg-brand-500 border-4 border-black shadow-[4px_4px_0_0_#000] rounded-none scale-[1.02]",
-    },
-    y2k: {
-      appBg: "bg-gradient-to-br from-fuchsia-100 via-pink-50 to-cyan-100",
-      textMain: "text-slate-800",
-      textSub: "text-slate-500",
-      header: "bg-white/40 backdrop-blur-2xl border-b border-white/60",
-      searchWrap: "bg-white/50 border border-white/80 rounded-full shadow-inner focus-within:ring-2 focus-within:ring-fuchsia-300",
-      searchInput: "bg-transparent text-slate-800 placeholder:text-slate-400 font-medium",
-      pillActive: "bg-gradient-to-r from-fuchsia-400 to-cyan-400 text-white rounded-full shadow-[0_4px_20px_rgba(232,121,249,0.5)] font-bold",
-      pillInactive: "bg-white/50 text-slate-600 border border-white/80 rounded-full font-medium hover:bg-white/80 backdrop-blur-sm",
-      card: "bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] shadow-[0_8px_32px_rgba(255,255,255,0.4)] hover:shadow-[0_12px_40px_rgba(255,255,255,0.6)] hover:-translate-y-1",
-      imgWrap: "rounded-2xl border-2 border-white/60 bg-white/50",
-      btnPrimary: "bg-gradient-to-r from-fuchsia-400 to-cyan-400 text-white rounded-full shadow-[0_8px_20px_rgba(232,121,249,0.4)] font-bold hover:scale-105",
-      btnAction: "bg-gradient-to-r from-fuchsia-400 to-cyan-400 text-white rounded-xl shadow-md",
-      qtyControl: "bg-white/60 border border-white/80 rounded-2xl shadow-inner backdrop-blur-sm",
-      qtyBtn: "bg-white/80 text-slate-700 hover:bg-white rounded-xl",
-      cartPopup: "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white rounded-[2rem] shadow-[0_20px_40px_rgba(217,70,239,0.4)] backdrop-blur-xl",
-      modal: "bg-white/80 backdrop-blur-3xl rounded-t-[3rem] border-t border-white",
-      modalHeader: "bg-white/60 border border-white/80 rounded-2xl",
-      methodCard: "bg-white/50 border border-white/80 rounded-2xl backdrop-blur-md hover:bg-white/80",
-      methodActive: "bg-gradient-to-r from-fuchsia-50 to-cyan-50 border-fuchsia-300 shadow-[0_4px_20px_rgba(232,121,249,0.2)] rounded-2xl",
-    },
-    streetwear: {
-      appBg: "bg-zinc-50",
-      textMain: "text-zinc-900 tracking-tighter",
-      textSub: "text-zinc-500",
-      header: "bg-zinc-50 border-b border-zinc-200",
-      searchWrap: "bg-zinc-100 rounded-none border-none focus-within:ring-2 focus-within:ring-black",
-      searchInput: "bg-transparent text-black placeholder:text-zinc-400 font-medium",
-      pillActive: "bg-black text-white rounded-none font-bold uppercase tracking-widest text-xs",
-      pillInactive: "bg-zinc-100 text-zinc-600 rounded-none font-medium uppercase tracking-widest text-xs hover:bg-zinc-200",
-      card: "bg-white border border-zinc-200 rounded-none shadow-sm hover:shadow-xl hover:-translate-y-1",
-      imgWrap: "rounded-none bg-zinc-100",
-      btnPrimary: "bg-brand-500 text-white rounded-none font-black uppercase tracking-widest shadow-lg hover:bg-brand-600",
-      btnAction: "bg-black text-white rounded-none",
-      qtyControl: "bg-zinc-100 rounded-none border border-zinc-200",
-      qtyBtn: "bg-zinc-200 text-black hover:bg-zinc-300 rounded-none",
-      cartPopup: "bg-black text-white rounded-none shadow-2xl",
-      modal: "bg-white rounded-none border-t border-zinc-200",
-      modalHeader: "bg-zinc-50 border border-zinc-200 rounded-none",
-      methodCard: "bg-zinc-50 border border-zinc-200 rounded-none hover:bg-zinc-100",
-      methodActive: "bg-black text-white border-black rounded-none",
-    },
-    playful: {
-      appBg: "bg-[#FFF9F0]",
-      textMain: "text-slate-800",
-      textSub: "text-amber-600/80",
-      header: "bg-[#FFF9F0]/90 backdrop-blur-md",
-      searchWrap: "bg-amber-50 border-2 border-amber-100 rounded-full focus-within:ring-4 focus-within:ring-amber-200 focus-within:border-amber-400",
-      searchInput: "bg-transparent text-amber-900 placeholder:text-amber-400 font-bold",
-      pillActive: "bg-amber-400 text-amber-950 rounded-full font-black shadow-[0_4px_15px_rgba(251,191,36,0.4)]",
-      pillInactive: "bg-white text-amber-600 border-2 border-amber-100 rounded-full font-bold hover:bg-amber-50",
-      card: "bg-white border-2 border-amber-100 rounded-[2.5rem] shadow-[0_8px_30px_rgba(251,191,36,0.15)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.25)] hover:-translate-y-1",
-      imgWrap: "rounded-[2rem] border-2 border-amber-50 bg-amber-50",
-      btnPrimary: "bg-brand-400 text-white rounded-full font-black shadow-[0_8px_20px_rgba(251,146,60,0.3)] hover:scale-105",
-      btnAction: "bg-amber-100 text-amber-700 rounded-full font-bold",
-      qtyControl: "bg-amber-50 border-2 border-amber-100 rounded-[1.5rem]",
-      qtyBtn: "bg-white text-amber-700 hover:bg-amber-100 rounded-[1rem]",
-      cartPopup: "bg-brand-500 text-white rounded-[2.5rem] shadow-[0_20px_40px_rgba(249,115,22,0.3)]",
-      modal: "bg-white rounded-t-[3rem]",
-      modalHeader: "bg-amber-50 border border-amber-100 rounded-[1.5rem]",
-      methodCard: "bg-white border-2 border-amber-100 rounded-[2rem] hover:bg-amber-50",
-      methodActive: "bg-amber-50 border-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.3)] rounded-[2rem] scale-[1.02]",
-    },
-    bento: {
-      appBg: "bg-slate-50",
-      textMain: "text-slate-900",
-      textSub: "text-slate-500",
-      header: "bg-white/80 backdrop-blur-xl border-b border-slate-100",
-      searchWrap: "bg-slate-100 rounded-2xl border border-transparent focus-within:bg-white focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-500/20 shadow-sm",
-      searchInput: "bg-transparent text-slate-900 placeholder:text-slate-400 font-medium",
-      pillActive: "bg-slate-900 text-white rounded-xl font-bold shadow-md",
-      pillInactive: "bg-white text-slate-600 border border-slate-200 rounded-xl font-medium hover:bg-slate-50 shadow-sm",
-      card: "bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow",
-      imgWrap: "rounded-2xl bg-slate-100",
-      btnPrimary: "bg-brand-500 text-white rounded-xl font-bold shadow-sm hover:bg-brand-600 active:scale-95",
-      btnAction: "bg-slate-100 text-slate-700 rounded-xl font-medium",
-      qtyControl: "bg-slate-50 border border-slate-200 rounded-xl",
-      qtyBtn: "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-lg shadow-sm",
-      cartPopup: "bg-slate-900 text-white rounded-2xl shadow-2xl",
-      modal: "bg-white rounded-t-3xl border-t border-slate-200",
-      modalHeader: "bg-slate-50 border border-slate-100 rounded-2xl",
-      methodCard: "bg-white border border-slate-200 rounded-2xl shadow-sm hover:bg-slate-50",
-      methodActive: "bg-brand-50 border-brand-500 ring-1 ring-brand-500 shadow-md rounded-2xl",
-    }
-  };
+  // Compute CSS variables for custom colors
+  const qsStyleVars = {
+    ...(hotel?.customizations?.qsPrimaryColor && { "--qs-primary": hotel.customizations.qsPrimaryColor }),
+    ...(hotel?.customizations?.qsBgColor && { "--qs-bg": hotel.customizations.qsBgColor }),
+    ...(hotel?.customizations?.qsTextColor && { "--qs-text": hotel.customizations.qsTextColor }),
+    ...(hotel?.customizations?.qsCardBgColor && { "--qs-card-bg": hotel.customizations.qsCardBgColor }),
+    "--brand-rgb": hexToRgb(hotel?.customizations?.primaryColor || "#ff7b00")
+  } as React.CSSProperties;
 
-  const t = themes[qsTheme as keyof typeof themes] || themes.bento;
+  const t = qsThemes[qsTheme as keyof typeof qsThemes] || qsThemes.bento;
 
   if (activeOrder) {
     // Show order tracking screen
     const isReady = activeOrder.status === "ready_for_pickup";
     const isClosed = activeOrder.status === "closed";
 
-    const customColor = hotel?.customizations?.primaryColor || "#ea580c";
-    const hexToRgb = (hex: string) => {
-      const bigint = parseInt(hex.replace('#', ''), 16);
-      return `${(bigint >> 16) & 255}, ${(bigint >> 8) & 255}, ${bigint & 255}`;
-    };
-    const customStyles = { "--brand-rgb": hexToRgb(customColor) } as React.CSSProperties;
-
     return (
-      <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe ${t.appBg}`} style={customStyles}>
+      <div className={`min-h-[100dvh] flex flex-col font-sans transition-colors duration-500 ${t.appBg}`} style={qsStyleVars}>
         <header className={`sticky top-0 z-40 shadow-sm pt-safe px-4 py-4 text-center ${t.header}`}>
           <h1 className={`font-black text-xl tracking-tight ${t.textMain}`}>{hotel?.name}</h1>
           <p className="text-xs text-slate-500 font-medium tracking-widest uppercase mt-0.5">Quick Service</p>
@@ -477,7 +373,7 @@ export default function QuickServiceClient({
   });
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={{"--brand-rgb": hexToRgb(hotel?.customizations?.primaryColor || "#ff7b00")} as React.CSSProperties}>
+    <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={qsStyleVars}>
       <header className={`sticky top-0 z-40 shadow-sm pt-safe ${t.header}`}>
         <div className="px-5 py-4 flex items-center justify-between">
           <div className="flex flex-col">
