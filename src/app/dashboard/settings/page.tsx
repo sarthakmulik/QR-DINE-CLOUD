@@ -657,8 +657,9 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            {/* Menu Layout Preset Selector */}
-            <div className="border-t border-gray-200 pt-4 space-y-4">
+            {/* Menu Layout Preset Selector (Dine-In Only) */}
+            {form.serviceType !== "quick_service" && (
+              <div className="border-t border-gray-200 pt-4 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
                   Menu Layout Preset
@@ -779,6 +780,7 @@ export default function SettingsPage() {
                 })}
               </div>
             </div>
+            )}
 
             {/* Elite Whitelabel Customization (Dine-In Only) */}
             {form.serviceType !== "quick_service" && (
@@ -1106,8 +1108,9 @@ export default function SettingsPage() {
           </form>
         </div>
 
-        {/* Live Preview Column */}
-        <div className="lg:col-span-5 sticky top-6 space-y-3">
+        {/* Live Preview Column (Dine-In Only) */}
+        {form.serviceType !== "quick_service" && (
+          <div className="lg:col-span-5 sticky top-6 space-y-3">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               Live Mobile Menu Preview
@@ -1318,6 +1321,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
