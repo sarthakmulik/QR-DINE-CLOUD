@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mapHotel, mapMenuItem } from "@/lib/types";
 import type { Hotel, MenuCategory, MenuItem } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ hotelId: string }> }

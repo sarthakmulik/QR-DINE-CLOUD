@@ -17,7 +17,7 @@ export default async function QuickServicePageServer({
   const sb = createAdminClient();
   const res = await sb
     .from("hotels")
-    .select("id, name, logo, plan, welcome_animation_enabled, welcome_animation_preset, status, service_type")
+    .select("id, name, logo, plan, welcome_animation_enabled, welcome_animation_preset, status, service_type, customizations")
     .eq("id", hotelId)
     .maybeSingle();
 
