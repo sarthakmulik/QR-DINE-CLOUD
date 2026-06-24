@@ -128,8 +128,8 @@ export default function QuickServiceClient({
         const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/status`);
         if (res.ok) {
           const data = await res.json();
-          if (data && data.status && data.status !== activeOrder.status) {
-            setActiveOrder((prev) => prev ? { ...prev, status: data.status } : null);
+          if (data && data.status && (data.status !== activeOrder.status || data.order_number !== (activeOrder as any).order_number)) {
+            setActiveOrder((prev) => prev ? { ...prev, status: data.status, order_number: data.order_number || (prev as any).order_number } : null);
           }
         }
       } catch (err) {
@@ -236,7 +236,7 @@ export default function QuickServiceClient({
                 const data = await res.json();
                 
                 if (res.ok && data.success) {
-                  setActiveOrder((prev) => prev ? { ...prev, status: "open" } : null);
+                  setActiveOrder((prev) => prev ? { ...prev, status: "open", order_number: data.order_number || (prev as any).order_number } : null);
                 } else {
                   throw new Error(data.error || "Payment verification failed");
                 }
@@ -248,6 +248,11 @@ export default function QuickServiceClient({
               }
             },
             prefill: { name: "Customer", contact: "9999999999" },
+            modal: {
+              ondismiss: function () {
+                setIsProcessing(false);
+              }
+            },
             theme: { color: hotel?.customizations?.qsPrimaryColor || hotel?.customizations?.primaryColor || "#ea580c" }
           };
           const rzp = new (window as any).Razorpay(options);

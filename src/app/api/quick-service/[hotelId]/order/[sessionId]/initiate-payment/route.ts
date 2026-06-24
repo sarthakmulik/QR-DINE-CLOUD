@@ -81,18 +81,18 @@ export async function POST(
       // Update session with transaction ID so we can verify it later
       await sb.from("table_sessions").update({ payment_reference: transactionId }).eq("id", sessionId);
 
-      // The exact callback URL depends on your hosted domain
-      // For now we will use a relative or configured URL
+      // Separate the headless S2S callback from the browser redirect
       const host = req.headers.get("host") || "localhost:3000";
       const protocol = host.includes("localhost") ? "http" : "https";
-      const callbackUrl = `${protocol}://${host}/api/webhooks/phonepe?hotelId=${hotelId}&sessionId=${sessionId}`;
+      const redirectUrl = `${protocol}://${host}/api/webhooks/phonepe/redirect?hotelId=${hotelId}&sessionId=${sessionId}`;
+      const callbackUrl = `${protocol}://${host}/api/webhooks/phonepe/callback?hotelId=${hotelId}&sessionId=${sessionId}`;
 
       const payload = {
         merchantId: merchant_id,
         merchantTransactionId: transactionId,
         merchantUserId: `U${sessionId.slice(0, 30)}`,
         amount: Math.round(totalAmount * 100), // in paise
-        redirectUrl: callbackUrl,
+        redirectUrl: redirectUrl,
         redirectMode: "POST",
         callbackUrl: callbackUrl,
         paymentInstrument: {

@@ -430,9 +430,25 @@ export async function assignOrderNumber(sessionId: string) {
   const { data: orderNumber, error: rpcError } = await sb.rpc("generate_daily_order_number", { p_hotel_id: session.hotel_id });
   if (rpcError || orderNumber === null) throw new Error("Failed to generate order number: " + rpcError?.message);
   
-  // Assign it to the session
-  const { error: updateErr } = await sb.from("table_sessions").update({ order_number: orderNumber }).eq("id", sessionId);
+  // Try to assign it only if it's still null (prevents race condition overwrites)
+  const { data: updated, error: updateErr } = await sb
+    .from("table_sessions")
+    .update({ order_number: orderNumber })
+    .eq("id", sessionId)
+    .is("order_number", null)
+    .select("order_number")
+    .maybeSingle();
+    
   if (updateErr) throw new Error("Failed to assign order number");
+  
+  if (!updated) {
+    // Another request beat us to it and set the order number!
+    // Fetch the existing order number and return it.
+    const { data: existing } = await sb.from("table_sessions").select("order_number").eq("id", sessionId).single();
+    if (existing && existing.order_number !== null) {
+      return existing.order_number;
+    }
+  }
   
   return orderNumber;
 }

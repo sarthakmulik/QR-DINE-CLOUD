@@ -39,7 +39,7 @@ export async function POST(
       }
 
       // Assign the order number strictly upon successful verification
-      await assignOrderNumber(sessionId);
+      const orderNumber = await assignOrderNumber(sessionId);
 
       // Mark session as open
       await sb.from("table_sessions").update({ 
@@ -48,7 +48,7 @@ export async function POST(
         payment_reference: razorpay_payment_id
       }).eq("id", sessionId);
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, order_number: orderNumber });
     }
 
     // --- PHONEPE VERIFICATION ---
@@ -88,14 +88,14 @@ export async function POST(
       const phonePeData = await phonePeRes.json();
 
       if (phonePeData.success && phonePeData.code === "PAYMENT_SUCCESS") {
-        await assignOrderNumber(sessionId);
+        const orderNumber = await assignOrderNumber(sessionId);
         
         await sb.from("table_sessions").update({ 
           status: "open", 
           payment_method: "UPI",
         }).eq("id", sessionId);
         
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, order_number: orderNumber });
       } else {
         return NextResponse.json({ error: phonePeData.message || "Payment not successful" }, { status: 400 });
       }
