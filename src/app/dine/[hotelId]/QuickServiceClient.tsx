@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useEffect, use, useRef } from "react";
+import React, { useState, useEffect, use, useRef, useMemo } from "react";
 import Script from "next/script";
 import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, FileText, Smartphone, Banknote, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,26 @@ import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
 import { qsThemes } from "@/lib/qs-themes";
 import { hexToRgb } from "@/lib/theme";
 
-type CartItem = MenuItem & { quantity: number };
+type MappedMenuItem = {
+  id: string;
+  hotelId: string;
+  categoryId: string;
+  name: string;
+  description: string | null;
+  price: number;
+  imageUrl: string | null;
+  isAvailable: boolean;
+  spicyLevel?: number | null;
+  prepTime?: number | null;
+  isVegetarian?: boolean | null;
+  containsNuts?: boolean | null;
+  isGlutenFree?: boolean | null;
+  isRecommended?: boolean | null;
+};
 
-type CategoryWithItems = MenuCategory & { items: MenuItem[] };
+type CartItem = MappedMenuItem & { quantity: number };
+
+type CategoryWithItems = MenuCategory & { items: MappedMenuItem[] };
 
 
 export default function QuickServiceClient({
@@ -94,12 +111,9 @@ export default function QuickServiceClient({
 
   // Fallback polling for order status
   useEffect(() => {
-    if (!activeOrder?.id) return;
-
-    // We removed Supabase Realtime because anonymous users trigger RLS policies
-    // which silently blocks updates from reaching the customer UI.
-    
     // Setup Fallback Polling (every 5 seconds) via secure API
+    if (!activeOrder?.id || activeOrder.status === "closed") return;
+    
     const pollInterval = setInterval(async () => {
       try {
         const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/status`);
@@ -119,7 +133,7 @@ export default function QuickServiceClient({
     };
   }, [activeOrder?.id, activeOrder?.status, hotelId]);
 
-  const updateQuantity = (item: MenuItem, delta: number) => {
+  const updateQuantity = (item: MappedMenuItem, delta: number) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -132,8 +146,34 @@ export default function QuickServiceClient({
     });
   };
 
-  const getQty = (id: string) => cart.find((i) => i.id === id)?.quantity || 0;
-  const cartTotal = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  const cartMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of cart) {
+      map[item.id] = item.quantity;
+    }
+    return map;
+  }, [cart]);
+
+  const getQty = (id: string) => cartMap[id] || 0;
+  const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0), [cart]);
+
+  const allItems = useMemo(() => categories.flatMap((c) => c.items), [categories]);
+  
+  const filteredCategories = useMemo(() => {
+    if (activeCategory !== "all") {
+      return categories.filter(c => c.id === activeCategory);
+    }
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      return categories.map(c => ({
+        ...c,
+        items: c.items.filter(i => i.name.toLowerCase().includes(lowerQuery))
+      })).filter(c => c.items.length > 0);
+    }
+    return categories;
+  }, [categories, activeCategory, searchQuery]);
+
+  const hasItems = filteredCategories.some(c => c.items.length > 0);
 
   async function triggerOnlinePayment(sessionToPay: TableSession) {
     setIsProcessing(true);
@@ -388,13 +428,6 @@ export default function QuickServiceClient({
 
   
 
-  const allItems = categories.flatMap((c) => c.items);
-  const filteredItems = allItems.filter((i) => {
-    if (activeCategory !== "all" && i.category_id !== activeCategory) return false;
-    if (searchQuery && !i.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
-
   return (
     <>
       <div className={`min-h-[100dvh] flex flex-col relative animate-fade-in pb-safe selection:bg-brand-500 selection:text-white ${t.appBg}`} style={qsStyleVars}>
@@ -451,29 +484,37 @@ export default function QuickServiceClient({
               <div className="absolute inset-0 rounded-full border-4 border-brand-500 border-t-transparent animate-spin"></div>
             </div>
           </div>
-        ) : filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredItems.map((item) => {
-              const qty = getQty(item.id);
-              const hasImage = !!item.image_url;
-              return (
-                <div key={item.id} className={`p-3 flex items-center gap-4 group transition-all duration-300 ${t.card}`}>
-                  <div className={`relative w-24 h-24 flex-shrink-0 overflow-hidden ${t.imgWrap}`}>
-                    {hasImage ? (
-                      <img src={item.image_url!} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-2xl font-black text-slate-300 uppercase tracking-tighter">{item.name.substring(0, 2)}</span>
-                      </div>
-                    )}
-                    {item.is_vegetarian !== null && item.is_vegetarian !== undefined && (
-                      <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-md p-1 rounded-md shadow-sm">
-                        <div className={`w-3 h-3 border-2 rounded-[3px] flex items-center justify-center ${item.is_vegetarian ? "border-emerald-500" : "border-red-500"}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${item.is_vegetarian ? "bg-emerald-500" : "bg-red-500"}`} />
+        ) : hasItems ? (
+          <div className="space-y-8">
+            {filteredCategories.map(category => (
+              <div key={category.id} className="animate-fade-in">
+                {(activeCategory === "all" && !searchQuery) && (
+                  <h2 className={`font-black text-xl mb-4 tracking-tight ${t.textMain}`}>
+                    {category.name}
+                  </h2>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {category.items.map((item) => {
+                    const qty = getQty(item.id);
+                    const hasImage = !!item.imageUrl;
+                    return (
+                      <div key={item.id} className={`p-3 flex items-center gap-4 group transition-all duration-300 ${t.card}`}>
+                        <div className={`relative w-24 h-24 flex-shrink-0 overflow-hidden ${t.imgWrap}`}>
+                          {hasImage ? (
+                            <img src={item.imageUrl!} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-2xl font-black text-slate-300 uppercase tracking-tighter">{item.name.substring(0, 2)}</span>
+                            </div>
+                          )}
+                          {item.isVegetarian !== null && item.isVegetarian !== undefined && (
+                            <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-md p-1 rounded-md shadow-sm">
+                              <div className={`w-3 h-3 border-2 rounded-[3px] flex items-center justify-center ${item.isVegetarian ? "border-emerald-500" : "border-red-500"}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${item.isVegetarian ? "bg-emerald-500" : "bg-red-500"}`} />
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
                   
                   <div className="flex-1 min-w-0 py-1 flex flex-col justify-between h-full">
                     <div>
@@ -522,7 +563,10 @@ export default function QuickServiceClient({
                   </div>
                 </div>
               );
-            })}
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
