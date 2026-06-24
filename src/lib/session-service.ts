@@ -385,10 +385,6 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
   
   if (sessionData.status !== "draft") throw new Error("Session is not in draft status");
 
-  // Call the RPC to get the daily order number
-  const { data: orderNumber, error: rpcError } = await sb.rpc("generate_daily_order_number", { p_hotel_id: sessionData.hotel_id });
-  if (rpcError || orderNumber === null) throw new Error("Failed to generate order number: " + rpcError?.message);
-
   const hotel = (sessionData as any).hotels as Hotel;
   const items = await getSessionItems(sessionId);
   const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
@@ -399,11 +395,13 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
   const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
   const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
 
+  // We explicitly DO NOT assign order_number here to prevent "ghost" orders from skipping numbers.
+  // order_number will be assigned later when payment is successfully confirmed.
+
   const { data: updated, error: updateErr } = await sb
     .from("table_sessions")
     .update({ 
       status: "payment_pending", 
-      order_number: orderNumber, 
       payment_method: paymentMethod,
       subtotal, 
       discount_amount: discountAmount, 
@@ -416,3 +414,25 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
   return mapTableSession(updated, items, hotel);
 }
 
+export async function assignOrderNumber(sessionId: string) {
+  const sb = admin();
+  
+  // Get session details to find hotel_id and check if it already has an order_number
+  const { data: session, error } = await sb.from("table_sessions").select("hotel_id, order_number").eq("id", sessionId).single();
+  if (error || !session) throw new Error("Session not found");
+  
+  if (session.order_number !== null) {
+    // Already has an order number, do nothing
+    return session.order_number;
+  }
+  
+  // Call the RPC to get the daily order number
+  const { data: orderNumber, error: rpcError } = await sb.rpc("generate_daily_order_number", { p_hotel_id: session.hotel_id });
+  if (rpcError || orderNumber === null) throw new Error("Failed to generate order number: " + rpcError?.message);
+  
+  // Assign it to the session
+  const { error: updateErr } = await sb.from("table_sessions").update({ order_number: orderNumber }).eq("id", sessionId);
+  if (updateErr) throw new Error("Failed to assign order number");
+  
+  return orderNumber;
+}

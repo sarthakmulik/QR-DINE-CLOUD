@@ -26,17 +26,11 @@ export async function POST(
       return NextResponse.json({ error: "Order is not awaiting payment" }, { status: 400 });
     }
     
-    // Update status to open so it appears in KDS
-    const { error: updateErr } = await sb
-      .from("table_sessions")
-      .update({ status: "open" })
-      .eq("id", sessionId);
-      
-    if (updateErr) {
-      throw new Error(updateErr.message);
-    }
+    // We explicitly DO NOT update the status to 'open' here.
+    // The admin must manually click "Confirm Paid" in the dashboard.
+    // This prevents fake users from bypassing payment.
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Awaiting admin verification" });
   } catch (err: any) {
     console.error("Mark paid error:", err);
     return NextResponse.json({ error: err.message || "Failed to mark paid" }, { status: 500 });

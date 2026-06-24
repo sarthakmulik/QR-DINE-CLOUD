@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
+import { assignOrderNumber } from "@/lib/session-service";
 import type { Hotel } from "@/lib/types";
 
 export async function POST(
@@ -36,6 +37,9 @@ export async function POST(
       if (generated_signature !== razorpay_signature) {
         return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
       }
+
+      // Assign the order number strictly upon successful verification
+      await assignOrderNumber(sessionId);
 
       // Mark session as open
       await sb.from("table_sessions").update({ 
@@ -84,6 +88,8 @@ export async function POST(
       const phonePeData = await phonePeRes.json();
 
       if (phonePeData.success && phonePeData.code === "PAYMENT_SUCCESS") {
+        await assignOrderNumber(sessionId);
+        
         await sb.from("table_sessions").update({ 
           status: "open", 
           payment_method: "UPI",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assignOrderNumber } from "@/lib/session-service";
 
 export async function POST(
   req: NextRequest,
@@ -28,6 +29,9 @@ export async function POST(
       return NextResponse.json({ error: "Order is not awaiting payment" }, { status: 400 });
     }
     
+    // Assign the order number safely
+    await assignOrderNumber(sessionId);
+
     // Accept payment -> send to kitchen queue
     const { error: updateErr } = await sb
       .from("table_sessions")

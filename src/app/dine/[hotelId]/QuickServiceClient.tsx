@@ -58,6 +58,7 @@ export default function QuickServiceClient({
   const [isVerifying, setIsVerifying] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "UPI" | "Card" | null>(null);
+  const [hasMarkedPaid, setHasMarkedPaid] = useState(false);
 
   const [activeOrder, setActiveOrder] = useState<TableSession | null>(null);
   const supabase = createClient();
@@ -346,7 +347,9 @@ export default function QuickServiceClient({
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className={`p-8 w-full max-w-md relative overflow-hidden ${t.card}`}>
             <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 ${t.textSub}`}>Order Number</h2>
-            <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>#{(activeOrder as any).orderNumber || activeOrder.order_number}</div>
+            <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>
+              #{(activeOrder as any).orderNumber || activeOrder.order_number || activeOrder.id.split('-')[0].toUpperCase()}
+            </div>
 
             {isClosed ? (
               <div className="text-emerald-500 animate-success-pop flex flex-col items-center">
@@ -410,21 +413,31 @@ export default function QuickServiceClient({
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${(hotel as any).upiId}&pn=${hotel?.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
                     </div>
                     <p className="text-slate-500 mb-8 font-semibold text-lg">Pay <span className="text-slate-800 font-bold">{formatINR(activeOrder.total)}</span> via any UPI App</p>
-                    <Button onClick={async () => {
-                      setIsProcessing(true);
-                      try {
-                        const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/mark-paid`, { method: "POST" });
-                        if (res.ok) {
-                          setActiveOrder({ ...activeOrder, status: "open" });
-                        } else {
-                          alert((await res.json()).error);
+                    {hasMarkedPaid ? (
+                      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 animate-fade-in">
+                        <div className="flex justify-center mb-2">
+                          <div className="w-8 h-8 rounded-full border-4 border-amber-300 border-t-amber-600 animate-spin"></div>
+                        </div>
+                        <p className="font-bold">Awaiting Counter Verification</p>
+                        <p className="text-sm mt-1">We are verifying your payment. Please wait...</p>
+                      </div>
+                    ) : (
+                      <Button onClick={async () => {
+                        setIsProcessing(true);
+                        try {
+                          const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/mark-paid`, { method: "POST" });
+                          if (res.ok) {
+                            setHasMarkedPaid(true);
+                          } else {
+                            alert((await res.json()).error);
+                          }
+                        } finally {
+                          setIsProcessing(false);
                         }
-                      } finally {
-                        setIsProcessing(false);
-                      }
-                    }} disabled={isProcessing} className="w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-transform active:scale-[0.98]">
-                      {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Verifying...</> : "I have paid successfully"}
-                    </Button>
+                      }} disabled={isProcessing} className="w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-transform active:scale-[0.98]">
+                        {isProcessing ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Verifying...</> : "I have paid successfully"}
+                      </Button>
+                    )}
                   </>
                 ) : (
                   <>

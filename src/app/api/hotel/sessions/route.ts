@@ -29,7 +29,7 @@ export async function GET() {
       .update({ status: "cancelled", closed_at: new Date().toISOString() })
       .eq("hotel_id", hotelId)
       .eq("status", "payment_pending")
-      .lt("updated_at", tenMinsAgo);
+      .lt("created_at", tenMinsAgo);
     // ------------------------------------------
 
     // Single nested join — eliminates N+1 items and table fetches
