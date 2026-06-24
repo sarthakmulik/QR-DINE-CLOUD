@@ -55,6 +55,7 @@ export default function QuickServiceClient({
   
   const [showCart, setShowCart] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "UPI" | "Card" | null>(null);
 
@@ -81,6 +82,13 @@ export default function QuickServiceClient({
         if (!sessionToRestore) {
           const stored = localStorage.getItem(`qr_dine_qs_session_${hotelId}`);
           if (stored) sessionToRestore = stored;
+        }
+
+        const paymentStatus = urlParams.get("payment");
+        if (paymentStatus === "failed") {
+          alert("Payment failed or was cancelled. Please try again.");
+          // Clear query params to prevent alert on reload
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
 
         if (sessionToRestore) {
@@ -207,25 +215,44 @@ export default function QuickServiceClient({
             currency: initData.currency,
             name: initData.hotel_name,
             description: `Order #${(sessionToPay as any).orderNumber || sessionToPay.order_number}`,
+            image: hotel?.logo || undefined,
             order_id: initData.order_id,
             handler: async function (response: any) {
-              // Verify payment
-              await fetch(`/api/quick-service/${hotelId}/order/${sessionToPay.id}/verify-payment`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  gateway: "razorpay",
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature
-                })
-              });
-              setActiveOrder((prev) => prev ? { ...prev, status: "open" } : null);
+              setIsVerifying(true);
+              try {
+                // Verify payment securely
+                const res = await fetch(`/api/quick-service/${hotelId}/order/${sessionToPay.id}/verify-payment`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    gateway: "razorpay",
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                  })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok && data.success) {
+                  setActiveOrder((prev) => prev ? { ...prev, status: "open" } : null);
+                } else {
+                  throw new Error(data.error || "Payment verification failed");
+                }
+              } catch (err: any) {
+                console.error("Verification error:", err);
+                alert(err.message || "Payment verification failed. If money was deducted, please contact the counter.");
+              } finally {
+                setIsVerifying(false);
+              }
             },
             prefill: { name: "Customer", contact: "9999999999" },
-            theme: { color: hotel?.customizations?.primaryColor || "#ea580c" }
+            theme: { color: hotel?.customizations?.qsPrimaryColor || hotel?.customizations?.primaryColor || "#ea580c" }
           };
           const rzp = new (window as any).Razorpay(options);
+          rzp.on('payment.failed', function (response: any) {
+             alert(response.error.description || "Payment failed!");
+          });
           rzp.open();
         } else if (initData.gateway === "phonepe") {
           window.location.href = initData.redirect_url;
@@ -352,13 +379,15 @@ export default function QuickServiceClient({
                     <h3 className={`text-2xl font-black tracking-tight mb-2 ${t.textMain}`}>Complete Payment</h3>
                     <p className="text-slate-500 font-medium mb-8">Please complete your payment to send the order to the kitchen.</p>
                     
-                    {isProcessing ? (
+                    {isProcessing || isVerifying ? (
                       <div className="w-full flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100">
                         <div className="w-12 h-12 relative mb-4">
                           <div className="absolute inset-0 rounded-full border-4 border-brand-200"></div>
                           <div className="absolute inset-0 rounded-full border-4 border-brand-600 border-t-transparent animate-orbit"></div>
                         </div>
-                        <p className="font-bold text-slate-700 animate-pulse">Connecting to Secure Gateway...</p>
+                        <p className="font-bold text-slate-700 animate-pulse">
+                          {isVerifying ? "Verifying Payment securely..." : "Connecting to Secure Gateway..."}
+                        </p>
                       </div>
                     ) : (
                       <button 
