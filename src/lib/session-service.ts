@@ -341,6 +341,35 @@ export function getTableStatus(
   return "free";
 }
 
+export async function autoCleanupSessions(hotelId: string) {
+  const sb = admin();
+  const now = Date.now();
+  const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
+  const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
+  const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
+
+  // 1. Auto-collect ready orders forgotten for 5 mins
+  await sb.from("table_sessions")
+    .update({ status: "closed", closed_at: new Date().toISOString() })
+    .eq("hotel_id", hotelId)
+    .eq("status", "ready_for_pickup")
+    .lt("updated_at", fiveMinsAgo);
+
+  // 2. Auto-discard unpaid orders abandoned for 10 mins (Uses updated_at to count from checkout initiation)
+  await sb.from("table_sessions")
+    .update({ status: "cancelled", closed_at: new Date().toISOString() })
+    .eq("hotel_id", hotelId)
+    .eq("status", "payment_pending")
+    .lt("updated_at", tenMinsAgo);
+    
+  // 3. Auto-discard stale drafts that were never submitted
+  await sb.from("table_sessions")
+    .update({ status: "cancelled", closed_at: new Date().toISOString() })
+    .eq("hotel_id", hotelId)
+    .eq("status", "draft")
+    .lt("updated_at", twoHoursAgo);
+}
+
 export async function getOrCreateQuickServiceSession(hotelId: string, expectedSessionId?: string | null) {
   const sb = admin();
   const hotelRes = await sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { RestaurantTable, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
+import { autoCleanupSessions } from "@/lib/session-service";
 import crypto from "crypto";
 
 export async function GET(
@@ -43,6 +44,10 @@ export async function GET(
     if (token !== expectedToken) {
       return NextResponse.json({ error: "Forbidden: Invalid token" }, { status: 403 });
     }
+
+    // --- AUTO-CLEANUP LOGIC ---
+    await autoCleanupSessions(hotelId);
+    // ------------------------------------------
 
     // 1. Fetch tables and open sessions in parallel
     const [tablesRes, sessionsRes] = await Promise.all([

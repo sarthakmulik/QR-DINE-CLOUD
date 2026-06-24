@@ -3,7 +3,7 @@ import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapTableSession } from "@/lib/types";
 import type { SessionItem, TableSession } from "@/lib/types";
-import { getOrCreateOpenSession } from "@/lib/session-service";
+import { getOrCreateOpenSession, autoCleanupSessions } from "@/lib/session-service";
 
 export const dynamic = "force-dynamic";
 
@@ -12,24 +12,8 @@ export async function GET() {
     const { hotelId } = await requireHotelAccess();
     const sb = createAdminClient();
 
-    // --- AUTO-CLEANUP LOGIC (Quick Service) ---
-    const now = Date.now();
-    const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
-    const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
-
-    // 1. Auto-collect ready orders forgotten for 5 mins
-    await sb.from("table_sessions")
-      .update({ status: "closed", closed_at: new Date().toISOString() })
-      .eq("hotel_id", hotelId)
-      .eq("status", "ready_for_pickup")
-      .lt("updated_at", fiveMinsAgo);
-
-    // 2. Auto-discard unpaid orders abandoned for 10 mins
-    await sb.from("table_sessions")
-      .update({ status: "cancelled", closed_at: new Date().toISOString() })
-      .eq("hotel_id", hotelId)
-      .eq("status", "payment_pending")
-      .lt("created_at", tenMinsAgo);
+    // --- AUTO-CLEANUP LOGIC ---
+    await autoCleanupSessions(hotelId);
     // ------------------------------------------
 
     // Single nested join — eliminates N+1 items and table fetches
