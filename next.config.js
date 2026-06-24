@@ -17,11 +17,6 @@ const nextConfig = {
         headers: [{ key: "Cache-Control", value: "private, max-age=60, stale-while-revalidate=120" }],
       },
       {
-        // Hotel admin: Profile rarely changes — cache for 60 seconds
-        source: "/api/hotel/profile",
-        headers: [{ key: "Cache-Control", value: "private, max-age=60, stale-while-revalidate=300" }],
-      },
-      {
         // Dine: menu (categories+items) is public, stable — aggressive cache
         // sessionOnly=true queries are excluded by the CDN via Vary
         source: "/api/dine/:hotelId/:tableNumber",

@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import DineClient from "./DineClient";
 import type { Hotel } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function DinePageServer({
   params,
   searchParams,
