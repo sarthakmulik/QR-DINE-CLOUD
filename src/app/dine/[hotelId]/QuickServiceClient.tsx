@@ -61,6 +61,7 @@ export default function QuickServiceClient({
   const [hasMarkedPaid, setHasMarkedPaid] = useState(false);
 
   const [activeOrder, setActiveOrder] = useState<TableSession | null>(null);
+  const [showMenuWhileTracking, setShowMenuWhileTracking] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -296,6 +297,7 @@ export default function QuickServiceClient({
       setShowCart(false);
       setShowPayment(false);
       setActiveOrder(session);
+      setShowMenuWhileTracking(false);
       localStorage.setItem(`qr_dine_qs_session_${hotelId}`, session.id);
 
       // If payment is UPI/Card and a gateway is configured, auto-initiate
@@ -337,7 +339,7 @@ export default function QuickServiceClient({
 
   const t = qsThemes[qsTheme as keyof typeof qsThemes] || qsThemes.bento;
 
-  if (activeOrder) {
+  if (activeOrder && !showMenuWhileTracking) {
     // Show order tracking screen
     const isReady = activeOrder.status === "ready_for_pickup";
     const isClosed = activeOrder.status === "closed";
@@ -464,6 +466,18 @@ export default function QuickServiceClient({
                 </div>
                 <h3 className={`text-3xl font-black tracking-tight mb-3 ${t.textMain}`}>Cooking...</h3>
                 <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order has been sent to the kitchen. We will notify you here when it&apos;s ready.</p>
+              </div>
+            )}
+            
+            {!isClosed && (
+              <div className="mt-8 pt-6 border-t border-slate-100 w-full animate-fade-in flex flex-col gap-3">
+                <Button 
+                  onClick={() => setShowMenuWhileTracking(true)}
+                  variant="secondary"
+                  className={`w-full h-14 text-lg font-bold border-2 transition-all active:scale-[0.98] text-brand-600 border-brand-200 hover:bg-brand-50`}
+                >
+                  Buy Something More
+                </Button>
               </div>
             )}
           </div>
@@ -644,6 +658,30 @@ export default function QuickServiceClient({
             </div>
             <div className="flex items-center gap-2 font-bold bg-white text-brand-600 px-4 py-2.5 rounded-xl relative z-10 shadow-sm">
               Checkout <ArrowRight size={16} strokeWidth={3} />
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Active Order Tracking Banner (Visible when browsing menu) */}
+      {activeOrder && activeOrder.status !== "closed" && showMenuWhileTracking && (
+        <div className={`fixed ${cart.length > 0 && !showCart ? 'bottom-28' : 'bottom-6'} left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-40 animate-slide-up transition-all duration-300`}>
+          <button
+            onClick={() => setShowMenuWhileTracking(false)}
+            className={`w-full p-3.5 flex items-center justify-between active:scale-[0.98] transition-all bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-brand-500 overflow-hidden relative group`}
+          >
+            <div className="absolute inset-0 bg-brand-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="flex items-center gap-3 relative z-10">
+               <div className="w-10 h-10 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center animate-pulse">
+                 <ShoppingBag size={20} />
+               </div>
+               <div className="flex flex-col items-start text-left">
+                 <span className="font-bold text-slate-800 tracking-tight text-sm">Order #{(activeOrder as any).orderNumber || activeOrder.order_number || activeOrder.id.split('-')[0].toUpperCase()}</span>
+                 <span className="text-[10px] text-brand-600 font-bold uppercase tracking-widest">{activeOrder.status === 'payment_pending' ? 'Awaiting Payment' : activeOrder.status.replace(/_/g, ' ')}</span>
+               </div>
+            </div>
+            <div className="bg-brand-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 relative z-10 shadow-sm">
+              Track <ArrowRight size={14} />
             </div>
           </button>
         </div>
