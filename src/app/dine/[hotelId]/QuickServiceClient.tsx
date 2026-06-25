@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, use, useRef, useMemo } from "react";
 import Script from "next/script";
-import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, FileText, Smartphone, Banknote, CreditCard, Loader2 } from "lucide-react";
+import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, FileText, Smartphone, Banknote, CreditCard, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatINR } from "@/lib/utils";
@@ -95,13 +95,10 @@ export default function QuickServiceClient({
 
         if (sessionToRestore) {
           // Restore the session after a payment gateway redirect or local storage
-          const { data: sessionData } = await supabase
-            .from("table_sessions")
-            .select("*")
-            .eq("id", sessionToRestore)
-            .single();
-          if (sessionData) {
-            if (sessionData.status !== "closed") {
+          const res = await fetch(`/api/quick-service/${hotelId}/order/${sessionToRestore}`);
+          if (res.ok) {
+            const { session: sessionData } = await res.json();
+            if (sessionData && sessionData.status !== "closed") {
               setActiveOrder(sessionData as TableSession);
               localStorage.setItem(`qr_dine_qs_session_${hotelId}`, sessionData.id);
             } else {
@@ -378,6 +375,15 @@ export default function QuickServiceClient({
                 </div>
                 <h3 className={`text-3xl font-black tracking-tight mb-2 ${t.textMain}`}>Ready for Pickup!</h3>
                 <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order is hot and ready. Please collect it from the counter.</p>
+              </div>
+            ) : activeOrder.status === "cancelled" ? (
+              <div className="flex flex-col items-center animate-fade-in">
+                <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                  <XCircle className="w-12 h-12" />
+                </div>
+                <h3 className={`text-3xl font-black tracking-tight mb-3 ${t.textMain}`}>Order Cancelled</h3>
+                <p className="text-slate-500 text-lg font-medium leading-relaxed mb-6">Your order was cancelled automatically. Please place a new order.</p>
+                <Button className={`w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => { localStorage.removeItem(`qr_dine_qs_session_${hotelId}`); window.location.href = window.location.pathname; }}>Start New Order</Button>
               </div>
             ) : activeOrder.status === "payment_pending" ? (
               <div className="flex flex-col items-center w-full animate-fade-in">
