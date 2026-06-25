@@ -353,21 +353,21 @@ export async function autoCleanupSessions(hotelId: string) {
     .update({ status: "closed", closed_at: new Date().toISOString() })
     .eq("hotel_id", hotelId)
     .eq("status", "ready_for_pickup")
-    .lt("updated_at", fiveMinsAgo);
+    .lt("start_time", fiveMinsAgo);
 
-  // 2. Auto-discard unpaid orders abandoned for 10 mins (Uses updated_at to count from checkout initiation)
+  // 2. Auto-discard unpaid orders abandoned for 10 mins (Uses start_time as Quick Service creates session at checkout)
   await sb.from("table_sessions")
     .update({ status: "cancelled", closed_at: new Date().toISOString() })
     .eq("hotel_id", hotelId)
     .eq("status", "payment_pending")
-    .lt("updated_at", tenMinsAgo);
+    .lt("start_time", tenMinsAgo);
     
   // 3. Auto-discard stale drafts that were never submitted
   await sb.from("table_sessions")
     .update({ status: "cancelled", closed_at: new Date().toISOString() })
     .eq("hotel_id", hotelId)
     .eq("status", "draft")
-    .lt("updated_at", twoHoursAgo);
+    .lt("start_time", twoHoursAgo);
 }
 
 export async function getOrCreateQuickServiceSession(hotelId: string, expectedSessionId?: string | null) {
