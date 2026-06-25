@@ -60,7 +60,7 @@ export default function QuickServiceClient({
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "UPI" | "Card" | null>(null);
   const [hasMarkedPaid, setHasMarkedPaid] = useState(false);
 
-  const [activeOrder, setActiveOrder] = useState<TableSession | null>(null);
+  const [activeOrders, setActiveOrders] = useState<TableSession[]>([]);
   const [showMenuWhileTracking, setShowMenuWhileTracking] = useState(false);
   const supabase = createClient();
 
@@ -80,30 +80,53 @@ export default function QuickServiceClient({
           alert(data.error);
         }
 
-        let sessionToRestore = sessionIdParam;
-        if (!sessionToRestore) {
-          const stored = localStorage.getItem(`qr_dine_qs_session_${hotelId}`);
-          if (stored) sessionToRestore = stored;
+        let sessionsToRestore: string[] = [];
+        if (sessionIdParam) {
+          sessionsToRestore.push(sessionIdParam);
         }
-
-        const paymentStatus = urlParams.get("payment");
-        if (paymentStatus === "failed") {
-          alert("Payment failed or was cancelled. Please try again.");
-          // Clear query params to prevent alert on reload
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        if (sessionToRestore) {
-          // Restore the session after a payment gateway redirect or local storage
-          const res = await fetch(`/api/quick-service/${hotelId}/order/${sessionToRestore}`);
-          if (res.ok) {
-            const { session: sessionData } = await res.json();
-            if (sessionData && sessionData.status !== "closed") {
-              setActiveOrder(sessionData as TableSession);
-              localStorage.setItem(`qr_dine_qs_session_${hotelId}`, sessionData.id);
-            } else {
-              localStorage.removeItem(`qr_dine_qs_session_${hotelId}`);
+        
+        // Load plural key
+        const storedPlural = localStorage.getItem(`qr_dine_qs_sessions_${hotelId}`);
+        if (storedPlural) {
+          try {
+            const arr = JSON.parse(storedPlural);
+            if (Array.isArray(arr)) {
+              sessionsToRestore = [...sessionsToRestore, ...arr];
             }
+          } catch (e) {}
+        } else {
+          // Fallback legacy key
+          const storedSingular = localStorage.getItem(`qr_dine_qs_session_${hotelId}`);
+          if (storedSingular) {
+            sessionsToRestore.push(storedSingular);
+          }
+        }
+        
+        // Deduplicate
+        sessionsToRestore = Array.from(new Set(sessionsToRestore));
+
+        if (sessionsToRestore.length > 0) {
+          const validOrders: TableSession[] = [];
+          await Promise.all(
+            sessionsToRestore.map(async (id) => {
+              const res = await fetch(`/api/quick-service/${hotelId}/order/${id}`);
+              if (res.ok) {
+                const { session: sessionData } = await res.json();
+                if (sessionData && sessionData.status !== "closed") {
+                  validOrders.push(sessionData as TableSession);
+                }
+              }
+            })
+          );
+          
+          if (validOrders.length > 0) {
+            // Sort by created_at desc (newest first)
+            validOrders.sort((a, b) => new Date((b as any).created_at || (b as any).createdAt || 0).getTime() - new Date((a as any).created_at || (a as any).createdAt || 0).getTime());
+            setActiveOrders(validOrders);
+            localStorage.setItem(`qr_dine_qs_sessions_${hotelId}`, JSON.stringify(validOrders.map(o => o.id)));
+          } else {
+            localStorage.removeItem(`qr_dine_qs_sessions_${hotelId}`);
+            localStorage.removeItem(`qr_dine_qs_session_${hotelId}`);
           }
         }
       } catch (err) {
@@ -118,16 +141,38 @@ export default function QuickServiceClient({
 
   // Fallback polling for order status
   useEffect(() => {
-    // Setup Fallback Polling (every 5 seconds) via secure API
-    if (!activeOrder?.id || activeOrder.status === "closed") return;
+    if (activeOrders.length === 0) return;
     
     const pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/status`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.status && (data.status !== activeOrder.status || data.order_number !== (activeOrder as any).order_number)) {
-            setActiveOrder((prev) => prev ? { ...prev, status: data.status, order_number: data.order_number || (prev as any).order_number } : null);
+        const updatedOrders = await Promise.all(activeOrders.map(async (order) => {
+          if (order.status === "closed") return order;
+          const res = await fetch(`/api/quick-service/${hotelId}/order/${order.id}/status`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status && (data.status !== order.status || data.order_number !== (order as any).order_number)) {
+              return { ...order, status: data.status, order_number: data.order_number || (order as any).order_number };
+            }
+          }
+          return order;
+        }));
+        
+        let changed = false;
+        
+        if (updatedOrders.length !== activeOrders.length) changed = true;
+        else {
+          for (let i = 0; i < updatedOrders.length; i++) {
+            if (updatedOrders[i].status !== activeOrders[i].status) changed = true;
+          }
+        }
+        
+        if (changed) {
+          setActiveOrders(updatedOrders);
+          const validIds = updatedOrders.filter(o => o.status !== "closed" && o.status !== "cancelled").map(o => o.id);
+          if (validIds.length > 0) {
+            localStorage.setItem(`qr_dine_qs_sessions_${hotelId}`, JSON.stringify(validIds));
+          } else {
+            localStorage.removeItem(`qr_dine_qs_sessions_${hotelId}`);
           }
         }
       } catch (err) {
@@ -138,7 +183,7 @@ export default function QuickServiceClient({
     return () => {
       clearInterval(pollInterval);
     };
-  }, [activeOrder?.id, activeOrder?.status, hotelId]);
+  }, [hotelId, activeOrders]);
 
   const updateQuantity = (item: MappedMenuItem, delta: number) => {
     setCart((prev) => {
@@ -234,7 +279,7 @@ export default function QuickServiceClient({
                 const data = await res.json();
                 
                 if (res.ok && data.success) {
-                  setActiveOrder((prev) => prev ? { ...prev, status: "open", order_number: data.order_number || (prev as any).order_number } : null);
+                  setActiveOrders((prev) => prev.map(o => o.id === sessionToPay.id ? { ...o, status: "open", order_number: data.order_number || (o as any).order_number } : o));
                 } else {
                   throw new Error(data.error || "Payment verification failed");
                 }
@@ -293,9 +338,12 @@ export default function QuickServiceClient({
       setCart([]);
       setShowCart(false);
       setShowPayment(false);
-      setActiveOrder(session);
+      
+      const newOrders = [session, ...activeOrders];
+      setActiveOrders(newOrders);
       setShowMenuWhileTracking(false);
-      localStorage.setItem(`qr_dine_qs_session_${hotelId}`, session.id);
+      localStorage.setItem(`qr_dine_qs_sessions_${hotelId}`, JSON.stringify(newOrders.map(o => o.id)));
+      localStorage.removeItem(`qr_dine_qs_session_${hotelId}`);
 
       // If payment is UPI/Card and a gateway is configured, auto-initiate
       const pg = (hotel as any)?.paymentSettings?.active_pg;
@@ -336,11 +384,8 @@ export default function QuickServiceClient({
 
   const t = qsThemes[qsTheme as keyof typeof qsThemes] || qsThemes.bento;
 
-  if (activeOrder && !showMenuWhileTracking) {
+  if (activeOrders.length > 0 && !showMenuWhileTracking) {
     // Show order tracking screen
-    const isReady = activeOrder.status === "ready_for_pickup";
-    const isClosed = activeOrder.status === "closed";
-
     return (
       <div className={`min-h-[100dvh] flex flex-col font-sans transition-colors duration-500 ${t.appBg}`} style={qsStyleVars}>
         <header className={`sticky top-0 z-40 shadow-sm pt-safe px-4 py-4 text-center ${t.header}`}>
@@ -348,12 +393,17 @@ export default function QuickServiceClient({
           <p className="text-xs text-slate-500 font-medium tracking-widest uppercase mt-0.5">Quick Service</p>
         </header>
         
-        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className={`p-8 w-full max-w-md relative overflow-hidden ${t.card}`}>
-            <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 ${t.textSub}`}>Order Number</h2>
-            <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>
-              #{(activeOrder as any).orderNumber || activeOrder.order_number || activeOrder.id.split('-')[0].toUpperCase()}
-            </div>
+        <main className="flex-1 overflow-y-auto p-6 flex flex-col items-center gap-6 pb-24 scroll-smooth">
+          {activeOrders.map((activeOrder) => {
+            const isReady = activeOrder.status === "ready_for_pickup";
+            const isClosed = activeOrder.status === "closed";
+
+            return (
+              <div key={activeOrder.id} className={`p-8 w-full max-w-md relative overflow-hidden text-center shrink-0 shadow-sm border border-black/5 ${t.card}`}>
+                <h2 className={`text-xs font-bold uppercase tracking-widest mb-1 ${t.textSub}`}>Order Number</h2>
+                <div className={`text-6xl font-black mb-10 tracking-tighter ${t.textMain}`}>
+                  #{(activeOrder as any).orderNumber || activeOrder.order_number || activeOrder.id.split('-')[0].toUpperCase()}
+                </div>
 
             {isClosed ? (
               <div className="text-emerald-500 animate-success-pop flex flex-col items-center">
@@ -362,7 +412,16 @@ export default function QuickServiceClient({
                 </div>
                 <h3 className={`text-3xl font-black tracking-tight ${t.textMain}`}>Order Complete</h3>
                 <p className="text-slate-500 mt-3 text-lg font-medium">Thank you for dining with us!</p>
-                <Button className={`mt-8 w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => { localStorage.removeItem(`qr_dine_qs_session_${hotelId}`); window.location.href = window.location.pathname; }}>Start New Order</Button>
+                <Button className={`mt-8 w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => {
+                  const newOrders = activeOrders.filter(o => o.id !== activeOrder.id);
+                  setActiveOrders(newOrders);
+                  if (newOrders.length > 0) {
+                    localStorage.setItem(`qr_dine_qs_sessions_${hotelId}`, JSON.stringify(newOrders.map(o => o.id)));
+                  } else {
+                    localStorage.removeItem(`qr_dine_qs_sessions_${hotelId}`);
+                    window.location.href = window.location.pathname;
+                  }
+                }}>Dismiss</Button>
               </div>
             ) : isReady ? (
               <div className="text-brand-600 flex flex-col items-center">
@@ -383,7 +442,16 @@ export default function QuickServiceClient({
                 </div>
                 <h3 className={`text-3xl font-black tracking-tight mb-3 ${t.textMain}`}>Order Cancelled</h3>
                 <p className="text-slate-500 text-lg font-medium leading-relaxed mb-6">Your order was cancelled automatically. Please place a new order.</p>
-                <Button className={`w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => { localStorage.removeItem(`qr_dine_qs_session_${hotelId}`); window.location.href = window.location.pathname; }}>Start New Order</Button>
+                <Button className={`w-full h-14 text-lg transition-all active:scale-[0.98] ${t.btnPrimary}`} onClick={() => {
+                  const newOrders = activeOrders.filter(o => o.id !== activeOrder.id);
+                  setActiveOrders(newOrders);
+                  if (newOrders.length > 0) {
+                    localStorage.setItem(`qr_dine_qs_sessions_${hotelId}`, JSON.stringify(newOrders.map(o => o.id)));
+                  } else {
+                    localStorage.removeItem(`qr_dine_qs_sessions_${hotelId}`);
+                    window.location.href = window.location.pathname;
+                  }
+                }}>Dismiss</Button>
               </div>
             ) : activeOrder.status === "payment_pending" ? (
               <div className="flex flex-col items-center w-full animate-fade-in">
@@ -474,19 +542,21 @@ export default function QuickServiceClient({
                 <p className="text-slate-500 text-lg font-medium leading-relaxed">Your order has been sent to the kitchen. We will notify you here when it&apos;s ready.</p>
               </div>
             )}
+            </div>
+            );
+          })}
             
-            {!isClosed && (
-              <div className="mt-8 pt-6 border-t border-slate-100 w-full animate-fade-in flex flex-col gap-3">
-                <Button 
-                  onClick={() => setShowMenuWhileTracking(true)}
-                  variant="secondary"
-                  className={`w-full h-14 text-lg font-bold border-2 transition-all active:scale-[0.98] text-brand-600 border-brand-200 hover:bg-brand-50`}
-                >
-                  Buy Something More
-                </Button>
-              </div>
-            )}
-          </div>
+          {activeOrders.some(o => o.status !== "closed" && o.status !== "cancelled") && (
+            <div className="w-full max-w-md mt-2 mb-8 flex flex-col gap-3 shrink-0">
+              <Button 
+                onClick={() => setShowMenuWhileTracking(true)}
+                variant="secondary"
+                className={`w-full h-14 text-lg font-bold border-2 transition-all active:scale-[0.98] text-brand-600 border-brand-200 hover:bg-brand-50`}
+              >
+                Buy Something More
+              </Button>
+            </div>
+          )}
         </main>
       </div>
     );
@@ -670,7 +740,7 @@ export default function QuickServiceClient({
       )}
 
       {/* Active Order Tracking Banner (Visible when browsing menu) */}
-      {activeOrder && activeOrder.status !== "closed" && showMenuWhileTracking && (
+      {activeOrders.length > 0 && showMenuWhileTracking && (
         <div className={`fixed ${cart.length > 0 && !showCart ? 'bottom-28' : 'bottom-6'} left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-40 animate-slide-up transition-all duration-300`}>
           <button
             onClick={() => setShowMenuWhileTracking(false)}
@@ -682,8 +752,8 @@ export default function QuickServiceClient({
                  <ShoppingBag size={20} />
                </div>
                <div className="flex flex-col items-start text-left">
-                 <span className="font-bold text-slate-800 tracking-tight text-sm">Order #{(activeOrder as any).orderNumber || activeOrder.order_number || activeOrder.id.split('-')[0].toUpperCase()}</span>
-                 <span className="text-[10px] text-brand-600 font-bold uppercase tracking-widest">{activeOrder.status === 'payment_pending' ? 'Awaiting Payment' : activeOrder.status.replace(/_/g, ' ')}</span>
+                 <span className="font-bold text-slate-800 tracking-tight text-sm">Active Orders ({activeOrders.length})</span>
+                 <span className="text-[10px] text-brand-600 font-bold uppercase tracking-widest">In Progress</span>
                </div>
             </div>
             <div className="bg-brand-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 relative z-10 shadow-sm">
