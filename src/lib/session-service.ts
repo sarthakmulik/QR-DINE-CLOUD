@@ -345,7 +345,12 @@ export async function autoCleanupSessions(hotelId: string) {
   const sb = admin();
   const now = Date.now();
   const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
-  const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
+  // BUG FIX: Changed from 10 minutes to 30 minutes for payment_pending cancellation.
+  // For Quick Service, start_time is stamped when the draft session is created (before
+  // the customer even finishes browsing). A 10-minute window was too aggressive and
+  // could auto-cancel a legitimately placed order almost immediately if the customer
+  // spent time browsing before checkout. 30 minutes is a safe threshold for abandonment.
+  const thirtyMinsAgo = new Date(now - 30 * 60 * 1000).toISOString();
   const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
 
   // 1. Auto-collect ready orders forgotten for 5 mins
@@ -355,12 +360,13 @@ export async function autoCleanupSessions(hotelId: string) {
     .eq("status", "ready_for_pickup")
     .lt("start_time", fiveMinsAgo);
 
-  // 2. Auto-discard unpaid orders abandoned for 10 mins (Uses start_time as Quick Service creates session at checkout)
+  // 2. Auto-cancel unpaid QS orders abandoned for 30 minutes.
+  // Uses start_time because QS sessions are created as drafts before checkout.
   await sb.from("table_sessions")
     .update({ status: "cancelled", closed_at: new Date().toISOString() })
     .eq("hotel_id", hotelId)
     .eq("status", "payment_pending")
-    .lt("start_time", tenMinsAgo);
+    .lt("start_time", thirtyMinsAgo);
     
   // 3. Auto-discard stale drafts that were never submitted
   await sb.from("table_sessions")

@@ -38,13 +38,23 @@ export async function POST(
         return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
       }
 
+      // Fetch the session to get the actual payment_method (UPI or Card)
+      // so we don't accidentally overwrite a Card payment as UPI
+      const { data: session } = await sb
+        .from("table_sessions")
+        .select("payment_method")
+        .eq("id", sessionId)
+        .single();
+
       // Assign the order number strictly upon successful verification
       const orderNumber = await assignOrderNumber(sessionId);
 
-      // Mark session as open
+      // Mark session as open — preserve the original payment_method set at checkout
       await sb.from("table_sessions").update({ 
         status: "open", 
-        payment_method: "UPI", // Assuming UPI for online
+        // Preserve whichever method the customer chose (UPI or Card).
+        // Only update if the session doesn't already have one (safety fallback).
+        payment_method: session?.payment_method ?? "UPI",
         payment_reference: razorpay_payment_id
       }).eq("id", sessionId);
 
@@ -58,7 +68,7 @@ export async function POST(
       // We need the transaction ID from the session to check its status
       const { data: session } = await sb
         .from("table_sessions")
-        .select("payment_reference")
+        .select("payment_reference, payment_method")
         .eq("id", sessionId)
         .single();
         
@@ -92,7 +102,8 @@ export async function POST(
         
         await sb.from("table_sessions").update({ 
           status: "open", 
-          payment_method: "UPI",
+          // Preserve the original payment_method (UPI or Card) set at checkout
+          payment_method: session.payment_method ?? "UPI",
         }).eq("id", sessionId);
         
         return NextResponse.json({ success: true, order_number: orderNumber });

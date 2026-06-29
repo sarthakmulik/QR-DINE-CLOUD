@@ -24,6 +24,24 @@ export async function POST(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
+    // ── Guard: only initiate payment for sessions that are awaiting it ──────
+    // This prevents duplicate gateway orders if the customer taps the button
+    // multiple times or retries after a failure.
+    if (session.status !== "payment_pending") {
+      if (session.status === "open") {
+        // Payment was already verified (e.g. webhook beat the client)
+        return NextResponse.json(
+          { error: "Payment has already been completed for this order." },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Order is not in a payable state." },
+        { status: 400 }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const { data: hotel, error: hotelErr } = await sb
       .from("hotels")
       .select("*")

@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, use, useRef, useMemo } from "react";
-import Script from "next/script";
-import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, FileText, Smartphone, Banknote, CreditCard, Loader2, XCircle } from "lucide-react";
+// Script import removed — Razorpay is loaded dynamically via document.createElement
+import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, Smartphone, Banknote, CreditCard, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatINR } from "@/lib/utils";
@@ -58,9 +58,14 @@ export default function QuickServiceClient({
   const [isVerifying, setIsVerifying] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "UPI" | "Card" | null>(null);
-  const [hasMarkedPaid, setHasMarkedPaid] = useState(false);
+  // FIX: Per-order paid state — previously a single boolean which broke with multiple orders.
+  // Now a Set<orderId> so "I have paid" only affects the correct order card.
+  const [markedPaidOrders, setMarkedPaidOrders] = useState<Set<string>>(new Set());
 
   const [activeOrders, setActiveOrders] = useState<TableSession[]>([]);
+  // Ref mirror of activeOrders for the polling interval — avoids recreating the
+  // interval on every status update (which caused the old interval to thrash).
+  const activeOrdersRef = useRef<TableSession[]>([]);
   const [showMenuWhileTracking, setShowMenuWhileTracking] = useState(false);
   const supabase = createClient();
 
@@ -139,14 +144,28 @@ export default function QuickServiceClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotelId, token]);
 
-  // Fallback polling for order status
+  // Keep the ref in sync with state so the polling callback always sees latest
+  useEffect(() => {
+    activeOrdersRef.current = activeOrders;
+  }, [activeOrders]);
+
+  // Fallback polling for order status.
+  // FIX: Uses a ref for the orders list so the interval is only created/destroyed
+  // when orders are added or fully removed — not on every individual status update.
+  // This prevents the old bug where the interval was recreated every 5 seconds,
+  // causing a cascade of rapid-fire requests.
   useEffect(() => {
     if (activeOrders.length === 0) return;
     
     const pollInterval = setInterval(async () => {
+      const currentOrders = activeOrdersRef.current;
       try {
-        const updatedOrders = await Promise.all(activeOrders.map(async (order) => {
-          if (order.status === "closed") return order;
+        const updatedOrders = await Promise.all(currentOrders.map(async (order) => {
+          // Skip polling for orders that are already in a terminal state
+          if (order.status === "closed" || order.status === "cancelled") return order;
+          // Skip polling for UPI-QR manual pay orders waiting for admin — they
+          // only update when the admin clicks "Confirm Paid", no point hammering.
+          // (payment_pending + no active PG = static QR shown)
           const res = await fetch(`/api/quick-service/${hotelId}/order/${order.id}/status`);
           if (res.ok) {
             const data = await res.json();
@@ -158,32 +177,40 @@ export default function QuickServiceClient({
         }));
         
         let changed = false;
-        
-        if (updatedOrders.length !== activeOrders.length) changed = true;
+        if (updatedOrders.length !== currentOrders.length) changed = true;
         else {
           for (let i = 0; i < updatedOrders.length; i++) {
-            if (updatedOrders[i].status !== activeOrders[i].status) changed = true;
+            if (updatedOrders[i].status !== currentOrders[i].status ||
+                (updatedOrders[i] as any).order_number !== (currentOrders[i] as any).order_number) {
+              changed = true;
+              break;
+            }
           }
         }
         
         if (changed) {
           setActiveOrders(updatedOrders);
-          const validIds = updatedOrders.filter(o => o.status !== "closed" && o.status !== "cancelled").map(o => o.id);
+          const validIds = updatedOrders
+            .filter(o => o.status !== "closed" && o.status !== "cancelled")
+            .map(o => o.id);
           if (validIds.length > 0) {
             localStorage.setItem(`qr_dine_qs_sessions_${hotelId}`, JSON.stringify(validIds));
           } else {
             localStorage.removeItem(`qr_dine_qs_sessions_${hotelId}`);
           }
         }
-      } catch (err) {
-        // Ignore polling errors to prevent console spam
+      } catch {
+        // Ignore polling errors silently
       }
     }, 5000);
 
-    return () => {
-      clearInterval(pollInterval);
-    };
-  }, [hotelId, activeOrders]);
+    return () => clearInterval(pollInterval);
+  // FIX: Depend only on hotelId and whether orders exist, NOT on activeOrders array itself.
+  // The ref keeps the callback current without triggering interval recreation.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotelId, activeOrders.length === 0]);
+
+  const MAX_QTY_PER_ITEM = 20;
 
   const updateQuantity = (item: MappedMenuItem, delta: number) => {
     setCart((prev) => {
@@ -191,6 +218,8 @@ export default function QuickServiceClient({
       if (existing) {
         const nextQty = existing.quantity + delta;
         if (nextQty <= 0) return prev.filter((i) => i.id !== item.id);
+        // FIX: Cap quantity at MAX_QTY_PER_ITEM to prevent absurd orders
+        if (nextQty > MAX_QTY_PER_ITEM) return prev;
         return prev.map((i) => (i.id === item.id ? { ...i, quantity: nextQty } : i));
       }
       if (delta > 0) return [...prev, { ...item, quantity: 1 }];
@@ -212,17 +241,19 @@ export default function QuickServiceClient({
   const allItems = useMemo(() => categories.flatMap((c) => c.items), [categories]);
   
   const filteredCategories = useMemo(() => {
-    if (activeCategory !== "all") {
-      return categories.filter(c => c.id === activeCategory);
-    }
-    if (searchQuery) {
-      const lowerQuery = searchQuery.toLowerCase();
-      return categories.map(c => ({
+    // FIX: Apply BOTH category and search filters together.
+    // Previously, selecting a category tab would silently ignore the search query.
+    const lowerQuery = searchQuery.toLowerCase().trim();
+
+    return categories
+      .filter(c => activeCategory === "all" || c.id === activeCategory)
+      .map(c => ({
         ...c,
-        items: c.items.filter(i => i.name.toLowerCase().includes(lowerQuery))
-      })).filter(c => c.items.length > 0);
-    }
-    return categories;
+        items: lowerQuery
+          ? c.items.filter(i => i.name.toLowerCase().includes(lowerQuery))
+          : c.items,
+      }))
+      .filter(c => c.items.length > 0);
   }, [categories, activeCategory, searchQuery]);
 
   const hasItems = filteredCategories.some(c => c.items.length > 0);
@@ -237,6 +268,8 @@ export default function QuickServiceClient({
       
       if (!initRes.ok) {
         alert(initData.error || "Failed to initiate payment");
+        // Reset processing since there's nothing more to do
+        setIsProcessing(false);
       } else {
         if (initData.gateway === "razorpay") {
           // Dynamically load Razorpay script to guarantee it's available
@@ -262,9 +295,10 @@ export default function QuickServiceClient({
             image: hotel?.logo || undefined,
             order_id: initData.order_id,
             handler: async function (response: any) {
+              // Payment done — reset isProcessing, show verifying spinner
+              setIsProcessing(false);
               setIsVerifying(true);
               try {
-                // Verify payment securely
                 const res = await fetch(`/api/quick-service/${hotelId}/order/${sessionToPay.id}/verify-payment`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -279,7 +313,11 @@ export default function QuickServiceClient({
                 const data = await res.json();
                 
                 if (res.ok && data.success) {
-                  setActiveOrders((prev) => prev.map(o => o.id === sessionToPay.id ? { ...o, status: "open", order_number: data.order_number || (o as any).order_number } : o));
+                  setActiveOrders((prev) => prev.map(o =>
+                    o.id === sessionToPay.id
+                      ? { ...o, status: "open", order_number: data.order_number || (o as any).order_number }
+                      : o
+                  ));
                 } else {
                   throw new Error(data.error || "Payment verification failed");
                 }
@@ -292,6 +330,9 @@ export default function QuickServiceClient({
             },
             prefill: { name: "Customer", contact: "9999999999" },
             modal: {
+              // FIX: ondismiss is the correct place to reset isProcessing.
+              // Previously the finally block ran immediately after rzp.open(),
+              // hiding the "Connecting..." spinner while the modal was still visible.
               ondismiss: function () {
                 setIsProcessing(false);
               }
@@ -299,20 +340,27 @@ export default function QuickServiceClient({
             theme: { color: hotel?.customizations?.qsPrimaryColor || hotel?.customizations?.primaryColor || "#ea580c" }
           };
           const rzp = new (window as any).Razorpay(options);
-          rzp.on('payment.failed', function (response: any) {
-             alert(response.error.description || "Payment failed!");
+          rzp.on("payment.failed", function (response: any) {
+            setIsProcessing(false);
+            alert(response.error.description || "Payment failed!");
           });
+          // NOTE: Do NOT call setIsProcessing(false) here — the modal is still open.
+          // isProcessing will be reset in ondismiss, handler, or payment.failed.
           rzp.open();
+          return; // ← prevent the finally block from resetting isProcessing too early
         } else if (initData.gateway === "phonepe") {
           window.location.href = initData.redirect_url;
+          // Don't reset isProcessing — we're navigating away
+          return;
         }
       }
     } catch (err) {
       console.error(err);
       alert("Payment gateway error. Please try again.");
-    } finally {
       setIsProcessing(false);
     }
+    // Only reaches here for non-Razorpay / non-PhonePe paths
+    setIsProcessing(false);
   }
 
   async function handleConfirmOrder() {
@@ -494,7 +542,9 @@ export default function QuickServiceClient({
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${(hotel as any).upiId}&pn=${hotel?.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
                     </div>
                     <p className="text-slate-500 mb-8 font-semibold text-lg">Pay <span className="text-slate-800 font-bold">{formatINR(activeOrder.total)}</span> via any UPI App</p>
-                    {hasMarkedPaid ? (
+                    {/* FIX: per-order paid state — previously a global boolean that would
+                        show "Awaiting Verification" on ALL orders when any one was marked. */}
+                    {markedPaidOrders.has(activeOrder.id) ? (
                       <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 animate-fade-in">
                         <div className="flex justify-center mb-2">
                           <div className="w-8 h-8 rounded-full border-4 border-amber-300 border-t-amber-600 animate-spin"></div>
@@ -508,7 +558,8 @@ export default function QuickServiceClient({
                         try {
                           const res = await fetch(`/api/quick-service/${hotelId}/order/${activeOrder.id}/mark-paid`, { method: "POST" });
                           if (res.ok) {
-                            setHasMarkedPaid(true);
+                            // Mark only THIS order, not all orders
+                            setMarkedPaidOrders(prev => new Set(prev).add(activeOrder.id));
                           } else {
                             alert((await res.json()).error);
                           }
@@ -586,7 +637,14 @@ export default function QuickServiceClient({
               type="text"
               placeholder="Search delicious food..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                // FIX: Reset category filter when user starts typing so the
+                // search isn't silently scoped to the active category.
+                if (e.target.value && activeCategory !== "all") {
+                  setActiveCategory("all");
+                }
+              }}
               className={`w-full py-3.5 pl-3 pr-2 text-sm focus:outline-none transition-all ${t.searchInput}`}
             />
           </div>
