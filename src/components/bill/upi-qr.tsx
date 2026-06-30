@@ -57,24 +57,24 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQr
         </div>
 
         {qrCodeUrl ? (
-          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-inner">
+          <div className="bg-white dark:bg-[#18181b] p-3 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-inner">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qrCodeUrl} alt="UPI Payment QR Code" className="h-44 w-44 object-contain" />
           </div>
         ) : (
-          <div className="h-44 w-44 bg-white border rounded-xl flex items-center justify-center">
+          <div className="h-44 w-44 bg-white dark:bg-white/[0.04] border dark:border-white/[0.08] rounded-xl flex items-center justify-center">
             <div className="animate-pulse h-8 w-8 rounded-full border-2 border-slate-200 border-t-brand-600"></div>
           </div>
         )}
 
         <div className="space-y-1">
-          <p className="text-xs text-gray-500 font-medium">Scan to pay exact amount: <span className="font-extrabold text-slate-900">₹{amount.toFixed(2)}</span></p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Scan to pay exact amount: <span className="font-extrabold text-slate-900 dark:text-white">₹{amount.toFixed(2)}</span></p>
           <p className="text-[10px] text-gray-400 font-semibold truncate max-w-[280px]">UPI ID: {upiId}</p>
         </div>
 
         <button
           onClick={handleCopyLink}
-          className="w-full flex items-center justify-center space-x-2 bg-white hover:bg-slate-100 text-slate-700 font-bold py-2 px-4 rounded-xl border border-slate-300 text-xs transition active:scale-[0.98] shadow-sm"
+          className="w-full flex items-center justify-center space-x-2 bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] text-slate-700 dark:text-gray-200 font-bold py-2 px-4 rounded-xl transition border border-slate-200 dark:border-white/[0.08] text-xs transition active:scale-[0.98] shadow-sm"
         >
           {copied ? (
             <>
