@@ -168,45 +168,45 @@ export default function AdminPage() {
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-[#18181b] rounded-xl shadow-sm border border-gray-200 dark:border-white/[0.07] overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-white/[0.04] border-b border-gray-200 dark:border-white/[0.07]">
+          <thead className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Hotel Name
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Owner
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Plan
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Type
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Status
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Last Payment
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Next Due
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Monthly Revenue
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+          <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
             {hotels.map((hotel) => (
-              <tr key={hotel.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{hotel.name}</td>
+              <tr key={hotel.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30">
+                <td className="px-4 py-3 font-medium text-gray-900 dark:text-zinc-100">{hotel.name}</td>
                 <td className="px-4 py-3">
-                  <div className="text-gray-900 dark:text-gray-100">{hotel.ownerName}</div>
+                  <div className="text-gray-900 dark:text-zinc-100">{hotel.ownerName}</div>
                   <div className="text-xs text-gray-500">{hotel.ownerEmail}</div>
                 </td>
                 <td className="px-4 py-3">
@@ -235,14 +235,14 @@ export default function AdminPage() {
                         loadData();
                       }
                     }}
-                    className="bg-transparent border border-gray-200 dark:border-white/[0.08] rounded px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-brand-500 text-gray-700 dark:text-gray-300"
+                    className="bg-transparent border border-gray-200 dark:border-zinc-700/80 rounded px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-brand-500 text-gray-700 dark:text-zinc-300"
                   >
                     <option value="basic">Basic</option>
                     <option value="pro">Pro</option>
                     <option value="elite">Elite</option>
                   </select>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-zinc-400">
                   {hotel.serviceType === "quick_service" ? "Quick Service" : "Dine In"}
                 </td>
                 <td className="px-4 py-3">
@@ -254,9 +254,9 @@ export default function AdminPage() {
                     {hotel.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 dark:text-gray-300">{formatDate(hotel.lastPaymentDate)}</td>
-                <td className="px-4 py-3 dark:text-gray-300">{formatDate(hotel.nextDueDate)}</td>
-                <td className="px-4 py-3 dark:text-gray-300">{formatINR(hotel.billingAmount)}</td>
+                <td className="px-4 py-3 dark:text-zinc-300">{formatDate(hotel.lastPaymentDate)}</td>
+                <td className="px-4 py-3 dark:text-zinc-300">{formatDate(hotel.nextDueDate)}</td>
+                <td className="px-4 py-3 dark:text-zinc-300">{formatINR(hotel.billingAmount)}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <Button
@@ -299,7 +299,7 @@ export default function AdminPage() {
             <select
               value={form.plan}
               onChange={(e) => setForm({ ...form, plan: e.target.value.toLowerCase() })}
-              className="w-full border rounded-lg px-3 py-2 dark:bg-[#18181b] dark:border-white/[0.08]"
+              className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80"
             >
               <option value="basic">Basic</option>
               <option value="pro">Pro</option>
@@ -311,7 +311,7 @@ export default function AdminPage() {
             <select
               value={form.serviceType}
               onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 dark:bg-[#18181b] dark:border-white/[0.08]"
+              className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80"
             >
               <option value="dine_in">Dine In (Table Based)</option>
               <option value="quick_service">Quick Service (Pay First)</option>

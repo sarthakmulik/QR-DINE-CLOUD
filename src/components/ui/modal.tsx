@@ -39,26 +39,26 @@ export function Modal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
         className={cn(
-          "relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl",
+          "relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl transition-colors",
           dark
             ? "bg-[#161618] border border-white/[0.08]"
-            : "bg-white border border-gray-200",
+            : "bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700/80",
           className
         )}
       >
         {/* Header */}
         <div
           className={cn(
-            "flex items-center justify-between px-5 py-4 border-b sticky top-0 z-10",
+            "flex items-center justify-between px-5 py-4 border-b sticky top-0 z-10 transition-colors",
             dark
               ? "bg-[#161618] border-white/[0.07]"
-              : "bg-white border-gray-100"
+              : "bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800"
           )}
         >
           <h2
             className={cn(
               "text-base font-semibold",
-              dark ? "text-white" : "text-gray-900"
+              dark ? "text-white" : "text-gray-900 dark:text-zinc-100"
             )}
           >
             {title}
@@ -69,7 +69,7 @@ export function Modal({
               "p-1.5 rounded-lg transition-colors",
               dark
                 ? "text-gray-400 hover:bg-white/[0.08] hover:text-gray-200"
-                : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                : "text-gray-400 dark:text-zinc-500 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-700 dark:hover:text-gray-200"
             )}
           >
             <X className="w-4 h-4" />

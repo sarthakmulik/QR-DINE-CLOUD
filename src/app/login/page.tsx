@@ -63,14 +63,14 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0F0F11] font-sans px-4">
-      <div className="w-full max-w-md bg-white dark:bg-[#18181b] rounded-2xl shadow-xl border border-transparent dark:border-white/[0.08] p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 font-sans px-4">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-transparent dark:border-zinc-700/80 p-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-500 rounded-2xl mb-4">
             <span className="text-2xl font-bold text-white">QR</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">QR Dine Cloud</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Restaurant Order Management</p>
+          <p className="text-gray-500 dark:text-zinc-400 mt-1">Restaurant Order Management</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,14 +81,14 @@ function LoginContent() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-white/[0.08] bg-transparent text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700/80 bg-transparent text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
               placeholder="you@example.com"
               required
               autoComplete="email"
@@ -97,14 +97,14 @@ function LoginContent() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-white/[0.08] bg-transparent text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700/80 bg-transparent text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
               placeholder="••••••••"
               required
               autoComplete="current-password"
@@ -124,16 +124,16 @@ function LoginContent() {
 
         <div className="mt-6">
           <div className="mt-6 flex items-center justify-center relative">
-            <div className="w-full border-t border-gray-200 dark:border-white/[0.08]" />
-            <div className="absolute px-4 bg-white dark:bg-[#18181b]">
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Or continue with</span>
+            <div className="w-full border-t border-gray-200 dark:border-zinc-700/80" />
+            <div className="absolute px-4 bg-white dark:bg-zinc-900">
+              <span className="text-gray-500 dark:text-zinc-400 text-sm">Or continue with</span>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            className="mt-4 w-full flex items-center justify-center gap-2 border border-gray-300 dark:border-white/[0.08] py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition-colors"
+            className="mt-4 w-full flex items-center justify-center gap-2 border border-gray-300 dark:border-zinc-700/80 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
             suppressHydrationWarning
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

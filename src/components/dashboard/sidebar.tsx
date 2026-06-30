@@ -87,7 +87,7 @@ export function DashboardSidebar({
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight">{hotelName}</p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight mt-0.5">Admin Panel</p>
+              <p className="text-[11px] text-gray-400 dark:text-zinc-500 leading-tight mt-0.5">Admin Panel</p>
             </div>
           </div>
         </div>
@@ -108,11 +108,11 @@ export function DashboardSidebar({
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-100",
                   active
-                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100"
+                    ? "bg-brand-50 text-brand-700 dark:bg-zinc-900rand-500/10 dark:text-brand-400"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"
                 )}
               >
-                <link.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500")} />
+                <link.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-zinc-500")} />
                 {link.label}
               </Link>
             );
@@ -124,15 +124,15 @@ export function DashboardSidebar({
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100 w-full transition-all duration-100"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100 w-full transition-all duration-100"
             >
-              {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" /> : <Moon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />}
+              {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400 dark:text-zinc-500 flex-shrink-0" /> : <Moon className="w-4 h-4 text-gray-400 dark:text-zinc-500 flex-shrink-0" />}
               {theme === "dark" ? "Light Mode" : "Dark Mode"}
             </button>
           )}
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 w-full transition-all duration-100"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 w-full transition-all duration-100"
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
             Sign out
@@ -148,12 +148,12 @@ export function DashboardSidebar({
           </div>
           <div>
             <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[150px] leading-tight">{hotelName}</p>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Admin Panel</p>
+            <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-tight">Admin Panel</p>
           </div>
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition"
+          className="p-2 rounded-md text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
@@ -177,12 +177,12 @@ export function DashboardSidebar({
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[160px] leading-tight">{hotelName}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Admin Panel</p>
+                  <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-tight">Admin Panel</p>
                 </div>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition"
+                className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -203,11 +203,11 @@ export function DashboardSidebar({
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-100",
                       active
-                        ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100"
+                        ? "bg-brand-50 text-brand-700 dark:bg-zinc-900rand-500/10 dark:text-brand-400"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100"
                     )}
                   >
-                    <link.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500")} />
+                    <link.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-zinc-500")} />
                     {link.label}
                   </Link>
                 );
@@ -218,15 +218,15 @@ export function DashboardSidebar({
               {mounted && (
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100 w-full transition"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-gray-100 w-full transition"
                 >
-                  {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <Moon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+                  {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400 dark:text-zinc-500" /> : <Moon className="w-4 h-4 text-gray-400 dark:text-zinc-500" />}
                   {theme === "dark" ? "Light Mode" : "Dark Mode"}
                 </button>
               )}
               <button
                 onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 w-full transition"
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 w-full transition"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out
@@ -251,7 +251,7 @@ export function DashboardSidebar({
                 "flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition flex-1 max-w-[72px]",
                 active
                   ? "text-brand-600 dark:text-brand-400"
-                  : "text-gray-400 dark:text-gray-500"
+                  : "text-gray-400 dark:text-zinc-500"
               )}
             >
               <link.icon className="w-5 h-5" />
@@ -262,7 +262,7 @@ export function DashboardSidebar({
         {/* More button triggers full sheet */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-gray-400 dark:text-gray-500 transition flex-1 max-w-[72px]"
+          className="flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-gray-400 dark:text-zinc-500 transition flex-1 max-w-[72px]"
         >
           <Menu className="w-5 h-5" />
           <span className="text-[9px] font-semibold">More</span>

@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils";
 
-// Light-mode variants (admin dashboard, customer pages)
-const lightVariants = {
-  active:   "bg-green-100 text-green-800",
-  paused:   "bg-amber-100 text-amber-800",
-  suspended:"bg-red-100 text-red-800",
-  free:     "bg-green-100 text-green-800",
-  occupied: "bg-orange-100 text-orange-800",
-  checkout: "bg-red-100 text-red-800",
-  default:  "bg-gray-100 text-gray-800",
+// Light-mode variants (admin dashboard, customer pages) which also support Tailwind's dark mode
+const lightVariants: Record<string, string> = {
+  active:   "bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-400",
+  paused:   "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-400",
+  suspended:"bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400",
+  free:     "bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-400",
+  occupied: "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-400",
+  checkout: "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400",
+  default:  "bg-gray-100 text-gray-800 dark:bg-white/[0.07] dark:text-zinc-300",
 };
 
 // Dark-mode variants (staff panel, kitchen screen)
