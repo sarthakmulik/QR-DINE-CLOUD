@@ -494,37 +494,39 @@ Thank you for dining with us!`;
   );
 
   return (
-    <div className="space-y-6 pb-12 animate-page-entrance">
+    <div className="space-y-7 pb-12">
       {/* HEADER SECTION */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
-            Tables & Orders
-            <span className="text-xs bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
+              Tables &amp; Orders
+            </h1>
+            <span className="text-[11px] bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-500/20 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">
               {currentPlan}
             </span>
-          </h1>
-          <p className="text-gray-500 dark:text-slate-400 text-sm">Real-time table status and orders</p>
+          </div>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Real-time table status and orders</p>
         </div>
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {hotelProfile?.id && hasKdsAccess && (
             <Link
               href={`/kitchen/${hotelProfile.id}`}
               target="_blank"
-              className="inline-flex items-center justify-center rounded-lg font-medium transition px-3 py-1.5 text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-[#1E1E22] dark:border-white/10 dark:text-white dark:hover:bg-[#2A2A2E] shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-md font-medium transition px-3 py-1.5 text-sm bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-[#1A1A1D] dark:border-white/[0.08] dark:text-gray-200 dark:hover:bg-[#222225]"
             >
               Kitchen Screen
             </Link>
           )}
-          <div className="flex gap-3 text-xs dark:text-slate-400">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-green-500 dark:bg-emerald-500" /> Free
+          <div className="flex gap-4 text-[11px] text-gray-400 dark:text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Free
             </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-orange-500 dark:bg-orange-500" /> Occupied
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-orange-400" /> Occupied
             </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-red-500 dark:bg-red-500" /> Checkout
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-400" /> Checkout
             </span>
           </div>
         </div>
@@ -532,122 +534,111 @@ Thank you for dining with us!`;
 
       {/* STATS OVERVIEW CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Today&apos;s Revenue</p>
-            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
+        <div className="bg-white dark:bg-[#18181b] border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-emerald-500 shadow-sm">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <IndianRupee size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Today&apos;s Revenue</p>
+            <h3 className="text-[22px] font-bold text-gray-900 dark:text-white mt-0.5 leading-none">
               {isSkeletons ? (
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+                <div className="h-6 w-20 bg-gray-100 dark:bg-white/[0.06] rounded animate-pulse mt-1" />
               ) : (
                 formatINR(stats.todayRevenue)
               )}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 flex items-center justify-center">
-            <IndianRupee size={18} />
-          </div>
         </div>
 
-        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Total Orders</p>
-            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
+        <div className="bg-white dark:bg-[#18181b] border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-sky-500 shadow-sm">
+          <div className="w-10 h-10 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center flex-shrink-0">
+            <ShoppingBag size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Orders</p>
+            <h3 className="text-[22px] font-bold text-gray-900 dark:text-white mt-0.5 leading-none">
               {isSkeletons ? (
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+                <div className="h-6 w-20 bg-gray-100 dark:bg-white/[0.06] rounded animate-pulse mt-1" />
               ) : (
                 stats.todayOrders
               )}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 border border-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20 flex items-center justify-center">
-            <ShoppingBag size={18} />
-          </div>
         </div>
 
-        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Active Tables</p>
-            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1">
+        <div className="bg-white dark:bg-[#18181b] border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-orange-500 shadow-sm">
+          <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-500 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
+            <Activity size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Active Tables</p>
+            <h3 className="text-[22px] font-bold text-gray-900 dark:text-white mt-0.5 leading-none">
               {isSkeletons ? (
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+                <div className="h-6 w-20 bg-gray-100 dark:bg-white/[0.06] rounded animate-pulse mt-1" />
               ) : (
                 stats.activeSessions
               )}
             </h3>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20 flex items-center justify-center">
-            <Activity size={18} />
-          </div>
         </div>
 
-        <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
-          <div>
-            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Average Rating</p>
+        <div className="bg-white dark:bg-[#18181b] border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-amber-500 shadow-sm">
+          <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
+            <Star size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Avg Rating</p>
             {hasFeedbackAccess ? (
-              <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mt-1 flex items-center gap-1">
+              <h3 className="text-[22px] font-bold text-gray-900 dark:text-white mt-0.5 leading-none">
                 {isSkeletons ? (
-                  <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+                  <div className="h-6 w-20 bg-gray-100 dark:bg-white/[0.06] rounded animate-pulse mt-1" />
                 ) : stats.avgRating > 0 ? (
-                  <>
-                    {stats.avgRating} <span className="text-amber-500 text-base">★</span>
-                  </>
+                  <span className="flex items-baseline gap-1">{stats.avgRating} <span className="text-amber-400 text-base font-normal">★</span></span>
                 ) : (
-                  "No reviews"
+                  <span className="text-base text-gray-400 font-medium">No reviews</span>
                 )}
               </h3>
             ) : (
-              <div className="flex items-center gap-1 text-slate-400 text-xs mt-2 font-bold">
-                <Lock size={12} /> Pro/Elite Only
+              <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500 text-xs mt-1 font-medium">
+                <Lock size={11} /> Pro/Elite
               </div>
             )}
-          </div>
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 flex items-center justify-center">
-            <Star size={18} className={hasFeedbackAccess && stats.avgRating > 0 ? "fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400" : ""} />
           </div>
         </div>
       </div>
 
       {/* HOURLY SALES CHART SECTION */}
-      <div className="bg-white/60 dark:bg-[#141416]/60 dark:border-white/10 border border-slate-200 rounded-xl p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
-          {!hasFeedbackAccess && (
-            <span className="text-[10px] bg-slate-100/60 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1">
-              <Lock size={10} /> Requires Pro
-            </span>
-          )}
+      <div className="bg-white dark:bg-[#18181b] border border-gray-100 dark:border-white/[0.06] rounded-xl p-6 shadow-sm">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
         </div>
 
         {hasFeedbackAccess ? (
           isSkeletons ? (
-            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-200 animate-pulse">
+            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-100 dark:border-white/[0.06] animate-pulse">
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-slate-100 rounded-t-md" style={{ height: "40px" }} />
-                  <div className="h-2 w-6 bg-gray-100 rounded mt-1.5" />
+                  <div className="w-full bg-gray-100 dark:bg-white/[0.05] rounded-t-md" style={{ height: "40px" }} />
                 </div>
               ))}
             </div>
           ) : (
             <div className="overflow-x-auto -mx-1">
-              <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-200 min-w-[520px] px-1">
+              <div className="h-28 flex items-end gap-2 pt-4 border-b border-gray-100 dark:border-white/[0.06] min-w-[500px]">
                 {stats.hourlyDistribution?.map((h) => {
                   const hourName = h.hour % 12 || 12;
                   const ampm = h.hour >= 12 ? "pm" : "am";
-                  const percentHeight = Math.max(4, (h.count / maxHourlyCount) * 100);
+                  const percentHeight = Math.max(8, (h.count / maxHourlyCount) * 100);
 
                   return (
                     <div key={h.hour} className="flex-1 flex flex-col items-center group">
-                      <div className="w-full bg-slate-100 dark:bg-[#1E1E22] group-hover:bg-slate-200 dark:group-hover:bg-[#2A2A2E] transition-all rounded-t-md relative flex items-end" style={{ height: "60px" }}>
+                      <div className="w-full relative flex items-end justify-center">
                         <div
-                          className="w-full bg-brand-500 group-hover:bg-brand-600 rounded-t-md transition-all"
-                          style={{ height: `${percentHeight}%` }}
+                          className="w-full bg-brand-500 rounded-t-sm transition-all group-hover:bg-brand-600"
+                          style={{ height: `${percentHeight}px` }}
                         />
-                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#2A2A2E] text-white dark:text-slate-200 text-[9px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow">
-                          {h.count} orders
-                        </div>
                       </div>
-                      <span className="text-[8px] font-bold text-gray-400 mt-1.5 uppercase truncate max-w-[30px]">
+                      <span className="text-[10px] font-medium text-gray-400 mt-2 uppercase">
                         {hourName}{ampm}
                       </span>
                     </div>
@@ -657,10 +648,10 @@ Thank you for dining with us!`;
             </div>
           )
         ) : (
-          <div className="h-28 bg-slate-50 dark:bg-[#1E1E22] dark:border-white/10 rounded-lg flex flex-col items-center justify-center border border-dashed text-slate-400 dark:text-slate-500">
-            <Zap size={20} className="mb-1 text-brand-400" />
-            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Upgrade to Pro or Elite Plan</p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500">To unlock hourly workload & order distribution charts.</p>
+          <div className="h-28 bg-gray-50 dark:bg-white/[0.03] rounded-lg flex flex-col items-center justify-center border border-dashed border-gray-200 dark:border-white/[0.06]">
+            <Zap size={18} className="mb-2 text-brand-400" />
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Upgrade to Pro or Elite Plan</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Unlock hourly order distribution charts.</p>
           </div>
         )}
       </div>
@@ -672,15 +663,15 @@ Thank you for dining with us!`;
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {isSkeletons ? (
           [...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border-2 border-slate-100 dark:border-white/5 p-4 text-left h-24 bg-white/60 dark:bg-[#141416]/60 animate-pulse"
+              className="rounded-xl border border-gray-100 dark:border-white/[0.06] p-4 text-left h-[88px] bg-white dark:bg-[#18181b] animate-pulse"
             >
-              <div className="h-5 bg-slate-200 rounded w-16 mb-2" />
-              <div className="h-4 bg-slate-200 rounded w-10" />
+              <div className="h-4 bg-gray-100 dark:bg-white/[0.06] rounded w-16 mb-3" />
+              <div className="h-3 bg-gray-100 dark:bg-white/[0.06] rounded w-10" />
             </div>
           ))
         ) : (
@@ -694,20 +685,24 @@ Thank you for dining with us!`;
                   setSelected(table);
                 }
               }}
-              className={`rounded-xl border-2 p-4 text-left transition hover:shadow-md cursor-pointer ${
-                table.status === 'free' ? 'bg-white/60 dark:bg-[#141416]/60 border-slate-200 dark:border-white/10 hover:border-brand-500' : statusColors[table.status]
+              className={`rounded-xl border p-4 text-left transition-all cursor-pointer group ${
+                table.status === 'free'
+                  ? 'bg-white dark:bg-[#18181b] border-gray-100 dark:border-white/[0.06] hover:border-brand-300 dark:hover:border-brand-500/40'
+                  : table.status === 'occupied'
+                  ? 'bg-orange-50 dark:bg-orange-500/[0.07] border-orange-200 dark:border-orange-500/20'
+                  : 'bg-red-50 dark:bg-red-500/[0.07] border-red-200 dark:border-red-500/20'
               }`}
             >
-              <div className="font-bold text-lg dark:text-white">{table.label}</div>
-              <Badge variant={table.status} className="mt-2">
-                {table.status === "free"
-                  ? "Free"
-                  : table.status === "occupied"
-                  ? "Occupied"
-                  : "Checkout"}
-              </Badge>
+              <div className="font-semibold text-sm text-gray-800 dark:text-white">{table.label}</div>
+              <div className={`text-[11px] font-medium mt-1.5 ${
+                table.status === 'free' ? 'text-emerald-600 dark:text-emerald-400' :
+                table.status === 'occupied' ? 'text-orange-600 dark:text-orange-400' :
+                'text-red-600 dark:text-red-400'
+              }`}>
+                {table.status === "free" ? "Available" : table.status === "occupied" ? "Occupied" : "Checkout"}
+              </div>
               {table.currentSession && table.currentSession.items.length > 0 && (
-                <p className="text-sm mt-2 font-medium">
+                <p className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mt-2">
                   {formatINR(table.currentSession.total)}
                 </p>
               )}
@@ -715,10 +710,10 @@ Thank you for dining with us!`;
           ))
         )}
         {!isSkeletons && tables.length === 0 && (
-          <div className="col-span-full text-center py-12 text-gray-500">
-            No tables yet.{" "}
-            <Link href="/dashboard/tables" className="text-brand-600 underline">
-              Create tables and QR codes
+          <div className="col-span-full text-center py-16 text-gray-400">
+            <p className="text-sm">No tables configured yet.</p>
+            <Link href="/dashboard/tables" className="text-brand-600 dark:text-brand-400 text-sm font-medium underline underline-offset-2 mt-1 inline-block">
+              Create tables and QR codes →
             </Link>
           </div>
         )}

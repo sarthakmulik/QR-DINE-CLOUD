@@ -78,20 +78,22 @@ export function DashboardSidebar({
   return (
     <>
       {/* ===== DESKTOP SIDEBAR (md and above) ===== */}
-      <aside className="hidden md:flex w-64 bg-white/80 dark:bg-[#141416]/60 backdrop-blur-md border-r border-gray-200 dark:border-white/5 flex-col transition-colors duration-200">
-        <div className="p-5 border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+      <aside className="hidden md:flex w-60 bg-white dark:bg-[#111113] border-r border-gray-200 dark:border-white/[0.06] flex-col flex-shrink-0 transition-colors duration-200">
+        {/* Branding */}
+        <div className="px-5 py-5 border-b border-gray-100 dark:border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs tracking-tight flex-shrink-0">
               QR
             </div>
-            <div>
-              <p className="font-semibold text-sm truncate dark:text-white">{hotelName}</p>
-              <p className="text-xs text-gray-500 dark:text-slate-500">Owner Panel</p>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight">{hotelName}</p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight mt-0.5">Admin Panel</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {/* Navigation */}
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {links.map((link) => {
             const active =
               link.href === "/dashboard"
@@ -104,59 +106,54 @@ export function DashboardSidebar({
                 target={link.target}
                 prefetch={true}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
+                  "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-100",
                   active
-                    ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-white/10 dark:text-brand-400 dark:border-white/5"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100"
                 )}
               >
-                <link.icon className="w-4 h-4" />
+                <link.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500")} />
                 {link.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-3 border-t dark:border-white/5 space-y-1">
+        {/* Footer */}
+        <div className="p-3 border-t border-gray-100 dark:border-white/[0.06] space-y-0.5">
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white w-full transition duration-150 ease-in-out"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100 w-full transition-all duration-100"
             >
-              <div className="flex items-center gap-3">
-                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                {theme === "dark" ? "Light Mode" : "Dark Mode"}
-              </div>
-              <div className={`w-8 h-4 rounded-full flex items-center p-0.5 transition-colors ${theme === "dark" ? "bg-brand-500" : "bg-slate-300"}`}>
-                <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`} />
-              </div>
+              {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" /> : <Moon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
             </button>
           )}
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-red-400 w-full active:scale-[0.98] transition duration-150 ease-in-out"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 w-full transition-all duration-100"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 flex-shrink-0" />
             Sign out
           </button>
         </div>
       </aside>
 
       {/* ===== MOBILE TOP HEADER (below md) ===== */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-[#141416]/60 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 h-14 shadow-sm transition-colors duration-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#111113] border-b border-gray-200 dark:border-white/[0.06] flex items-center justify-between px-4 h-14 transition-colors duration-200">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
             QR
           </div>
           <div>
-            <p className="font-semibold text-sm truncate max-w-[150px] dark:text-white">{hotelName}</p>
-            <p className="text-[10px] text-gray-500 dark:text-slate-500">Owner Panel</p>
+            <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[150px] leading-tight">{hotelName}</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Admin Panel</p>
           </div>
         </div>
-        {/* Hamburger for full menu sheet */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 rounded-lg text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
+          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
@@ -168,30 +165,30 @@ export function DashboardSidebar({
         <>
           {/* Backdrop */}
           <div
-            className="md:hidden fixed inset-0 z-40 bg-black/40"
+            className="md:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sheet */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white/95 dark:bg-[#141416]/95 backdrop-blur-xl z-50 shadow-2xl flex flex-col transition-colors duration-200">
-            <div className="p-4 border-b dark:border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#111113] z-50 shadow-2xl flex flex-col border-l border-gray-200 dark:border-white/[0.06] transition-colors duration-200">
+            <div className="px-4 py-4 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                   QR
                 </div>
                 <div>
-                  <p className="font-semibold text-sm truncate max-w-[160px] dark:text-white">{hotelName}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-slate-500">Owner Panel</p>
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[160px] leading-tight">{hotelName}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Admin Panel</p>
                 </div>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition"
+                className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.05] transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
               {links.map((link) => {
                 const active =
                   link.href === "/dashboard"
@@ -204,37 +201,32 @@ export function DashboardSidebar({
                     target={link.target}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition active:scale-[0.98] duration-150 ease-in-out",
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-100",
                       active
-                        ? "bg-brand-50 text-brand-700 shadow-sm border border-brand-100/50 dark:bg-white/10 dark:text-brand-400 dark:border-white/5"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                        ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100"
                     )}
                   >
-                    <link.icon className="w-4 h-4 flex-shrink-0" />
+                    <link.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500")} />
                     {link.label}
                   </Link>
                 );
               })}
             </nav>
 
-            <div className="p-3 border-t dark:border-white/5 space-y-2">
+            <div className="p-3 border-t border-gray-100 dark:border-white/[0.06] space-y-0.5">
               {mounted && (
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="flex items-center justify-between px-3 py-3 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white w-full transition duration-150 ease-in-out"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-100 w-full transition"
                 >
-                  <div className="flex items-center gap-3">
-                    {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                  </div>
-                  <div className={`w-8 h-4 rounded-full flex items-center p-0.5 transition-colors ${theme === "dark" ? "bg-brand-500" : "bg-slate-300"}`}>
-                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`} />
-                  </div>
+                  {theme === "dark" ? <Sun className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <Moon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
                 </button>
               )}
               <button
                 onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
-                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-red-400 w-full transition"
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 w-full transition"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out
@@ -245,7 +237,7 @@ export function DashboardSidebar({
       )}
 
       {/* ===== MOBILE BOTTOM NAV BAR (below md) ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/80 dark:bg-[#141416]/80 backdrop-blur-md border-t border-gray-200 dark:border-white/5 flex items-center justify-around h-16 shadow-lg px-1 transition-colors duration-200">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#111113] border-t border-gray-200 dark:border-white/[0.06] flex items-center justify-around h-16 px-1 transition-colors duration-200">
         {bottomNavLinks.map((link) => {
           const active =
             link.href === "/dashboard"
@@ -256,26 +248,24 @@ export function DashboardSidebar({
               key={link.href}
               href={link.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition flex-1 max-w-[80px]",
+                "flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition flex-1 max-w-[72px]",
                 active
-                  ? "text-brand-700 dark:text-brand-400"
-                  : "text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
+                  ? "text-brand-600 dark:text-brand-400"
+                  : "text-gray-400 dark:text-gray-500"
               )}
             >
-              <link.icon className={cn("w-5 h-5", active && "fill-brand-50 dark:fill-brand-500/20 stroke-brand-700 dark:stroke-brand-400")} />
-              <span className={cn("text-[9px] font-bold uppercase tracking-wider", active ? "text-brand-700 dark:text-brand-400" : "text-gray-400 dark:text-slate-500")}>
-                {link.label}
-              </span>
+              <link.icon className="w-5 h-5" />
+              <span className="text-[9px] font-semibold">{link.label}</span>
             </Link>
           );
         })}
         {/* More button triggers full sheet */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300 transition flex-1 max-w-[80px]"
+          className="flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-gray-400 dark:text-gray-500 transition flex-1 max-w-[72px]"
         >
           <Menu className="w-5 h-5" />
-          <span className="text-[9px] font-bold uppercase tracking-wider">More</span>
+          <span className="text-[9px] font-semibold">More</span>
         </button>
       </nav>
     </>

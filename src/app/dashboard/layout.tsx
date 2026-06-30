@@ -32,14 +32,14 @@ export default async function DashboardLayout({
 
   return (
     <PlanProvider hotelId={user.hotelId} initialPlan={hotel?.plan} initialServiceType={hotel?.service_type}>
-      <div className="h-screen bg-gray-50 dark:bg-[#0A0A0A] dark:bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] dark:from-brand-900/10 dark:via-[#0A0A0A] dark:to-[#0A0A0A] flex overflow-hidden transition-colors duration-200">
+      <div className="h-screen bg-gray-50 dark:bg-[#0C0C0E] flex overflow-hidden transition-colors duration-200">
         <DashboardSidebar hotelName={hotel?.name || "Restaurant"} hotelId={user.hotelId} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {hotel && (hotel.status === "paused" || hotel.status === "suspended") && (
             <PausedBanner status={hotel.status} />
           )}
-          <main className="flex-1 p-4 md:p-6 pt-[calc(3.5rem+1rem)] md:pt-6 pb-[calc(4rem+1rem)] md:pb-6 overflow-y-auto overscroll-y-none">
-            <div className="max-w-7xl mx-auto w-full animate-fade-in">
+          <main className="flex-1 pt-[calc(3.5rem+1.25rem)] md:pt-0 pb-[calc(4rem+1rem)] md:pb-0 overflow-y-auto overscroll-y-none">
+            <div className="max-w-7xl mx-auto w-full p-6 md:p-8 animate-fade-in">
               {children}
             </div>
           </main>
