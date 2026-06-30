@@ -18,7 +18,50 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased overscroll-none;
+    @apply bg-gray-50 dark:bg-[#0F0F11] text-gray-900 dark:text-gray-100 antialiased overscroll-none;
+  }
+}
+
+@layer components {
+  /* ─── Form Controls ──────────────────────────────────────────────────────── */
+  .input-base {
+    @apply w-full border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm
+           bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-600
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           disabled:opacity-50 disabled:cursor-not-allowed transition;
+  }
+  .select-base {
+    @apply w-full border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm
+           bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition;
+  }
+  .textarea-base {
+    @apply w-full border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm
+           bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-600
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           resize-none transition;
+  }
+  /* ─── Cards ──────────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white dark:bg-[#18181b] border border-gray-100 dark:border-white/[0.06] rounded-xl;
+  }
+  .card-section {
+    @apply bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] rounded-lg;
+  }
+  /* ─── Table primitives ───────────────────────────────────────────────────── */
+  .table-head {
+    @apply bg-gray-50 dark:bg-white/[0.04] border-b border-gray-200 dark:border-white/[0.07];
+  }
+  .table-th {
+    @apply text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3;
+  }
+  .table-row {
+    @apply border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors;
+  }
+  .table-td {
+    @apply px-4 py-3 text-sm text-gray-700 dark:text-gray-300;
   }
 }
 

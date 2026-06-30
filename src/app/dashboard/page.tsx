@@ -745,25 +745,25 @@ Thank you for dining with us!`;
               </span>
             </div>
 
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border border-gray-200 dark:border-white/[0.07] rounded-lg overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-white/[0.04]">
                   <tr>
-                    <th className="text-left px-3 py-2">Item</th>
-                    <th className="text-right px-3 py-2">Qty</th>
-                    <th className="text-right px-3 py-2">Price</th>
-                    <th className="text-right px-3 py-2">Added</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-gray-500 dark:text-gray-400">Item</th>
+                    <th className="text-right px-3 py-2.5 font-medium text-gray-500 dark:text-gray-400">Qty</th>
+                    <th className="text-right px-3 py-2.5 font-medium text-gray-500 dark:text-gray-400">Price</th>
+                    <th className="text-right px-3 py-2.5 font-medium text-gray-500 dark:text-gray-400">Added</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                   {selected.currentSession.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-3 py-2">{item.name}</td>
-                      <td className="px-3 py-2 text-right">{item.quantity}</td>
-                      <td className="px-3 py-2 text-right">
+                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                      <td className="px-3 py-2.5 text-gray-900 dark:text-gray-100">{item.name}</td>
+                      <td className="px-3 py-2.5 text-right text-gray-700 dark:text-gray-300">{item.quantity}</td>
+                      <td className="px-3 py-2.5 text-right text-gray-700 dark:text-gray-300">
                         {formatINR(item.price * item.quantity)}
                       </td>
-                      <td className="px-3 py-2 text-right text-xs text-gray-500">
+                      <td className="px-3 py-2.5 text-right text-xs text-gray-400 dark:text-gray-500">
                         {formatDateTime(item.addedAt)}
                       </td>
                     </tr>
@@ -772,9 +772,9 @@ Thank you for dining with us!`;
               </table>
             </div>
 
-            <div className="flex gap-2 items-end border-t pt-4">
+            <div className="flex gap-2 items-end border-t border-gray-100 dark:border-white/[0.07] pt-4">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                   Discount Coupon
                 </label>
                 <input
@@ -782,7 +782,7 @@ Thank you for dining with us!`;
                   placeholder="Enter coupon code"
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm uppercase"
+                  className="w-full border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm uppercase bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   disabled={applyingCoupon}
                 />
               </div>
@@ -807,38 +807,38 @@ Thank you for dining with us!`;
               )}
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 space-y-1 text-sm">
-              <div className="flex justify-between">
+            <div className="bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.06] rounded-lg p-4 space-y-2 text-sm">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Subtotal</span>
                 <span>{formatINR(selected.currentSession.subtotal)}</span>
               </div>
               {selected.currentSession.discountAmount && selected.currentSession.discountAmount > 0 ? (
-                <div className="flex justify-between text-green-600 font-medium">
+                <div className="flex justify-between text-green-600 dark:text-emerald-400 font-medium">
                   <span>Discount {selected.currentSession.couponCode ? `(${selected.currentSession.couponCode})` : ""}</span>
                   <span>-{formatINR(selected.currentSession.discountAmount)}</span>
                 </div>
               ) : null}
-              <div className="flex justify-between">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Tax</span>
                 <span>{formatINR(selected.currentSession.taxAmount)}</span>
               </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
+              <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-200 dark:border-white/[0.07] text-gray-900 dark:text-white">
                 <span>Total</span>
                 <span>{formatINR(selected.currentSession.total)}</span>
               </div>
             </div>
 
             {selected.currentSession.status === "open" && (
-              <div className="space-y-4 border-t pt-4">
+              <div className="space-y-4 border-t border-gray-100 dark:border-white/[0.07] pt-4">
                 <div className="flex flex-wrap gap-2 items-end">
                   <div className="flex-1 min-w-[200px]">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Add item on behalf of customer
                     </label>
                     <select
                       value={manualItemId}
                       onChange={(e) => setManualItemId(e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="">Select menu item</option>
                       {menuItems.map((m) => (
@@ -853,20 +853,20 @@ Thank you for dining with us!`;
                     min={1}
                     value={manualQty}
                     onChange={(e) => setManualQty(e.target.value)}
-                    className="w-16 border rounded-lg px-2 py-2 text-sm"
+                    className="w-16 border border-gray-300 dark:border-white/[0.08] rounded-lg px-2 py-2 text-sm bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   <Button size="sm" variant="secondary" onClick={handleAddManualItem}>
                     Add Item
                   </Button>
                 </div>
 
-                <div className="border-t pt-4 space-y-3">
+                <div className="border-t border-gray-100 dark:border-white/[0.07] pt-4 space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Customer WhatsApp Number (Optional)
                     </label>
                     <div className="flex gap-2 max-w-xs">
-                      <span className="inline-flex items-center px-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                      <span className="inline-flex items-center px-3 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-gray-400 text-sm">
                         +91
                       </span>
                       <input
@@ -879,7 +879,7 @@ Thank you for dining with us!`;
                             [selected.currentSession!.id]: e.target.value,
                           }))
                         }
-                        className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                        className="flex-1 border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
                         maxLength={10}
                       />
                     </div>
@@ -891,13 +891,13 @@ Thank you for dining with us!`;
 
             {(selected.currentSession.status === "checkout_initiated" ||
               selected.currentSession.status === "bill_printed") && (
-              <div className="space-y-4 border-t pt-4">
+              <div className="space-y-4 border-t border-gray-100 dark:border-white/[0.07] pt-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Customer WhatsApp Number (Optional)
                   </label>
                   <div className="flex gap-2 max-w-xs">
-                    <span className="inline-flex items-center px-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                    <span className="inline-flex items-center px-3 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-gray-400 text-sm">
                       +91
                     </span>
                     <input
@@ -910,7 +910,7 @@ Thank you for dining with us!`;
                           [selected.currentSession!.id]: e.target.value,
                         }))
                       }
-                      className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                      className="flex-1 border border-gray-300 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white/[0.05] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       maxLength={10}
                     />
                   </div>
@@ -944,8 +944,8 @@ Thank you for dining with us!`;
       >
         {sessionToOpen && (
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-gray-500">
-              Would you like to open a new dining session for <strong>{sessionToOpen.label}</strong>? 
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              Would you like to open a new dining session for <strong className="text-gray-900 dark:text-white">{sessionToOpen.label}</strong>? 
               This will mark the table as Occupied and allow you to log orders on behalf of walk-in guests.
             </p>
             <div className="flex gap-3 justify-end pt-2">

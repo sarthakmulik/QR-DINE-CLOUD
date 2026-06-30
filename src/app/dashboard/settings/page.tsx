@@ -322,25 +322,25 @@ export default function SettingsPage() {
     <div className="max-w-5xl mx-auto space-y-6 animate-page-entrance">
       <div>
         <h1 className="text-2xl font-bold">Restaurant Settings</h1>
-        <p className="text-gray-500 text-sm">Profile and whitelabel configuration</p>
+        <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm">Profile and whitelabel configuration</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Form Column */}
         <div className="lg:col-span-7 space-y-6">
-          <form onSubmit={handleSave} className="bg-white rounded-xl border p-6 space-y-4">
+          <form onSubmit={handleSave} className="bg-white dark:bg-[#18181b] rounded-xl border dark:border-white/[0.07] p-6 space-y-4">
             {/* Store Status Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/[0.04] rounded-xl border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07]">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-900">Accepting Orders</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Accepting Orders</span>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     form.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800 animate-pulse"
                   }`}>
                     {form.status === "active" ? "Open" : "Closed"}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
                   {form.status === "active" 
                     ? "Customers can scan QR codes, view menu, and place orders." 
                     : "Scanning QR codes will show a closed message. No fake orders."}
@@ -350,12 +350,12 @@ export default function SettingsPage() {
                 type="button"
                 disabled={saving}
                 onClick={handleToggleStatus}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-                  form.status === "active" ? "bg-brand-600" : "bg-gray-200"
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border dark:border-white/[0.07]-2 border dark:border-white/[0.07]-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                  form.status === "active" ? "bg-brand-600" : "bg-gray-200 dark:bg-white/[0.06]"
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-[#18181b] shadow ring-0 transition duration-200 ease-in-out ${
                     form.status === "active" ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
@@ -372,14 +372,14 @@ export default function SettingsPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleLogoFile}
-                  className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700"
+                  className="w-full text-sm text-gray-600 dark:text-gray-400 dark:text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border dark:border-white/[0.07]-0 file:text-sm file:bg-brand-50 file:text-brand-700"
                 />
                 {logoError && (
                   <p className="text-xs text-red-600">{logoError}</p>
                 )}
                 {!logoError && form.logo && (
                   <div className="flex items-center gap-3">
-                    <div className="relative w-24 h-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <div className="relative w-24 h-24 border dark:border-white/[0.07] rounded-lg overflow-hidden bg-gray-50 dark:bg-white/[0.04] flex items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={form.logo}
@@ -402,7 +402,7 @@ export default function SettingsPage() {
                   value={form.logo.startsWith("data:") ? "" : form.logo}
                   onChange={(e) => { setLogoError(""); setForm({ ...form, logo: e.target.value }); }}
                   placeholder="Or paste logo URL (optional)"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
             </div>
@@ -417,27 +417,27 @@ export default function SettingsPage() {
                 maxLength={4}
                 value={form.kitchenPin}
                 onChange={(e) => setForm({ ...form, kitchenPin: e.target.value.replace(/\D/g, "") })}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
                 placeholder="e.g. 1234"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
                 4-digit numeric code required to log into the kitchen KDS screen.
               </p>
             </div>
 
-            <div className="flex items-start gap-3 bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4">
+            <div className="flex items-start gap-3 bg-amber-50/40 border border dark:border-white/[0.07]-amber-200/50 rounded-2xl p-4">
               <input
                 type="checkbox"
                 id="secureQr"
                 checked={form.secureQr || false}
                 onChange={(e) => setForm({ ...form, secureQr: e.target.checked })}
-                className="mt-1.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                className="mt-1.5 h-4 w-4 rounded border dark:border-white/[0.07]-gray-300 dark:border dark:border-white/[0.07]-white/[0.08] text-brand-600 focus:ring-brand-500 cursor-pointer"
               />
               <div className="space-y-1">
-                <label htmlFor="secureQr" className="block text-sm font-bold text-gray-800 cursor-pointer">
+                <label htmlFor="secureQr" className="block text-sm font-bold text-gray-800 dark:text-gray-200 cursor-pointer">
                   Strict QR Verification (Anti-Tampering)
                 </label>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 leading-relaxed">
                   Cryptographically signs dine-in URLs to prevent customers from manually changing table numbers to place fake orders.
                 </p>
                 <span className="text-[10px] text-amber-800 font-semibold block bg-amber-100/50 px-2 py-1 rounded-lg">
@@ -447,12 +447,12 @@ export default function SettingsPage() {
             </div>
 
             {/* Payment Integrations */}
-            <div className="border border-gray-200 rounded-xl p-4 space-y-4">
+            <div className="border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] rounded-xl p-4 space-y-4">
               <div>
-                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                   💳 Payment Integration
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-0.5">
                   Configure how your customers pay for their orders online.
                 </p>
               </div>
@@ -465,7 +465,7 @@ export default function SettingsPage() {
                     ...form,
                     paymentSettings: { ...form.paymentSettings, active_pg: e.target.value }
                   })}
-                  className="w-full border rounded-lg px-3 py-2 bg-slate-50"
+                  className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2 bg-slate-50"
                 >
                   <option value="none">Direct UPI (Static QR - No auto verification)</option>
                   <option value="razorpay">Razorpay (Auto verification)</option>
@@ -474,7 +474,7 @@ export default function SettingsPage() {
               </div>
 
               {form.paymentSettings?.active_pg === "none" && (
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div className="bg-slate-50 p-3 rounded-lg border border dark:border-white/[0.07]-slate-100">
                   <label className="block text-sm font-medium mb-1">
                     UPI ID for Direct Payments
                   </label>
@@ -482,17 +482,17 @@ export default function SettingsPage() {
                     type="text"
                     value={form.upiId}
                     onChange={(e) => setForm({ ...form, upiId: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                    className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                     placeholder="e.g. restaurant@okaxis"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
                     Generates a direct UPI QR. Customers must show payment proof to staff.
                   </p>
                 </div>
               )}
 
               {form.paymentSettings?.active_pg === "razorpay" && (
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-3">
+                <div className="bg-slate-50 p-3 rounded-lg border border dark:border-white/[0.07]-slate-100 space-y-3">
                   <div>
                     <label className="block text-sm font-medium mb-1">Razorpay Key ID</label>
                     <input
@@ -505,7 +505,7 @@ export default function SettingsPage() {
                           razorpay: { ...form.paymentSettings.razorpay, key_id: e.target.value }
                         }
                       })}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                       placeholder="rzp_live_..."
                     />
                   </div>
@@ -521,7 +521,7 @@ export default function SettingsPage() {
                           razorpay: { ...form.paymentSettings.razorpay, key_secret: e.target.value }
                         }
                       })}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                       placeholder="••••••••••••••••"
                     />
                   </div>
@@ -529,7 +529,7 @@ export default function SettingsPage() {
               )}
 
               {form.paymentSettings?.active_pg === "phonepe" && (
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-3">
+                <div className="bg-slate-50 p-3 rounded-lg border border dark:border-white/[0.07]-slate-100 space-y-3">
                   <div className="flex gap-4">
                     <div className="flex-1">
                       <label className="block text-sm font-medium mb-1">Environment</label>
@@ -542,7 +542,7 @@ export default function SettingsPage() {
                             phonepe: { ...form.paymentSettings.phonepe, env: e.target.value }
                           }
                         })}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                        className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                       >
                         <option value="TEST">UAT / Test Mode</option>
                         <option value="PROD">Live Production</option>
@@ -560,7 +560,7 @@ export default function SettingsPage() {
                             phonepe: { ...form.paymentSettings.phonepe, salt_index: e.target.value }
                           }
                         })}
-                        className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                        className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                         placeholder="e.g. 1"
                       />
                     </div>
@@ -577,7 +577,7 @@ export default function SettingsPage() {
                           phonepe: { ...form.paymentSettings.phonepe, merchant_id: e.target.value }
                         }
                       })}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                       placeholder="Enter PhonePe Merchant ID"
                     />
                   </div>
@@ -593,7 +593,7 @@ export default function SettingsPage() {
                           phonepe: { ...form.paymentSettings.phonepe, salt_key: e.target.value }
                         }
                       })}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 bg-white"
+                      className="w-full border border dark:border-white/[0.07]-slate-200 rounded-lg px-3 py-2 bg-white dark:bg-[#18181b]"
                       placeholder="••••••••••••••••"
                     />
                   </div>
@@ -602,12 +602,12 @@ export default function SettingsPage() {
             </div>
 
             {/* Thermal Printer Size */}
-            <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+            <div className="border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] rounded-xl p-4 space-y-3">
               <div>
-                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                   🖨️ Thermal Receipt Printer Size
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-0.5">
                   Choose the paper width of your thermal receipt printer. This controls the bill layout when printing from the dashboard.
                 </p>
               </div>
@@ -630,10 +630,10 @@ export default function SettingsPage() {
                           },
                         })
                       }
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      className={`p-3 rounded-xl border dark:border-white/[0.07]-2 text-left transition-all ${
                         selected
-                          ? "border-brand-500 bg-brand-50 text-brand-700"
-                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          ? "border dark:border-white/[0.07]-brand-500 bg-brand-50 text-brand-700"
+                          : "border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] hover:border dark:border-white/[0.07]-gray-300 dark:border dark:border-white/[0.07]-white/[0.08] text-gray-700 dark:text-gray-300"
                       }`}
                     >
                       <div className="font-bold text-sm">{opt.label}</div>
@@ -653,18 +653,18 @@ export default function SettingsPage() {
                 step="0.1"
                 value={form.taxRate}
                 onChange={(e) => setForm({ ...form, taxRate: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
                 Default 5% (CGST 2.5% + SGST 2.5%)
               </p>
             </div>
 
             {/* Menu Layout Preset Selector (Dine-In Only) */}
             {form.serviceType !== "quick_service" && (
-              <div className="border-t border-gray-200 pt-4 space-y-4">
+              <div className="border dark:border-white/[0.07]-t border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] pt-4 space-y-4">
               <div>
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
                   Menu Layout Preset
                   {isBasic && (
                     <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
@@ -682,7 +682,7 @@ export default function SettingsPage() {
                     </span>
                   )}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
                   Choose how your digital menu items are presented to customers.
                 </p>
               </div>
@@ -740,17 +740,17 @@ export default function SettingsPage() {
                           }
                         });
                       }}
-                      className={`relative flex items-start text-left p-4 rounded-2xl border transition-all ${
+                      className={`relative flex items-start text-left p-4 rounded-2xl border dark:border-white/[0.07] transition-all ${
                         isSelected
-                          ? "border-brand-600 bg-brand-50/10 shadow-sm"
+                          ? "border dark:border-white/[0.07]-brand-600 bg-brand-50/10 shadow-sm"
                           : layout.allowed
-                          ? "border-gray-200 bg-white hover:bg-slate-50/50 hover:border-gray-300"
-                          : "border-gray-200 bg-gray-50/30 opacity-60 cursor-not-allowed"
+                          ? "border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] bg-white dark:bg-[#18181b] hover:bg-slate-50/50 hover:border dark:border-white/[0.07]-gray-300 dark:border dark:border-white/[0.07]-white/[0.08]"
+                          : "border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] bg-gray-50/30 opacity-60 cursor-not-allowed"
                       }`}
                     >
                       <div className="flex-1 pr-12">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-gray-900">{layout.name}</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{layout.name}</span>
                           {!layout.allowed && (
                             <span className="text-[8px] bg-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
                               Upgrade
@@ -765,7 +765,7 @@ export default function SettingsPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{layout.desc}</p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">{layout.desc}</p>
                       </div>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2">
                         {isSelected ? (
@@ -773,7 +773,7 @@ export default function SettingsPage() {
                             ✓
                           </div>
                         ) : layout.allowed ? (
-                          <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-white" />
+                          <div className="w-5 h-5 rounded-full border dark:border-white/[0.07]-2 border dark:border-white/[0.07]-gray-300 dark:border dark:border-white/[0.07]-white/[0.08] bg-white dark:bg-[#18181b]" />
                         ) : (
                           <div className="text-xs">🔒</div>
                         )}
@@ -788,9 +788,9 @@ export default function SettingsPage() {
             {/* Elite Whitelabel Customization (Dine-In Only) */}
             {form.serviceType !== "quick_service" && (
               <>
-                <div className="border-t border-gray-200 pt-4 space-y-4">
+                <div className="border dark:border-white/[0.07]-t border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] pt-4 space-y-4">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">
                       Dine-In Elite Whitelabel
                     </h3>
                 {!isElite && (
@@ -801,14 +801,14 @@ export default function SettingsPage() {
               </div>
 
               {!isElite ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-3">
+                <div className="bg-slate-50 border border dark:border-white/[0.07]-slate-200 rounded-2xl p-6 text-center space-y-3">
                   <div className="text-3xl">✨</div>
                   <h4 className="font-extrabold text-sm text-gray-950">Unlock Custom Branding</h4>
-                  <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 max-w-xs mx-auto leading-relaxed">
                     Choose custom brand colors, custom typography fonts, and add scrolling header announcements on your customer-facing menus.
                   </p>
                   <div className="pt-2">
-                    <span className="inline-block bg-brand-600 text-white text-xs font-extrabold px-4 py-2 rounded-xl border shadow-md shadow-brand-100 uppercase tracking-wider select-none">
+                    <span className="inline-block bg-brand-600 text-white text-xs font-extrabold px-4 py-2 rounded-xl border dark:border-white/[0.07] shadow-md shadow-brand-100 uppercase tracking-wider select-none">
                       Upgrade to Elite
                     </span>
                   </div>
@@ -817,7 +817,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   {/* Theme Presets */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                       Theme Preset
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -838,16 +838,16 @@ export default function SettingsPage() {
                                 }
                               });
                             }}
-                            className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                            className={`p-2.5 rounded-xl border dark:border-white/[0.07] text-left text-xs transition-all ${
                               isSelected
-                                ? "border-brand-600 bg-brand-50/20 shadow-sm"
-                                : "border-gray-200 hover:bg-gray-50"
+                                ? "border dark:border-white/[0.07]-brand-600 bg-brand-50/20 shadow-sm"
+                                : "border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] hover:bg-gray-50 dark:bg-white/[0.04]"
                             }`}
                           >
-                            <p className="font-bold text-gray-900">{preset.name}</p>
+                            <p className="font-bold text-gray-900 dark:text-gray-100">{preset.name}</p>
                             <div className="flex gap-1.5 mt-1.5">
-                              <span className="w-3.5 h-3.5 rounded-full border border-black/5" style={{ backgroundColor: preset.primaryColor }} />
-                              <span className="w-3.5 h-3.5 rounded-full border border-black/5" style={{ backgroundColor: preset.secondaryColor }} />
+                              <span className="w-3.5 h-3.5 rounded-full border dark:border-white/[0.07] border dark:border-white/[0.07]-black/5" style={{ backgroundColor: preset.primaryColor }} />
+                              <span className="w-3.5 h-3.5 rounded-full border dark:border-white/[0.07] border dark:border-white/[0.07]-black/5" style={{ backgroundColor: preset.secondaryColor }} />
                             </div>
                           </button>
                         );
@@ -860,7 +860,7 @@ export default function SettingsPage() {
                   {/* Custom Colors */}
                   <div className="grid grid-cols-2 gap-4 mt-6">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
                         Primary Color
                       </label>
                       <div className="flex gap-2">
@@ -877,7 +877,7 @@ export default function SettingsPage() {
                               }
                             });
                           }}
-                          className="w-10 h-10 border rounded-lg cursor-pointer p-0.5 bg-white"
+                          className="w-10 h-10 border dark:border-white/[0.07] rounded-lg cursor-pointer p-0.5 bg-white dark:bg-[#18181b]"
                         />
                         <input
                           type="text"
@@ -892,13 +892,13 @@ export default function SettingsPage() {
                               }
                             });
                           }}
-                          className="w-full border rounded-lg px-2.5 text-xs font-mono uppercase"
+                          className="w-full border dark:border-white/[0.07] rounded-lg px-2.5 text-xs font-mono uppercase"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
                         Secondary Color
                       </label>
                       <div className="flex gap-2">
@@ -915,7 +915,7 @@ export default function SettingsPage() {
                               }
                             });
                           }}
-                          className="w-10 h-10 border rounded-lg cursor-pointer p-0.5 bg-white"
+                          className="w-10 h-10 border dark:border-white/[0.07] rounded-lg cursor-pointer p-0.5 bg-white dark:bg-[#18181b]"
                         />
                         <input
                           type="text"
@@ -930,7 +930,7 @@ export default function SettingsPage() {
                               }
                             });
                           }}
-                          className="w-full border rounded-lg px-2.5 text-xs font-mono uppercase"
+                          className="w-full border dark:border-white/[0.07] rounded-lg px-2.5 text-xs font-mono uppercase"
                         />
                       </div>
                     </div>
@@ -938,7 +938,7 @@ export default function SettingsPage() {
 
                   {/* Font Family */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
                       Font Typography
                     </label>
                     <select
@@ -952,7 +952,7 @@ export default function SettingsPage() {
                           }
                         });
                       }}
-                      className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                      className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#18181b]"
                     >
                       <option value="Inter">Inter (Classic Sans)</option>
                       <option value="Poppins">Poppins (Modern Geometric)</option>
@@ -964,7 +964,7 @@ export default function SettingsPage() {
 
                   {/* Custom Welcome Message */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
                       Welcome Message Banner
                     </label>
                     <input
@@ -980,13 +980,13 @@ export default function SettingsPage() {
                         });
                       }}
                       placeholder="e.g. Welcome to Gourmet Bistro!"
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
                   {/* Announcement Text */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
                       Scrolling Announcement Ticker
                     </label>
                     <input
@@ -1002,7 +1002,7 @@ export default function SettingsPage() {
                         });
                       }}
                       placeholder="e.g. Live Music tonight at 8 PM! | Get 15% off all beverages!"
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -1023,8 +1023,8 @@ export default function SettingsPage() {
 
             {/* Quick Service Themes */}
             {(form.serviceType === "quick_service" || form.serviceType === "both") && (
-              <div className="border-t border-gray-200 pt-4 space-y-4 mb-8">
-                <label className="block text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <div className="border dark:border-white/[0.07]-t border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] pt-4 space-y-4 mb-8">
+                <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-3 flex items-center gap-2">
                   Quick Service Aesthetic
                   <span className="text-[10px] bg-sky-100 text-sky-600 px-2 py-0.5 rounded-full font-black tracking-normal uppercase">
                     Gen Z Designed
@@ -1046,71 +1046,71 @@ export default function SettingsPage() {
                             }
                           });
                         }}
-                        className={`p-3 rounded-xl border text-left text-xs transition-all ${
+                        className={`p-3 rounded-xl border dark:border-white/[0.07] text-left text-xs transition-all ${
                           isSelected
-                            ? "border-sky-500 bg-sky-50 shadow-sm ring-1 ring-sky-500/20"
-                            : "border-gray-200 hover:bg-gray-50"
+                            ? "border dark:border-white/[0.07]-sky-500 bg-sky-50 shadow-sm ring-1 ring-sky-500/20"
+                            : "border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] hover:bg-gray-50 dark:bg-white/[0.04]"
                         }`}
                       >
                         <div className="flex justify-between items-start mb-1">
-                          <p className={`font-bold ${isSelected ? "text-sky-900" : "text-gray-900"}`}>{preset.name}</p>
+                          <p className={`font-bold ${isSelected ? "text-sky-900" : "text-gray-900 dark:text-gray-100"}`}>{preset.name}</p>
                           {isSelected && (
                             <div className="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
                           )}
                         </div>
-                        <p className={`text-[10px] ${isSelected ? "text-sky-700/80" : "text-gray-500"}`}>{preset.desc}</p>
+                        <p className={`text-[10px] ${isSelected ? "text-sky-700/80" : "text-gray-500 dark:text-gray-400 dark:text-gray-500"}`}>{preset.desc}</p>
                       </button>
                     );
                   })}
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-sky-100/50">
-                  <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3">Custom Colors (Overrides Theme Defaults)</h4>
+                <div className="mt-6 pt-4 border dark:border-white/[0.07]-t border dark:border-white/[0.07]-sky-100/50">
+                  <h4 className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider mb-3">Custom Colors (Overrides Theme Defaults)</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Primary Color</label>
+                      <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 dark:text-gray-500 uppercase mb-1">Primary Color</label>
                       <input
                         type="color"
                         value={form.customizations?.qsPrimaryColor || "#ea580c"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsPrimaryColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] cursor-pointer p-0.5"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Background</label>
+                      <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 dark:text-gray-500 uppercase mb-1">Background</label>
                       <input
                         type="color"
                         value={form.customizations?.qsBgColor || "#f4f4f0"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsBgColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] cursor-pointer p-0.5"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Text Color</label>
+                      <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 dark:text-gray-500 uppercase mb-1">Text Color</label>
                       <input
                         type="color"
                         value={form.customizations?.qsTextColor || "#000000"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsTextColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] cursor-pointer p-0.5"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Card / Element</label>
+                      <label className="block text-[10px] font-bold text-gray-600 dark:text-gray-400 dark:text-gray-500 uppercase mb-1">Card / Element</label>
                       <input
                         type="color"
                         value={form.customizations?.qsCardBgColor || "#ffffff"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsCardBgColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] cursor-pointer p-0.5"
                       />
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-2">Leave blank or default if you want to use the theme&apos;s native colors.</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-2">Leave blank or default if you want to use the theme&apos;s native colors.</p>
                 </div>
               </div>
             )}
 
-            <div className="border-t border-gray-200 pt-4 space-y-4">
-              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Account Security</h3>
+            <div className="border dark:border-white/[0.07]-t border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] pt-4 space-y-4">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Account Security</h3>
               
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -1121,10 +1121,10 @@ export default function SettingsPage() {
                   required
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
                   placeholder="e.g. owner@gmail.com"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
                   Used to log in to the Restaurant Dashboard. Changing this updates your login identity.
                 </p>
               </div>
@@ -1137,10 +1137,10 @@ export default function SettingsPage() {
                   type="password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
                   placeholder="••••••••"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
                   Leave blank to keep your current password. Minimum 6 characters.
                 </p>
               </div>
@@ -1167,32 +1167,32 @@ export default function SettingsPage() {
                   <button 
                     type="button"
                     onClick={() => setPreviewTab("dine_in")}
-                    className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-colors ${previewTab === "dine_in" ? "border-brand-500 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                    className={`text-xs font-bold uppercase tracking-wider pb-1 border dark:border-white/[0.07]-b-2 transition-colors ${previewTab === "dine_in" ? "border dark:border-white/[0.07]-brand-500 text-gray-900 dark:text-gray-100" : "border dark:border-white/[0.07]-transparent text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:text-gray-500"}`}
                   >
                     Dine-In
                   </button>
                   <button 
                     type="button"
                     onClick={() => setPreviewTab("quick_service")}
-                    className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-colors ${previewTab === "quick_service" ? "border-brand-500 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                    className={`text-xs font-bold uppercase tracking-wider pb-1 border dark:border-white/[0.07]-b-2 transition-colors ${previewTab === "quick_service" ? "border dark:border-white/[0.07]-brand-500 text-gray-900 dark:text-gray-100" : "border dark:border-white/[0.07]-transparent text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:text-gray-500"}`}
                   >
                     Quick Service
                   </button>
                 </>
               ) : (
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   Live Mobile Menu Preview
                 </span>
               )}
             </div>
             {isElite && (
-              <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase tracking-wider">
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border dark:border-white/[0.07]-emerald-200 font-bold uppercase tracking-wider">
                 Live Rendering
               </span>
             )}
           </div>
 
-          <div className="bg-slate-900 rounded-[40px] p-3 shadow-2xl border-4 border-slate-950 aspect-[9/19] max-w-[280px] mx-auto flex flex-col overflow-hidden relative select-none">
+          <div className="bg-slate-900 rounded-[40px] p-3 shadow-2xl border dark:border-white/[0.07]-4 border dark:border-white/[0.07]-slate-950 aspect-[9/19] max-w-[280px] mx-auto flex flex-col overflow-hidden relative select-none">
             {/* Phone Speaker & Notch */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-950 rounded-full z-10 flex items-center justify-center">
               <span className="w-1.5 h-1.5 bg-slate-800 rounded-full mr-2" />
@@ -1205,7 +1205,7 @@ export default function SettingsPage() {
             ) : (
             <div
               className={`flex-1 rounded-[32px] overflow-hidden flex flex-col relative pt-3 transition-colors duration-300 ${
-                form.customizations?.layout === "dark_slider" ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-800"
+                form.customizations?.layout === "dark_slider" ? "bg-slate-950 text-slate-100" : "bg-gray-50 dark:bg-white/[0.04] text-gray-800 dark:text-gray-200"
               }`}
               style={{
                 ...brandColors,
@@ -1229,8 +1229,8 @@ export default function SettingsPage() {
               )}
 
               {/* Header */}
-              <div className={`border-b px-3 py-2 flex items-center justify-between mt-3 transition-colors duration-300 ${
-                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white border-gray-100"
+              <div className={`border dark:border-white/[0.07]-b px-3 py-2 flex items-center justify-between mt-3 transition-colors duration-300 ${
+                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border dark:border-white/[0.07]-white/5" : "bg-white dark:bg-[#18181b] border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06]"
               }`}>
                 <div className="flex items-center gap-1.5">
                   {form.logo ? (
@@ -1238,23 +1238,23 @@ export default function SettingsPage() {
                     <img
                       src={form.logo}
                       alt=""
-                      className="w-6 h-6 rounded-full object-cover border border-gray-100 shadow-sm"
+                      className="w-6 h-6 rounded-full object-cover border border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06] shadow-sm"
                     />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-xs shadow-inner">
+                    <div className="w-6 h-6 rounded-full bg-brand-50 border border dark:border-white/[0.07]-brand-100 flex items-center justify-center text-xs shadow-inner">
                       🍽️
                     </div>
                   )}
                   <div>
                     <h5 className={`font-extrabold text-[9px] leading-tight ${
-                      form.customizations?.layout === "dark_slider" ? "text-white" : "text-gray-900"
+                      form.customizations?.layout === "dark_slider" ? "text-white" : "text-gray-900 dark:text-gray-100"
                     }`}>
                       {form.name || "Restaurant Name"}
                     </h5>
-                    <p className="text-[7px] text-gray-400 font-bold">Table 3</p>
+                    <p className="text-[7px] text-gray-400 dark:text-gray-500 font-bold">Table 3</p>
                   </div>
                 </div>
-                <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-full text-[7px] font-bold">
+                <div className="bg-brand-50 border border dark:border-white/[0.07]-brand-100 text-brand-600 px-2 py-0.5 rounded-full text-[7px] font-bold">
                   Call Waiter
                 </div>
               </div>
@@ -1262,11 +1262,11 @@ export default function SettingsPage() {
               {/* Welcome Banner Card in preview */}
               {form.customizations?.welcomeMessage && (
                 <div className="px-3 pt-2">
-                  <div className={`border border-brand-100 rounded-xl p-2 text-center ${
-                    form.customizations?.layout === "dark_slider" ? "bg-white/[0.02] border-white/10" : "bg-gradient-to-br from-brand-600/10 to-brand-500/5"
+                  <div className={`border border dark:border-white/[0.07]-brand-100 rounded-xl p-2 text-center ${
+                    form.customizations?.layout === "dark_slider" ? "bg-white/[0.02] border dark:border-white/[0.07]-white/10" : "bg-gradient-to-br from-brand-600/10 to-brand-500/5"
                   }`}>
                     <h6 className={`font-black text-[8px] leading-normal ${
-                      form.customizations?.layout === "dark_slider" ? "text-white" : "text-gray-900"
+                      form.customizations?.layout === "dark_slider" ? "text-white" : "text-gray-900 dark:text-gray-100"
                     }`}>
                       {form.customizations.welcomeMessage}
                     </h6>
@@ -1278,18 +1278,18 @@ export default function SettingsPage() {
               <div className="flex-1 p-3 space-y-2 overflow-y-auto">
                 <div className="flex justify-between items-center">
                   <span className={`text-[8px] font-extrabold uppercase tracking-widest ${
-                    form.customizations?.layout === "dark_slider" ? "text-slate-550" : "text-gray-400"
+                    form.customizations?.layout === "dark_slider" ? "text-slate-550" : "text-gray-400 dark:text-gray-500"
                   }`}>
                     Popular Dishes
                   </span>
                 </div>
 
                 {form.customizations?.layout === "compact" ? (
-                  <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="bg-white dark:bg-[#18181b] rounded-xl border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] divide-y divide-gray-100 dark:divide-white/[0.05] overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                     <div className="p-2 flex items-center justify-between gap-2 bg-transparent">
                       <div className="min-w-0 flex-1">
                         <h6 className="font-extrabold text-[8px] text-gray-950 truncate">Paneer Tikka</h6>
-                        <p className="text-[7px] text-gray-400 font-medium truncate mt-0.5">Spiced cottage cheese</p>
+                        <p className="text-[7px] text-gray-400 dark:text-gray-500 font-medium truncate mt-0.5">Spiced cottage cheese</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="font-extrabold text-brand-600 text-[8px]">₹280</span>
@@ -1299,11 +1299,11 @@ export default function SettingsPage() {
                     <div className="p-2 flex items-center justify-between gap-2 bg-transparent">
                       <div className="min-w-0 flex-1">
                         <h6 className="font-extrabold text-[8px] text-gray-955 truncate">Spring Rolls</h6>
-                        <p className="text-[7px] text-gray-400 font-medium truncate mt-0.5">Golden fried wraps</p>
+                        <p className="text-[7px] text-gray-400 dark:text-gray-500 font-medium truncate mt-0.5">Golden fried wraps</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="font-extrabold text-brand-600 text-[8px]">₹180</span>
-                        <div className="bg-brand-50 border border-brand-100 text-brand-600 px-1 py-0.5 rounded flex items-center gap-1 text-[7px] font-bold">
+                        <div className="bg-brand-50 border border dark:border-white/[0.07]-brand-100 text-brand-600 px-1 py-0.5 rounded flex items-center gap-1 text-[7px] font-bold">
                           <span>-</span><span>1</span><span>+</span>
                         </div>
                       </div>
@@ -1311,26 +1311,26 @@ export default function SettingsPage() {
                   </div>
                 ) : form.customizations?.layout === "masonry" || form.customizations?.layout === "fullscreen_story" ? (
                   <div className="grid grid-cols-2 gap-2 space-y-0">
-                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col shadow-sm">
+                    <div className="bg-white dark:bg-[#18181b] rounded-xl border border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06] overflow-hidden flex flex-col shadow-sm">
                       <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🧀</div>
                       <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
-                        <h6 className="font-bold text-[8px] text-gray-900 line-clamp-1">Paneer Tikka</h6>
+                        <h6 className="font-bold text-[8px] text-gray-900 dark:text-gray-100 line-clamp-1">Paneer Tikka</h6>
                         {form.customizations?.layout === "fullscreen_story" && (
                           <span className="text-[6px] text-emerald-600 bg-emerald-50 px-1 rounded self-start font-bold">Chef&apos;s Pick</span>
                         )}
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                        <div className="flex items-center justify-between pt-1 border dark:border-white/[0.07]-t border dark:border-white/[0.07]-slate-50">
                           <span className="font-extrabold text-brand-600 text-[7px]">₹280</span>
                           <span className="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[6px] font-black">ADD</span>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col shadow-sm">
+                    <div className="bg-white dark:bg-[#18181b] rounded-xl border border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06] overflow-hidden flex flex-col shadow-sm">
                       <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🌯</div>
                       <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
-                        <h6 className="font-bold text-[8px] text-gray-900 line-clamp-1">Spring Rolls</h6>
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                        <h6 className="font-bold text-[8px] text-gray-900 dark:text-gray-100 line-clamp-1">Spring Rolls</h6>
+                        <div className="flex items-center justify-between pt-1 border dark:border-white/[0.07]-t border dark:border-white/[0.07]-slate-50">
                           <span className="font-extrabold text-brand-600 text-[7px]">₹180</span>
-                          <span className="bg-brand-50 border border-brand-100 text-brand-600 px-1 rounded flex items-center gap-0.5 text-[6px] font-bold">
+                          <span className="bg-brand-50 border border dark:border-white/[0.07]-brand-100 text-brand-600 px-1 rounded flex items-center gap-0.5 text-[6px] font-bold">
                             <span>-</span><span>1</span><span>+</span>
                           </span>
                         </div>
@@ -1339,7 +1339,7 @@ export default function SettingsPage() {
                   </div>
                 ) : form.customizations?.layout === "dark_slider" ? (
                   <div className="space-y-2">
-                    <div className="bg-slate-900 rounded-xl border border-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
+                    <div className="bg-slate-900 rounded-xl border border dark:border-white/[0.07]-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-white">Tandoori Paneer Tikka</h6>
                         <p className="text-[8px] font-black text-brand-400">₹280</p>
@@ -1348,19 +1348,19 @@ export default function SettingsPage() {
                         ADD
                       </div>
                     </div>
-                    <div className="bg-slate-900 rounded-xl border border-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
+                    <div className="bg-slate-900 rounded-xl border border dark:border-white/[0.07]-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-white">Crispy Spring Rolls</h6>
                         <p className="text-[8px] font-black text-brand-400">₹180</p>
                       </div>
-                      <div className="bg-brand-50/10 border border-brand-500/25 text-brand-400 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
+                      <div className="bg-brand-50/10 border border dark:border-white/[0.07]-brand-500/25 text-brand-400 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
                         <span>-</span><span className="text-white">1</span><span>+</span>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-sm">
+                    <div className="bg-white dark:bg-[#18181b] rounded-xl border border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06] p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-gray-950">Tandoori Paneer Tikka</h6>
                         <p className="text-[8px] font-black text-brand-600">₹280</p>
@@ -1369,12 +1369,12 @@ export default function SettingsPage() {
                         ADD
                       </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-100 p-2.5 flex items-center justify-between shadow-sm">
+                    <div className="bg-white dark:bg-[#18181b] rounded-xl border border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06] p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-gray-955">Crispy Spring Rolls</h6>
                         <p className="text-[8px] font-black text-brand-600">₹180</p>
                       </div>
-                      <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
+                      <div className="bg-brand-50 border border dark:border-white/[0.07]-brand-100 text-brand-600 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
                         <span>-</span><span className="font-bold">1</span><span>+</span>
                       </div>
                     </div>
@@ -1383,10 +1383,10 @@ export default function SettingsPage() {
               </div>
 
               {/* Footer View Cart Bar */}
-              <div className={`border-t p-2.5 flex items-center justify-between rounded-b-[28px] mt-auto transition-colors duration-300 ${
-                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white border-gray-100"
+              <div className={`border dark:border-white/[0.07]-t p-2.5 flex items-center justify-between rounded-b-[28px] mt-auto transition-colors duration-300 ${
+                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border dark:border-white/[0.07]-white/5" : "bg-white dark:bg-[#18181b] border dark:border-white/[0.07]-gray-100 dark:border dark:border-white/[0.07]-white/[0.06]"
               }`}>
-                <span className="text-[8px] text-gray-400 font-bold">1 item in cart</span>
+                <span className="text-[8px] text-gray-400 dark:text-gray-500 font-bold">1 item in cart</span>
                 <div className="bg-brand-600 text-white font-extrabold text-[8px] px-3 py-1.5 rounded-lg flex items-center gap-1">
                   View Order
                 </div>
@@ -1416,7 +1416,7 @@ function Field({
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border rounded-lg px-3 py-2"
+        className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
       />
     </div>
   );

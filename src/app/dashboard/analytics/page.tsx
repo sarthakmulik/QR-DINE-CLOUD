@@ -254,18 +254,18 @@ export default function AnalyticsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Business Analytics</h1>
-          <p className="text-gray-500 text-sm">Monitor revenue, sales statistics, and table performance</p>
+          <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm">Monitor revenue, sales statistics, and table performance</p>
         </div>
 
         {/* Date Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="bg-gray-100 rounded-lg p-1 flex border text-sm">
+          <div className="bg-gray-100 dark:bg-white/[0.05] rounded-lg p-1 flex border dark:border-white/[0.07] text-sm">
             {(["today", "week", "month", "custom"] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
                 className={`px-3 py-1.5 rounded-md font-semibold transition-all capitalize ${
-                  range === r ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
+                  range === r ? "bg-white dark:bg-[#18181b] text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-100"
                 }`}
               >
                 {r === "week" ? "7 Days" : r === "month" ? "30 Days" : r}
@@ -274,23 +274,23 @@ export default function AnalyticsPage() {
           </div>
 
           {range === "custom" && (
-            <div className="flex items-center gap-2 bg-white border rounded-lg p-1.5 shadow-sm text-sm">
-              <Calendar size={16} className="text-gray-400" />
+            <div className="flex items-center gap-2 bg-white dark:bg-[#18181b] border dark:border-white/[0.07] rounded-lg p-1.5 shadow-sm text-sm">
+              <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
               <input
                 type="date"
                 value={customFrom}
                 max={customTo || new Date().toISOString().split("T")[0]}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="focus:outline-none border-none text-gray-700 bg-transparent text-xs"
+                className="focus:outline-none border dark:border-white/[0.07]-none text-gray-700 dark:text-gray-300 bg-transparent text-xs"
               />
-              <span className="text-gray-400">to</span>
+              <span className="text-gray-400 dark:text-gray-500">to</span>
               <input
                 type="date"
                 value={customTo}
                 min={customFrom}
                 max={new Date().toISOString().split("T")[0]}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="focus:outline-none border-none text-gray-700 bg-transparent text-xs"
+                className="focus:outline-none border dark:border-white/[0.07]-none text-gray-700 dark:text-gray-300 bg-transparent text-xs"
               />
             </div>
           )}
@@ -299,7 +299,7 @@ export default function AnalyticsPage() {
 
       {loading && !data ? (
         <div className="h-64 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-600"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border dark:border-white/[0.07]-t-2 border dark:border-white/[0.07]-b-2 border dark:border-white/[0.07]-brand-600"></div>
         </div>
       ) : data ? (
         <>
@@ -310,21 +310,21 @@ export default function AnalyticsPage() {
               value={formatINR(data.totalRevenue)}
               icon={<IndianRupee size={22} className="text-sky-500" />}
               bgColor="bg-sky-50"
-              borderColor="border-sky-100"
+              borderColor="border dark:border-white/[0.07]-sky-100"
             />
             <StatCard
               title="Total Sessions"
               value={String(data.totalSessions)}
               icon={<ShoppingBag size={22} className="text-emerald-500" />}
               bgColor="bg-emerald-50"
-              borderColor="border-emerald-100"
+              borderColor="border dark:border-white/[0.07]-emerald-100"
             />
             <StatCard
               title="Average Order Value"
               value={formatINR(data.avgOrderValue)}
               icon={<TrendingUp size={22} className="text-indigo-500" />}
               bgColor="bg-indigo-50"
-              borderColor="border-indigo-100"
+              borderColor="border dark:border-white/[0.07]-indigo-100"
             />
             <StatCard
               title="Top Selling Item"
@@ -332,23 +332,23 @@ export default function AnalyticsPage() {
               subtext={data.topItem.count > 0 ? `${data.topItem.count} portions sold` : ""}
               icon={<Award size={22} className="text-amber-500" />}
               bgColor="bg-amber-50"
-              borderColor="border-amber-100"
+              borderColor="border dark:border-white/[0.07]-amber-100"
             />
           </div>
 
           {/* CHARTS SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Daily Revenue Line Chart */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm lg:col-span-2">
-              <h2 className="text-base font-bold text-gray-800 mb-4">Daily Revenue Trends</h2>
+            <div className="bg-white dark:bg-[#18181b] border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
+              <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4">Daily Revenue Trends</h2>
               <div className="h-72 relative">
                 <canvas ref={revenueCanvasRef} />
               </div>
             </div>
 
             {/* Top 5 Items Horizontal Bar Chart */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-base font-bold text-gray-800 mb-4">Top 5 Items</h2>
+            <div className="bg-white dark:bg-[#18181b] border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] rounded-2xl p-6 shadow-sm">
+              <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4">Top 5 Items</h2>
               <div className="h-72 relative">
                 <canvas ref={topItemsCanvasRef} />
               </div>
@@ -357,11 +357,11 @@ export default function AnalyticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Table Performance */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm lg:col-span-2">
-              <h2 className="text-base font-bold text-gray-800 mb-4">Table Performance</h2>
+            <div className="bg-white dark:bg-[#18181b] border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
+              <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4">Table Performance</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b">
+                  <thead className="bg-gray-50 dark:bg-white/[0.04] text-gray-600 dark:text-gray-400 dark:text-gray-500 uppercase text-[10px] tracking-wider border dark:border-white/[0.07]-b">
                     <tr>
                       <th className="px-4 py-3">Table Number</th>
                       <th className="px-4 py-3 text-right">Orders Served</th>
@@ -369,10 +369,10 @@ export default function AnalyticsPage() {
                       <th className="px-4 py-3 text-right">Avg. Order Value</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-gray-700">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05] text-gray-700 dark:text-gray-300">
                     {data.tablePerformance.map((table) => (
                       <tr key={table.tableNumber} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-semibold text-gray-900">Table {table.tableNumber}</td>
+                        <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">Table {table.tableNumber}</td>
                         <td className="px-4 py-3 text-right">{table.sessions}</td>
                         <td className="px-4 py-3 text-right font-medium text-emerald-600">
                           {formatINR(table.revenue)}
@@ -382,7 +382,7 @@ export default function AnalyticsPage() {
                     ))}
                     {data.tablePerformance.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="text-center py-6 text-gray-400">
+                        <td colSpan={4} className="text-center py-6 text-gray-400 dark:text-gray-500">
                           No table performance data in this range.
                         </td>
                       </tr>
@@ -393,8 +393,8 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Hourly Performance Chart */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-base font-bold text-gray-800 mb-4">Orders by Hour (Load distribution)</h2>
+            <div className="bg-white dark:bg-[#18181b] border border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] rounded-2xl p-6 shadow-sm">
+              <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4">Orders by Hour (Load distribution)</h2>
               <div className="h-72 relative">
                 <canvas ref={hourlyCanvasRef} />
               </div>
@@ -402,14 +402,14 @@ export default function AnalyticsPage() {
           </div>
         </>
       ) : (
-        <div className="h-64 flex items-center justify-center text-gray-400">
+        <div className="h-64 flex items-center justify-center text-gray-400 dark:text-gray-500">
           No data available. Try selecting a different date range.
         </div>
       )}
 
       {/* Powered by footer */}
-      <footer className="pt-8 border-t border-gray-200 flex items-center justify-center">
-        <p className="text-xs font-black tracking-widest uppercase text-gray-400">
+      <footer className="pt-8 border dark:border-white/[0.07]-t border dark:border-white/[0.07]-gray-200 dark:border dark:border-white/[0.07]-white/[0.07] flex items-center justify-center">
+        <p className="text-xs font-black tracking-widest uppercase text-gray-400 dark:text-gray-500">
           Powered by QR Dine Cloud
         </p>
       </footer>
@@ -433,13 +433,13 @@ function StatCard({
   borderColor: string;
 }) {
   return (
-    <div className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex items-start justify-between`}>
+    <div className={`bg-white dark:bg-[#18181b] border dark:border-white/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex items-start justify-between`}>
       <div className="space-y-2 max-w-[70%]">
-        <span className="text-gray-400 text-xs font-bold uppercase tracking-wider block">{title}</span>
-        <h3 className="text-2xl font-black text-gray-900 truncate tracking-tight">{value}</h3>
+        <span className="text-gray-400 dark:text-gray-500 text-xs font-bold uppercase tracking-wider block">{title}</span>
+        <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 truncate tracking-tight">{value}</h3>
         {subtext && <p className="text-xs font-semibold text-emerald-500 mt-1">{subtext}</p>}
       </div>
-      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center border ${bgColor} ${borderColor} shadow-sm flex-shrink-0`}>
+      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center border dark:border-white/[0.07] ${bgColor} ${borderColor} shadow-sm flex-shrink-0`}>
         {icon}
       </div>
     </div>

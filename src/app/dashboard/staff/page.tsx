@@ -150,14 +150,14 @@ export default function StaffPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             Staff Management
-            <span className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+            <span className="text-xs bg-brand-50 text-brand-700 border border dark:border-white/[0.07]-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
               {currentPlan}
             </span>
           </h1>
-          <p className="text-gray-500 text-sm flex items-center gap-1.5 mt-1">
+          <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm flex items-center gap-1.5 mt-1">
             Create logins for Waiters and Kitchen KDS staff
             <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-            <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-gray-600"}`}>
+            <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-gray-600 dark:text-gray-400 dark:text-gray-500"}`}>
               {totalStaff} / {maxStaff === "unlimited" ? "∞" : maxStaff} accounts active
             </span>
           </p>
@@ -168,7 +168,7 @@ export default function StaffPage() {
       </div>
 
       {limitReached && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm">
+        <div className="bg-amber-50 border border dark:border-white/[0.07]-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-500 mt-0.5" />
           <div>
             <p className="font-bold">Staff Limit Reached</p>
@@ -179,10 +179,10 @@ export default function StaffPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-white dark:bg-[#18181b] rounded-xl border dark:border-white/[0.07] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 border-b text-gray-600 font-medium">
+            <thead className="bg-gray-50 dark:bg-white/[0.04] border dark:border-white/[0.07]-b text-gray-600 dark:text-gray-400 dark:text-gray-500 font-medium">
               <tr>
                 <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Role</th>
@@ -190,31 +190,31 @@ export default function StaffPage() {
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-white/[0.05]">
               {isSkeletons ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-200" />
-                        <div className="h-4 bg-gray-200 rounded w-24" />
+                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/[0.06]" />
+                        <div className="h-4 bg-gray-200 dark:bg-white/[0.06] rounded w-24" />
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-5 bg-gray-200 rounded w-16" />
+                      <div className="h-5 bg-gray-200 dark:bg-white/[0.06] rounded w-16" />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-4 bg-gray-200 rounded w-32" />
+                      <div className="h-4 bg-gray-200 dark:bg-white/[0.06] rounded w-32" />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="h-6 w-12 bg-gray-200 rounded ml-auto" />
+                      <div className="h-6 w-12 bg-gray-200 dark:bg-white/[0.06] rounded ml-auto" />
                     </td>
                   </tr>
                 ))
               ) : (
                 staffList.map((staff) => (
                   <tr key={staff.id} className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-semibold text-gray-900">
+                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs uppercase">
                           {staff.name.substring(0, 2)}
@@ -226,21 +226,21 @@ export default function StaffPage() {
                       <span
                         className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
                           staff.role === "admin"
-                            ? "bg-purple-100 text-purple-700 border border-purple-200"
+                            ? "bg-purple-100 text-purple-700 border border dark:border-white/[0.07]-purple-200"
                             : staff.role === "kds"
-                            ? "bg-blue-100 text-blue-700 border border-blue-200"
-                            : "bg-amber-100 text-amber-700 border border-amber-200"
+                            ? "bg-blue-100 text-blue-700 border border dark:border-white/[0.07]-blue-200"
+                            : "bg-amber-100 text-amber-700 border border dark:border-white/[0.07]-amber-200"
                         }`}
                       >
                         {staff.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">{staff.email}</td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 dark:text-gray-500">{staff.email}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => openEditModal(staff)}
-                          className="p-1 text-gray-400 hover:text-gray-600 transition"
+                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:text-gray-500 transition"
                         >
                           <Pencil size={16} />
                         </button>
@@ -257,7 +257,7 @@ export default function StaffPage() {
               )}
               {!isSkeletons && staffList.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-gray-400">
+                  <td colSpan={4} className="text-center py-8 text-gray-400 dark:text-gray-500">
                     No staff accounts configured. Add a waiter or kitchen staff.
                   </td>
                 </tr>
@@ -279,7 +279,7 @@ export default function StaffPage() {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
               required
               placeholder="e.g. John Doe"
             />
@@ -289,7 +289,7 @@ export default function StaffPage() {
             <select
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value as any })}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
               required
             >
               <option value="waiter">Waiter (Staff workflow)</option>
@@ -303,7 +303,7 @@ export default function StaffPage() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
               required
               placeholder="e.g. john@restaurant.com"
             />
@@ -316,7 +316,7 @@ export default function StaffPage() {
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border dark:border-white/[0.07] rounded-lg px-3 py-2"
               required={!editingStaff}
               placeholder="Minimum 4 characters"
               minLength={4}
