@@ -382,42 +382,43 @@ export default function StaffPanelPage() {
   const pendingRequests = waiterRequests.filter((r) => r.status === "pending");
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col pb-10">
-      {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20 shadow-md">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 font-black text-sm">
+    <div className="min-h-screen bg-[#0C0C0E] text-white font-sans flex flex-col">
+      {/* ── Header ── */}
+      <header className="bg-[#111113] border-b border-white/[0.07] px-4 h-14 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
             QR
           </div>
           <div>
-            <h1 className="text-sm font-bold truncate max-w-[120px]">{hotelName}</h1>
-            <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-              <User size={10} />
-              {staffName} ({staffRole})
-            </div>
+            <p className="text-sm font-semibold text-white leading-tight truncate max-w-[140px]">{hotelName}</p>
+            <p className="text-[11px] text-gray-400 leading-tight mt-0.5 flex items-center gap-1">
+              <User size={10} className="text-gray-500" />
+              {staffName} · <span className="capitalize">{staffRole}</span>
+            </p>
           </div>
         </div>
 
-        <button onClick={handleSignOut} className="p-2 hover:text-red-400 text-slate-500 transition-colors">
+        <button onClick={handleSignOut} className="p-2 text-gray-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10">
           <LogOut size={16} />
         </button>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 p-4 space-y-6 max-w-3xl mx-auto w-full">
+      {/* ── Main ── */}
+      <main className="flex-1 p-4 space-y-4 max-w-2xl mx-auto w-full pb-8">
+
         {/* Push Notification Banner */}
         {pushSupported && !pushEnabled && (
-          <div className="bg-brand-500/10 border border-brand-500/30 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div className="bg-brand-600/10 border border-brand-500/20 rounded-xl p-3.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-brand-500/20 rounded-full text-brand-400">
+              <div className="w-9 h-9 bg-brand-600/15 rounded-lg flex items-center justify-center text-brand-400 flex-shrink-0">
                 <BellRing size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-brand-100 text-sm">Enable Notifications</h3>
-                <p className="text-xs text-brand-200/70 mt-0.5">Get real-time alerts when tables call for help.</p>
+                <p className="text-sm font-semibold text-white leading-tight">Enable Notifications</p>
+                <p className="text-[12px] text-gray-400 mt-0.5">Get real-time alerts for table calls and orders.</p>
               </div>
             </div>
-            <Button size="sm" onClick={handleEnablePush} className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs">
+            <Button size="sm" onClick={handleEnablePush} className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 flex-shrink-0">
               Enable
             </Button>
           </div>
@@ -425,19 +426,21 @@ export default function StaffPanelPage() {
 
         {/* Waiter Calls Section */}
         {pendingRequests.length > 0 && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 space-y-3 shadow-lg">
-            <div className="flex items-center gap-2 text-red-400">
-              <Bell size={18} className="animate-bounce" />
-              <h2 className="font-extrabold text-sm uppercase tracking-wider">Active Assistance Calls ({pendingRequests.length})</h2>
+          <div className="bg-red-500/[0.08] border border-red-500/20 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Bell size={15} className="text-red-400 animate-bounce" />
+              <p className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                {pendingRequests.length} Active {pendingRequests.length === 1 ? "Call" : "Calls"}
+              </p>
             </div>
-            <div className="grid gap-2">
+            <div className="space-y-2">
               {pendingRequests.map((req) => (
-                <div key={req.id} className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex justify-between items-center">
+                <div key={req.id} className="bg-[#111113] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center">
                   <div>
-                    <p className="font-black text-base text-white">Table {req.table_number}</p>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Called at {new Date(req.created_at).toLocaleTimeString()}</p>
+                    <p className="font-semibold text-sm text-white">Table {req.table_number}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Called at {new Date(req.created_at).toLocaleTimeString()}</p>
                   </div>
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs px-3 font-bold" onClick={() => handleCompleteRequest(req.id)}>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs px-3 font-semibold" onClick={() => handleCompleteRequest(req.id)}>
                     <Check size={12} /> Resolve
                   </Button>
                 </div>
@@ -448,108 +451,104 @@ export default function StaffPanelPage() {
 
         {/* Live Tables Grid */}
         <div className="space-y-3">
-          <h2 className="text-xs font-black uppercase text-slate-500 tracking-wider">Restaurant Table Status</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest px-0.5">Table Status</p>
+          <div className="grid grid-cols-2 gap-3">
             {isSkeletons ? (
               [...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="border border-slate-800 bg-slate-900/40 rounded-2xl p-4 text-left flex flex-col justify-between h-28 animate-pulse"
+                  className="border border-white/[0.06] bg-[#111113] rounded-xl p-4 h-[100px] animate-pulse"
                 >
-                  <div>
-                    <div className="h-5 bg-slate-800 rounded w-16 mb-2" />
-                    <div className="h-3.5 bg-slate-850 rounded w-10" />
-                  </div>
-                  <div className="h-5 bg-slate-850 rounded w-20 mt-2" />
+                  <div className="h-4 bg-white/[0.05] rounded w-20 mb-3" />
+                  <div className="h-3 bg-white/[0.04] rounded w-14" />
                 </div>
               ))
             ) : (
-              tables.map((table) => {
-                const statusColors = {
-                  free: "border-slate-800 bg-slate-900/40 text-slate-500",
-                  occupied: "border-orange-500/30 bg-orange-500/5 text-orange-400",
-                  checkout: "border-red-500/30 bg-red-500/5 text-red-400 animate-pulse",
-                };
+              tables.map((table) => (
+                <div
+                  key={table.id}
+                  onClick={() => {
+                    if (table.status === "free") {
+                      setSessionToOpen(table);
+                    } else {
+                      setSelectedTable(table);
+                    }
+                  }}
+                  className={`border rounded-xl p-4 cursor-pointer transition-all active:scale-[0.98] ${
+                    table.status === "free"
+                      ? "bg-[#111113] border-white/[0.06] hover:border-white/[0.12]"
+                      : table.status === "occupied"
+                      ? "bg-orange-500/[0.07] border-orange-500/20"
+                      : "bg-red-500/[0.07] border-red-500/20"
+                  }`}
+                >
+                  <p className="font-semibold text-sm text-white">{table.label}</p>
+                  <p className={`text-[11px] font-medium mt-1 ${
+                    table.status === "free" ? "text-gray-500"
+                    : table.status === "occupied" ? "text-orange-400"
+                    : "text-red-400"
+                  }`}>
+                    {table.status === "free" ? "Available" : table.status === "occupied" ? "Occupied" : "Checkout"}
+                  </p>
 
-                return (
-                  <div
-                    key={table.id}
-                    onClick={() => {
-                      if (table.status === "free") {
-                        setSessionToOpen(table);
-                      } else {
-                        setSelectedTable(table);
-                      }
-                    }}
-                    className={`border rounded-2xl p-4 text-left flex flex-col justify-between h-28 cursor-pointer hover:shadow-lg transition-all ${
-                      statusColors[table.status]
-                    }`}
-                  >
-                    <div>
-                      <h3 className="font-black text-lg text-white">Table {table.tableNumber}</h3>
-                      <span className="text-[10px] font-bold uppercase tracking-widest mt-1 block">
-                        {table.status === "free" ? "Vacant" : table.status}
+                  {table.currentSession && (
+                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-white/[0.06]">
+                      <span className="text-[12px] font-semibold text-white">
+                        {formatINR(table.currentSession.total)}
+                      </span>
+                      <span className="text-[10px] bg-white/[0.06] px-1.5 py-0.5 rounded text-gray-400 font-medium">
+                        {table.currentSession.items.length} items
                       </span>
                     </div>
-
-                    {table.currentSession && (
-                      <div className="flex justify-between items-center mt-2 border-t border-slate-800/60 pt-2">
-                        <span className="text-xs font-black text-slate-200">
-                          {formatINR(table.currentSession.total)}
-                        </span>
-                        <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 font-bold">
-                          {table.currentSession.items.length} items
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+                  )}
+                </div>
+              ))
             )}
           </div>
         </div>
       </main>
 
-      <Modal open={!!selectedTable} onClose={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }} title={selectedTable ? `${selectedTable.label} Details` : ""}>
+      {/* ── Table Details Modal ── */}
+      <Modal open={!!selectedTable} onClose={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }} title={selectedTable ? `${selectedTable.label} — Details` : ""}>
         {selectedTable?.currentSession && (
-          <div className="space-y-4 text-white">
+          <div className="space-y-4">
             {!isAddingItems ? (
               <>
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
                   <Badge variant={selectedTable.currentSession.status === "open" ? "occupied" : "checkout"}>
                     {selectedTable.currentSession.status.replace("_", " ")}
                   </Badge>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    Start: {formatDateTime(selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString())}
+                  <span className="text-[11px] text-gray-500">
+                    Started {formatDateTime(selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString())}
                   </span>
                 </div>
 
-                {/* Item Table */}
-                <div className="border border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                {/* Items Table */}
+                <div className="border border-white/[0.07] rounded-xl overflow-hidden max-h-52 overflow-y-auto">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-900 border-b border-slate-800 text-slate-400">
+                    <thead className="bg-white/[0.04] border-b border-white/[0.07]">
                       <tr>
-                        <th className="px-3 py-2">Item</th>
-                        <th className="px-3 py-2 text-center">Status</th>
-                        <th className="px-3 py-2 text-right">Qty</th>
-                        <th className="px-3 py-2 text-right">Price</th>
+                        <th className="px-3 py-2.5 font-semibold text-gray-400">Item</th>
+                        <th className="px-3 py-2.5 font-semibold text-gray-400 text-center">Status</th>
+                        <th className="px-3 py-2.5 font-semibold text-gray-400 text-right">Qty</th>
+                        <th className="px-3 py-2.5 font-semibold text-gray-400 text-right">Price</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-850">
+                    <tbody className="divide-y divide-white/[0.04]">
                       {selectedTable.currentSession.items.map((item: any) => (
-                        <tr key={item.id}>
-                          <td className="px-3 py-2.5 font-medium">{item.name}</td>
+                        <tr key={item.id} className="hover:bg-white/[0.02]">
+                          <td className="px-3 py-2.5 font-medium text-gray-100">{item.name}</td>
                           <td className="px-3 py-2.5 text-center">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
-                              item.status === 'ready' ? 'bg-emerald-500/20 text-emerald-400' :
-                              item.status === 'served' ? 'bg-slate-800 text-slate-500' :
-                              'bg-amber-500/20 text-amber-400'
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                              item.status === "ready" ? "bg-emerald-500/15 text-emerald-400"
+                              : item.status === "served" ? "bg-white/[0.06] text-gray-500"
+                              : "bg-amber-500/15 text-amber-400"
                             }`}>
                               {item.status || "preparing"}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 text-right font-bold">{item.quantity}</td>
-                          <td className="px-3 py-2.5 text-right text-slate-300">
+                          <td className="px-3 py-2.5 text-right text-gray-200 font-semibold">{item.quantity}</td>
+                          <td className="px-3 py-2.5 text-right text-gray-300">
                             {formatINR(item.price * item.quantity)}
                           </td>
                         </tr>
@@ -558,39 +557,39 @@ export default function StaffPanelPage() {
                   </table>
                 </div>
 
-                {/* Sum stats */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-400">
+                {/* Bill Summary */}
+                <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 space-y-2">
+                  <div className="flex justify-between text-xs text-gray-400">
                     <span>Subtotal</span>
                     <span>{formatINR(selectedTable.currentSession.subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-xs text-gray-400">
                     <span>Tax</span>
                     <span>{formatINR(selectedTable.currentSession.taxAmount)}</span>
                   </div>
-                  <div className="flex justify-between font-black text-sm pt-2 border-t border-slate-800 text-white">
-                    <span>Total Bill</span>
+                  <div className="flex justify-between text-sm font-bold pt-2 border-t border-white/[0.07] text-white">
+                    <span>Total</span>
                     <span>{formatINR(selectedTable.currentSession.total)}</span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-3 pt-2">
-                  <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold" 
+                <div className="flex flex-col gap-2.5 pt-1">
+                  <Button
+                    className="w-full bg-[#1e40af] hover:bg-[#1d4ed8] text-white font-semibold"
                     onClick={() => { setIsAddingItems(true); loadMenu(); }}
                   >
-                    <Plus size={16} className="mr-2" /> Add Order Items
+                    <Plus size={15} className="mr-2" /> Add Items to Order
                   </Button>
-                  
-                  <div className="grid grid-cols-2 gap-3">
+
+                  <div className="grid grid-cols-2 gap-2.5">
                     {selectedTable.currentSession.status === "open" ? (
-                      <Button className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold" onClick={() => handleCheckout(selectedTable.currentSession!.id)} disabled={performingAction}>
+                      <Button className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold" onClick={() => handleCheckout(selectedTable.currentSession!.id)} disabled={performingAction}>
                         Initiate Checkout
                       </Button>
                     ) : (
-                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={() => handleVacant(selectedTable.currentSession!.id)} disabled={performingAction}>
-                        Paid — Mark Vacant
+                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold" onClick={() => handleVacant(selectedTable.currentSession!.id)} disabled={performingAction}>
+                        Mark Vacant
                       </Button>
                     )}
                     <Button variant="secondary" className="w-full" onClick={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }}>
@@ -600,46 +599,46 @@ export default function StaffPanelPage() {
                 </div>
               </>
             ) : (
-              // Add Items UI
-              <div className="space-y-4 flex flex-col h-[60vh]">
+              // ── Add Items UI ──
+              <div className="space-y-4 flex flex-col h-[58vh]">
                 <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search menu..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full pl-9 pr-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   />
                 </div>
-                
-                <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+
+                <div className="flex-1 overflow-y-auto space-y-5 pr-1">
                   {menuCategories.map(cat => {
                     const items = menuItems.filter(i => i.categoryId === cat.id && i.name.toLowerCase().includes(searchQuery.toLowerCase()));
                     if (items.length === 0) return null;
                     return (
                       <div key={cat.id} className="space-y-2">
-                        <h4 className="text-sm font-bold text-brand-400 border-b border-slate-800 pb-1">{cat.name}</h4>
-                        <div className="space-y-2">
+                        <p className="text-[11px] font-bold text-brand-400 uppercase tracking-widest border-b border-white/[0.07] pb-1.5">{cat.name}</p>
+                        <div className="space-y-1.5">
                           {items.map(item => {
                             const qty = cart[item.id] || 0;
                             return (
-                              <div key={item.id} className="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                              <div key={item.id} className="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.05] p-3 rounded-lg border border-white/[0.06] transition-colors">
                                 <div>
-                                  <p className="font-bold text-sm">{item.name}</p>
-                                  <p className="text-xs text-slate-400">{formatINR(item.price)}</p>
+                                  <p className="font-medium text-sm text-white">{item.name}</p>
+                                  <p className="text-[11px] text-gray-500 mt-0.5">{formatINR(item.price)}</p>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2.5">
                                   {qty > 0 && (
                                     <>
-                                      <button onClick={() => setCart(p => ({ ...p, [item.id]: p[item.id] - 1 }))} className="p-1 bg-slate-800 rounded hover:bg-slate-700 text-brand-400">
-                                        <Minus size={14} />
+                                      <button onClick={() => setCart(p => ({ ...p, [item.id]: p[item.id] - 1 }))} className="w-7 h-7 bg-white/[0.07] rounded-lg hover:bg-white/[0.12] text-gray-300 flex items-center justify-center transition-colors">
+                                        <Minus size={13} />
                                       </button>
-                                      <span className="text-sm font-bold w-4 text-center">{qty}</span>
+                                      <span className="text-sm font-bold w-4 text-center text-white">{qty}</span>
                                     </>
                                   )}
-                                  <button onClick={() => setCart(p => ({ ...p, [item.id]: (p[item.id] || 0) + 1 }))} className="p-1 bg-brand-600/20 rounded hover:bg-brand-600/40 text-brand-400 border border-brand-500/30">
-                                    <Plus size={14} />
+                                  <button onClick={() => setCart(p => ({ ...p, [item.id]: (p[item.id] || 0) + 1 }))} className="w-7 h-7 bg-brand-600/20 rounded-lg hover:bg-brand-600/40 text-brand-400 border border-brand-500/30 flex items-center justify-center transition-colors">
+                                    <Plus size={13} />
                                   </button>
                                 </div>
                               </div>
@@ -651,14 +650,14 @@ export default function StaffPanelPage() {
                   })}
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 grid grid-cols-2 gap-3 shrink-0">
+                <div className="pt-3 border-t border-white/[0.07] grid grid-cols-2 gap-2.5 flex-shrink-0">
                   <Button variant="secondary" onClick={() => { setIsAddingItems(false); setCart({}); }}>Cancel</Button>
-                  <Button 
-                    className="bg-brand-600 hover:bg-brand-700 font-bold" 
+                  <Button
+                    className="bg-brand-600 hover:bg-brand-700 font-semibold"
                     onClick={submitOrderToSession}
-                    disabled={performingAction || Object.values(cart).reduce((a,b) => a+b, 0) === 0}
+                    disabled={performingAction || Object.values(cart).reduce((a, b) => a + b, 0) === 0}
                   >
-                    {performingAction ? "Sending..." : `Send to Kitchen`}
+                    {performingAction ? "Sending..." : "Send to Kitchen"}
                   </Button>
                 </div>
               </div>
@@ -667,19 +666,19 @@ export default function StaffPanelPage() {
         )}
       </Modal>
 
-      <Modal open={!!sessionToOpen} onClose={() => setSessionToOpen(null)} title={sessionToOpen ? `Start Session — Table ${sessionToOpen.tableNumber}` : ""}>
+      {/* ── Open Session Modal ── */}
+      <Modal open={!!sessionToOpen} onClose={() => setSessionToOpen(null)} title={sessionToOpen ? `Start Session — ${sessionToOpen.label}` : ""}>
         {sessionToOpen && (
-          <div className="space-y-4 pt-2 text-white">
-            <p className="text-sm text-slate-350">
-              Open a new dining session for <strong>Table {sessionToOpen.tableNumber}</strong>? 
-              This will mark the table as occupied and allow you to request checkout and log payments once they are finished.
+          <div className="space-y-5 pt-1">
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Open a new dining session for <strong className="text-white">{sessionToOpen.label}</strong>? This will mark the table as occupied and allow you to manage their orders and checkout.
             </p>
-            <div className="flex gap-3 justify-end pt-2">
+            <div className="flex gap-2.5 justify-end">
               <Button variant="secondary" onClick={() => setSessionToOpen(null)} disabled={openingSession}>
                 Cancel
               </Button>
-              <Button onClick={handleOpenSession} disabled={openingSession} className="bg-brand-600 hover:bg-brand-700 text-white font-bold">
-                {openingSession ? "Starting..." : "Start Dining Session"}
+              <Button onClick={handleOpenSession} disabled={openingSession} className="bg-brand-600 hover:bg-brand-700 text-white font-semibold">
+                {openingSession ? "Starting..." : "Start Session"}
               </Button>
             </div>
           </div>
