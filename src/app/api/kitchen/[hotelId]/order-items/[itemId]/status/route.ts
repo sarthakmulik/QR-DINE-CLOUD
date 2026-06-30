@@ -133,30 +133,34 @@ export async function PATCH(
           const payloadTitle = `Order ${status === "ready" ? "Ready" : "Served"}`;
           const payloadBody = `Table ${sessionDataObj.table_number} — ${updated.name} is ${status}!`;
 
-          // Fire and forget
-          Promise.allSettled(
+          // Await so Vercel doesn't kill the serverless function prematurely
+          await Promise.allSettled(
             subs.map(async (sub) => {
               if (sub.p256dh === "fcm") {
-                // Native Android FCM Push
-                const { messaging } = await import("@/lib/firebase");
-                return messaging.send({
-                  token: sub.endpoint,
-                  notification: {
-                    title: payloadTitle,
-                    body: payloadBody,
-                  },
-                  android: {
-                    priority: "high",
+                try {
+                  const { messaging } = await import("@/lib/firebase");
+                  return await messaging.send({
+                    token: sub.endpoint,
                     notification: {
-                      icon: "ic_launcher_round",
-                      sound: "default",
-                      channelId: "waiter_alerts"
+                      title: payloadTitle,
+                      body: payloadBody,
+                    },
+                    android: {
+                      priority: "high",
+                      notification: {
+                        icon: "ic_launcher_round",
+                        sound: "default",
+                        channelId: "waiter_alerts"
+                      }
                     }
+                  });
+                } catch (err: any) {
+                  if (err?.code === 'messaging/registration-token-not-registered') {
+                    sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
                   }
-                });
+                }
               } else if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-                // Web Browser Push
-                return webpush.sendNotification(
+                return await webpush.sendNotification(
                   {
                     endpoint: sub.endpoint,
                     keys: { p256dh: sub.p256dh, auth: sub.auth },
@@ -166,7 +170,11 @@ export async function PATCH(
                     body: payloadBody,
                     icon: "/logo.png"
                   })
-                );
+                ).catch((err: any) => {
+                  if (err.statusCode === 404 || err.statusCode === 410) {
+                    sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+                  }
+                });
               }
             })
           ).catch((err) => console.error("Push notification error:", err));

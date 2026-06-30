@@ -34,15 +34,41 @@ async function notifyStaff(hotelId: string, tableNumber: number) {
 
     // Fire all push notifications in parallel — ignore individual failures
     await Promise.allSettled(
-      subscriptions.map((sub) =>
-        webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
-        ).catch(() => {
-          // Remove expired/invalid subscriptions silently
-          sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
-        })
-      )
+      subscriptions.map(async (sub) => {
+        if (sub.p256dh === "fcm") {
+          try {
+            const { messaging } = await import("@/lib/firebase");
+            return await messaging.send({
+              token: sub.endpoint,
+              notification: {
+                title: `🔔 Table ${tableNumber} — Waiter Needed!`,
+                body: `Table ${tableNumber} is calling for assistance.`,
+              },
+              android: {
+                priority: "high",
+                notification: {
+                  icon: "ic_launcher_round",
+                  sound: "default",
+                  channelId: "waiter_alerts"
+                }
+              }
+            });
+          } catch (err: any) {
+            if (err?.code === 'messaging/registration-token-not-registered') {
+              sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+            }
+          }
+        } else if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+          return await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            payload
+          ).catch((err: any) => {
+            if (err.statusCode === 404 || err.statusCode === 410) {
+              sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+            }
+          });
+        }
+      })
     );
   } catch (err) {
     // Push failure must NEVER affect the waiter call response
