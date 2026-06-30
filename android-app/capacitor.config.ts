@@ -7,7 +7,12 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://qr-dine-cloud.vercel.app',
     cleartext: true
-  }
+  },
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"],
+    },
+  },
 };
 
 export default config;

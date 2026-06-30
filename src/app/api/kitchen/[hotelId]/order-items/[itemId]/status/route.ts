@@ -116,40 +116,60 @@ export async function PATCH(
       }
 
       // Send Push Notification to Waiters
-      if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-        const { data: sessionDataObj } = await sb
-          .from("table_sessions")
-          .select("table_number")
-          .eq("id", item.session_id)
-          .single();
+      const { data: sessionDataObj } = await sb
+        .from("table_sessions")
+        .select("table_number")
+        .eq("id", item.session_id)
+        .single();
 
-        if (sessionDataObj?.table_number) {
-          // Get staff push subscriptions for this hotel
-          const { data: subs } = await sb
-            .from("push_subscriptions")
-            .select("*")
-            .eq("hotel_id", hotelId);
+      if (sessionDataObj?.table_number) {
+        // Get staff push subscriptions for this hotel
+        const { data: subs } = await sb
+          .from("push_subscriptions")
+          .select("*")
+          .eq("hotel_id", hotelId);
 
-          if (subs && subs.length > 0) {
-            const payload = JSON.stringify({
-              title: `Order ${status === "ready" ? "Ready" : "Served"}`,
-              body: `Table ${sessionDataObj.table_number} — ${updated.name} is ${status}!`,
-              icon: "/logo.png"
-            });
+        if (subs && subs.length > 0) {
+          const payloadTitle = `Order ${status === "ready" ? "Ready" : "Served"}`;
+          const payloadBody = `Table ${sessionDataObj.table_number} — ${updated.name} is ${status}!`;
 
-            // Fire and forget
-            Promise.allSettled(
-              subs.map((sub) =>
-                webpush.sendNotification(
+          // Fire and forget
+          Promise.allSettled(
+            subs.map(async (sub) => {
+              if (sub.p256dh === "fcm") {
+                // Native Android FCM Push
+                const { messaging } = await import("@/lib/firebase");
+                return messaging.send({
+                  token: sub.endpoint,
+                  notification: {
+                    title: payloadTitle,
+                    body: payloadBody,
+                  },
+                  android: {
+                    priority: "high",
+                    notification: {
+                      icon: "ic_launcher_round",
+                      sound: "default",
+                      channelId: "waiter_alerts"
+                    }
+                  }
+                });
+              } else if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+                // Web Browser Push
+                return webpush.sendNotification(
                   {
                     endpoint: sub.endpoint,
                     keys: { p256dh: sub.p256dh, auth: sub.auth },
                   },
-                  payload
-                )
-              )
-            ).catch((err) => console.error("Push notification error:", err));
-          }
+                  JSON.stringify({
+                    title: payloadTitle,
+                    body: payloadBody,
+                    icon: "/logo.png"
+                  })
+                );
+              }
+            })
+          ).catch((err) => console.error("Push notification error:", err));
         }
       }
     }

@@ -7,21 +7,21 @@ export async function POST(req: NextRequest) {
   try {
     const { hotelId } = await requireHotelAccess();
     const body = await req.json();
-    const { endpoint, keys } = body;
+    const { endpoint, keys, fcmToken } = body;
 
-    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    if (!fcmToken && (!endpoint || !keys?.p256dh || !keys?.auth)) {
       return NextResponse.json({ error: "Invalid subscription payload" }, { status: 400 });
     }
 
     const sb = createAdminClient();
 
-    // Upsert so re-subscribing the same browser doesn't create duplicates
+    // Upsert so re-subscribing the same browser/app doesn't create duplicates
     const { error } = await sb.from("push_subscriptions").upsert(
       {
         hotel_id: hotelId,
-        endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth,
+        endpoint: fcmToken || endpoint,
+        p256dh: fcmToken ? 'fcm' : keys.p256dh,
+        auth: fcmToken ? 'fcm' : keys.auth,
       },
       { onConflict: "endpoint" }
     );

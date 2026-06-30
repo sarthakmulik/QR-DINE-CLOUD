@@ -12,12 +12,15 @@
     "db:setup": "tsx --env-file=.env scripts/apply-schema.ts && tsx --env-file=.env scripts/seed-supabase.ts"
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/push-notifications": "^8.1.1",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
     "@types/web-push": "^3.6.4",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
     "crypto": "^1.0.1",
+    "firebase-admin": "^14.1.0",
     "lucide-react": "^0.468.0",
     "next": "^15.3.3",
     "next-themes": "^0.4.6",

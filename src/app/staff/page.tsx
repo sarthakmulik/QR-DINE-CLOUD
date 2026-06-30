@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +64,12 @@ export default function StaffPanelPage() {
   const [pushSupported, setPushSupported] = useState(false);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
+    if (Capacitor.isNativePlatform()) {
+      setPushSupported(true);
+      PushNotifications.checkPermissions().then((res) => {
+        if (res.receive === 'granted') setPushEnabled(true);
+      });
+    } else if ("serviceWorker" in navigator && "PushManager" in window) {
       setPushSupported(true);
       navigator.serviceWorker.ready.then((reg) => {
         reg.pushManager.getSubscription().then((sub) => {
@@ -74,31 +81,57 @@ export default function StaffPanelPage() {
 
   async function handleEnablePush() {
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        alert("Notifications blocked. Please enable them in your browser settings.");
-        return;
-      }
-      
-      const reg = await navigator.serviceWorker.ready;
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        });
-      }
+      if (Capacitor.isNativePlatform()) {
+        let permStatus = await PushNotifications.checkPermissions();
+        if (permStatus.receive === 'prompt') {
+          permStatus = await PushNotifications.requestPermissions();
+        }
+        if (permStatus.receive !== 'granted') {
+          alert('User denied permissions!');
+          return;
+        }
 
-      const res = await fetch("/api/staff/push-subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.toJSON().keys })
-      });
-      
-      if (res.ok) {
-        setPushEnabled(true);
+        await PushNotifications.register();
+        
+        PushNotifications.addListener('registration', async (token) => {
+          const res = await fetch("/api/staff/push-subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fcmToken: token.value })
+          });
+          if (res.ok) setPushEnabled(true);
+        });
+
+        PushNotifications.addListener('registrationError', (err) => {
+          alert('Registration error: ' + err.error);
+        });
       } else {
-        alert("Failed to save push subscription to server.");
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          alert("Notifications blocked. Please enable them in your browser settings.");
+          return;
+        }
+        
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          });
+        }
+
+        const res = await fetch("/api/staff/push-subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.toJSON().keys })
+        });
+        
+        if (res.ok) {
+          setPushEnabled(true);
+        } else {
+          alert("Failed to save push subscription to server.");
+        }
       }
     } catch (err) {
       console.error("Push error:", err);
