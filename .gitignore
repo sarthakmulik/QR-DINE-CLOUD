@@ -42,3 +42,14 @@ next-env.d.ts
 # prisma
 prisma/dev.db
 prisma/dev.db-journal
+
+# desktop app
+desktop-app/dist/
+desktop-app/node_modules/
+
+# android app
+android-app/node_modules/
+android-app/android/build/
+android-app/android/.gradle/
+android-app/android/app/build/
+android-app/android/capacitor-cordova-android-plugins/

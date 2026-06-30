@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
+import webpush from "web-push";
+
+// Configure web-push with VAPID keys if available
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "mailto:support@qrdine.app",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -101,6 +111,44 @@ export async function PATCH(
               .from("table_sessions")
               .update({ status: "ready_for_pickup" })
               .eq("id", sessionId);
+          }
+        }
+      }
+
+      // Send Push Notification to Waiters
+      if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+        const { data: sessionDataObj } = await sb
+          .from("table_sessions")
+          .select("table_number")
+          .eq("id", item.session_id)
+          .single();
+
+        if (sessionDataObj?.table_number) {
+          // Get staff push subscriptions for this hotel
+          const { data: subs } = await sb
+            .from("push_subscriptions")
+            .select("*")
+            .eq("hotel_id", hotelId);
+
+          if (subs && subs.length > 0) {
+            const payload = JSON.stringify({
+              title: `Order ${status === "ready" ? "Ready" : "Served"}`,
+              body: `Table ${sessionDataObj.table_number} — ${updated.name} is ${status}!`,
+              icon: "/logo.png"
+            });
+
+            // Fire and forget
+            Promise.allSettled(
+              subs.map((sub) =>
+                webpush.sendNotification(
+                  {
+                    endpoint: sub.endpoint,
+                    keys: { p256dh: sub.p256dh, auth: sub.auth },
+                  },
+                  payload
+                )
+              )
+            ).catch((err) => console.error("Push notification error:", err));
           }
         }
       }

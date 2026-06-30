@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
-import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff } from "lucide-react";
+import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search } from "lucide-react";
 
 interface TableItem {
   id: string;
@@ -14,6 +14,7 @@ interface TableItem {
   price: number;
   quantity: number;
   addedAt?: string;
+  status?: "preparing" | "ready" | "served";
 }
 
 interface TableData {
@@ -49,6 +50,13 @@ export default function StaffPanelPage() {
   const [performingAction, setPerformingAction] = useState(false);
   const [sessionToOpen, setSessionToOpen] = useState<TableData | null>(null);
   const [openingSession, setOpeningSession] = useState(false);
+
+  // New Waiter Order State
+  const [isAddingItems, setIsAddingItems] = useState(false);
+  const [menuCategories, setMenuCategories] = useState<any[]>([]);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [cart, setCart] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
@@ -118,6 +126,60 @@ export default function StaffPanelPage() {
       alert("Failed to start session due to network issue");
     } finally {
       setOpeningSession(false);
+    }
+  }
+
+  async function loadMenu() {
+    if (menuCategories.length > 0) return;
+    try {
+      const res = await fetch("/api/staff/menu");
+      if (res.ok) {
+        const data = await res.json();
+        setMenuCategories(data.categories);
+        setMenuItems(data.items);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function submitOrderToSession() {
+    if (!selectedTable?.currentSession) return;
+    setPerformingAction(true);
+    try {
+      const itemsPayload = Object.entries(cart)
+        .map(([itemId, qty]) => {
+          const menuItem = menuItems.find((m) => m.id === itemId);
+          return {
+            menuItemId: itemId,
+            name: menuItem.name,
+            price: menuItem.price,
+            quantity: qty,
+          };
+        })
+        .filter((i) => i.quantity > 0);
+
+      if (itemsPayload.length === 0) {
+        setIsAddingItems(false);
+        setPerformingAction(false);
+        return;
+      }
+
+      await fetch("/api/staff/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: selectedTable.currentSession.id,
+          items: itemsPayload,
+        }),
+      });
+      setCart({});
+      setIsAddingItems(false);
+      loadData();
+    } catch (e) {
+      alert("Failed to add items");
+    } finally {
+      setPerformingAction(false);
     }
   }
 
@@ -405,74 +467,159 @@ export default function StaffPanelPage() {
         </div>
       </main>
 
-      {/* Itemized Detail Modal */}
-      <Modal open={!!selectedTable} onClose={() => setSelectedTable(null)} title={selectedTable ? `${selectedTable.label} Details` : ""}>
+      <Modal open={!!selectedTable} onClose={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }} title={selectedTable ? `${selectedTable.label} Details` : ""}>
         {selectedTable?.currentSession && (
           <div className="space-y-4 text-white">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <Badge variant={selectedTable.currentSession.status === "open" ? "occupied" : "checkout"}>
-                {selectedTable.currentSession.status.replace("_", " ")}
-              </Badge>
-              <span className="text-xs text-slate-400 font-semibold">
-                Start: {formatDateTime(selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString())}
-              </span>
-            </div>
+            {!isAddingItems ? (
+              <>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <Badge variant={selectedTable.currentSession.status === "open" ? "occupied" : "checkout"}>
+                    {selectedTable.currentSession.status.replace("_", " ")}
+                  </Badge>
+                  <span className="text-xs text-slate-400 font-semibold">
+                    Start: {formatDateTime(selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString())}
+                  </span>
+                </div>
 
-            {/* Item Table */}
-            <div className="border border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-900 border-b border-slate-800 text-slate-400">
-                  <tr>
-                    <th className="px-3 py-2">Item</th>
-                    <th className="px-3 py-2 text-right">Qty</th>
-                    <th className="px-3 py-2 text-right">Price</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-850">
-                  {selectedTable.currentSession.items.map((item: any) => (
-                    <tr key={item.id}>
-                      <td className="px-3 py-2.5 font-medium">{item.name}</td>
-                      <td className="px-3 py-2.5 text-right font-bold">{item.quantity}</td>
-                      <td className="px-3 py-2.5 text-right text-slate-300">
-                        {formatINR(item.price * item.quantity)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                {/* Item Table */}
+                <div className="border border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-900 border-b border-slate-800 text-slate-400">
+                      <tr>
+                        <th className="px-3 py-2">Item</th>
+                        <th className="px-3 py-2 text-center">Status</th>
+                        <th className="px-3 py-2 text-right">Qty</th>
+                        <th className="px-3 py-2 text-right">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-850">
+                      {selectedTable.currentSession.items.map((item: any) => (
+                        <tr key={item.id}>
+                          <td className="px-3 py-2.5 font-medium">{item.name}</td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                              item.status === 'ready' ? 'bg-emerald-500/20 text-emerald-400' :
+                              item.status === 'served' ? 'bg-slate-800 text-slate-500' :
+                              'bg-amber-500/20 text-amber-400'
+                            }`}>
+                              {item.status || "preparing"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-bold">{item.quantity}</td>
+                          <td className="px-3 py-2.5 text-right text-slate-300">
+                            {formatINR(item.price * item.quantity)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Sum stats */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1.5 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>Subtotal</span>
-                <span>{formatINR(selectedTable.currentSession.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Tax</span>
-                <span>{formatINR(selectedTable.currentSession.taxAmount)}</span>
-              </div>
-              <div className="flex justify-between font-black text-sm pt-2 border-t border-slate-800 text-white">
-                <span>Total Bill</span>
-                <span>{formatINR(selectedTable.currentSession.total)}</span>
-              </div>
-            </div>
+                {/* Sum stats */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Subtotal</span>
+                    <span>{formatINR(selectedTable.currentSession.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Tax</span>
+                    <span>{formatINR(selectedTable.currentSession.taxAmount)}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-sm pt-2 border-t border-slate-800 text-white">
+                    <span>Total Bill</span>
+                    <span>{formatINR(selectedTable.currentSession.total)}</span>
+                  </div>
+                </div>
 
-            {/* Actions */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              {selectedTable.currentSession.status === "open" ? (
-                <Button className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold" onClick={() => handleCheckout(selectedTable.currentSession!.id)} disabled={performingAction}>
-                  Initiate Checkout
-                </Button>
-              ) : (
-                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={() => handleVacant(selectedTable.currentSession!.id)} disabled={performingAction}>
-                  Paid — Mark Vacant
-                </Button>
-              )}
-              <Button variant="secondary" className="w-full" onClick={() => setSelectedTable(null)}>
-                Close
-              </Button>
-            </div>
+                {/* Actions */}
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold" 
+                    onClick={() => { setIsAddingItems(true); loadMenu(); }}
+                  >
+                    <Plus size={16} className="mr-2" /> Add Order Items
+                  </Button>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedTable.currentSession.status === "open" ? (
+                      <Button className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold" onClick={() => handleCheckout(selectedTable.currentSession!.id)} disabled={performingAction}>
+                        Initiate Checkout
+                      </Button>
+                    ) : (
+                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={() => handleVacant(selectedTable.currentSession!.id)} disabled={performingAction}>
+                        Paid — Mark Vacant
+                      </Button>
+                    )}
+                    <Button variant="secondary" className="w-full" onClick={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }}>
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Add Items UI
+              <div className="space-y-4 flex flex-col h-[60vh]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search menu..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+                  {menuCategories.map(cat => {
+                    const items = menuItems.filter(i => i.categoryId === cat.id && i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={cat.id} className="space-y-2">
+                        <h4 className="text-sm font-bold text-brand-400 border-b border-slate-800 pb-1">{cat.name}</h4>
+                        <div className="space-y-2">
+                          {items.map(item => {
+                            const qty = cart[item.id] || 0;
+                            return (
+                              <div key={item.id} className="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                                <div>
+                                  <p className="font-bold text-sm">{item.name}</p>
+                                  <p className="text-xs text-slate-400">{formatINR(item.price)}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {qty > 0 && (
+                                    <>
+                                      <button onClick={() => setCart(p => ({ ...p, [item.id]: p[item.id] - 1 }))} className="p-1 bg-slate-800 rounded hover:bg-slate-700 text-brand-400">
+                                        <Minus size={14} />
+                                      </button>
+                                      <span className="text-sm font-bold w-4 text-center">{qty}</span>
+                                    </>
+                                  )}
+                                  <button onClick={() => setCart(p => ({ ...p, [item.id]: (p[item.id] || 0) + 1 }))} className="p-1 bg-brand-600/20 rounded hover:bg-brand-600/40 text-brand-400 border border-brand-500/30">
+                                    <Plus size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-3 border-t border-slate-800 grid grid-cols-2 gap-3 shrink-0">
+                  <Button variant="secondary" onClick={() => { setIsAddingItems(false); setCart({}); }}>Cancel</Button>
+                  <Button 
+                    className="bg-brand-600 hover:bg-brand-700 font-bold" 
+                    onClick={submitOrderToSession}
+                    disabled={performingAction || Object.values(cart).reduce((a,b) => a+b, 0) === 0}
+                  >
+                    {performingAction ? "Sending..." : `Send to Kitchen`}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
