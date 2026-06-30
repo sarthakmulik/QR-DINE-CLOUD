@@ -509,13 +509,13 @@ export default function StaffPanelPage() {
       </main>
 
       {/* ── Table Details Modal ── */}
-      <Modal open={!!selectedTable} onClose={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }} title={selectedTable ? `${selectedTable.label} — Details` : ""}>
+      <Modal dark open={!!selectedTable} onClose={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }} title={selectedTable ? `${selectedTable.label} — Details` : ""}>
         {selectedTable?.currentSession && (
           <div className="space-y-4">
             {!isAddingItems ? (
               <>
                 <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
-                  <Badge variant={selectedTable.currentSession.status === "open" ? "occupied" : "checkout"}>
+                  <Badge dark variant={selectedTable.currentSession.status === "open" ? "occupied" : "checkout"}>
                     {selectedTable.currentSession.status.replace("_", " ")}
                   </Badge>
                   <span className="text-[11px] text-gray-500">
@@ -592,7 +592,7 @@ export default function StaffPanelPage() {
                         Mark Vacant
                       </Button>
                     )}
-                    <Button variant="secondary" className="w-full" onClick={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }}>
+                    <Button variant="dark-secondary" className="w-full" onClick={() => { setSelectedTable(null); setIsAddingItems(false); setCart({}); }}>
                       Close
                     </Button>
                   </div>
@@ -651,7 +651,7 @@ export default function StaffPanelPage() {
                 </div>
 
                 <div className="pt-3 border-t border-white/[0.07] grid grid-cols-2 gap-2.5 flex-shrink-0">
-                  <Button variant="secondary" onClick={() => { setIsAddingItems(false); setCart({}); }}>Cancel</Button>
+                  <Button variant="dark-secondary" onClick={() => { setIsAddingItems(false); setCart({}); }}>Cancel</Button>
                   <Button
                     className="bg-brand-600 hover:bg-brand-700 font-semibold"
                     onClick={submitOrderToSession}
@@ -667,14 +667,14 @@ export default function StaffPanelPage() {
       </Modal>
 
       {/* ── Open Session Modal ── */}
-      <Modal open={!!sessionToOpen} onClose={() => setSessionToOpen(null)} title={sessionToOpen ? `Start Session — ${sessionToOpen.label}` : ""}>
+      <Modal dark open={!!sessionToOpen} onClose={() => setSessionToOpen(null)} title={sessionToOpen ? `Start Session — ${sessionToOpen.label}` : ""}>
         {sessionToOpen && (
           <div className="space-y-5 pt-1">
             <p className="text-sm text-gray-400 leading-relaxed">
               Open a new dining session for <strong className="text-white">{sessionToOpen.label}</strong>? This will mark the table as occupied and allow you to manage their orders and checkout.
             </p>
             <div className="flex gap-2.5 justify-end">
-              <Button variant="secondary" onClick={() => setSessionToOpen(null)} disabled={openingSession}>
+              <Button variant="dark-secondary" onClick={() => setSessionToOpen(null)} disabled={openingSession}>
                 Cancel
               </Button>
               <Button onClick={handleOpenSession} disabled={openingSession} className="bg-brand-600 hover:bg-brand-700 text-white font-semibold">

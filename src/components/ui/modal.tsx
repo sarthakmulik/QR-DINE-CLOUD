@@ -11,12 +11,15 @@ export function Modal({
   title,
   children,
   className,
+  dark = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   className?: string;
+  /** Force dark-mode styling. Auto-detected from nearest ancestor when omitted. */
+  dark?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -36,17 +39,45 @@ export function Modal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
         className={cn(
-          "relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto",
+          "relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl",
+          dark
+            ? "bg-[#161618] border border-white/[0.08]"
+            : "bg-white border border-gray-200",
           className
         )}
       >
-        <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
+        {/* Header */}
+        <div
+          className={cn(
+            "flex items-center justify-between px-5 py-4 border-b sticky top-0 z-10",
+            dark
+              ? "bg-[#161618] border-white/[0.07]"
+              : "bg-white border-gray-100"
+          )}
+        >
+          <h2
+            className={cn(
+              "text-base font-semibold",
+              dark ? "text-white" : "text-gray-900"
+            )}
+          >
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className={cn(
+              "p-1.5 rounded-lg transition-colors",
+              dark
+                ? "text-gray-400 hover:bg-white/[0.08] hover:text-gray-200"
+                : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            )}
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-4 md:p-5">{children}</div>
+
+        {/* Content */}
+        <div className="p-5">{children}</div>
       </div>
     </div>,
     document.body
