@@ -93,6 +93,16 @@ export default function StaffPanelPage() {
 
         await PushNotifications.register();
         
+        // Ensure notification channel exists on Android 8.0+
+        await PushNotifications.createChannel({
+          id: 'waiter_alerts',
+          name: 'Waiter Alerts',
+          description: 'High priority alerts for table assistance and order statuses',
+          importance: 5, // High Importance
+          visibility: 1, // Public
+          vibration: true,
+        });
+        
         PushNotifications.addListener('registration', async (token) => {
           const res = await fetch("/api/staff/push-subscribe", {
             method: "POST",
