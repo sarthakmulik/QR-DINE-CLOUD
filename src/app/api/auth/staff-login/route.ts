@@ -92,10 +92,14 @@ export async function POST(req: NextRequest) {
     };
 
     const cookieStore = await cookies();
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 30); // 30 days persistent login
+
     cookieStore.set("staff_session", JSON.stringify(sessionData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 12, // 12 hours session
+      expires: expires,
+      sameSite: "lax",
       path: "/",
     });
 
