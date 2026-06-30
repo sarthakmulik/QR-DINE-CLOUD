@@ -56,7 +56,23 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
+  /* Premium scale utilities not in Tailwind by default */
+  .scale-103 { transform: scale(1.03); }
+  .group-hover\:scale-103:hover { transform: scale(1.03); }
+  .scale-108 { transform: scale(1.08); }
+  .group-hover\:scale-108:hover { transform: scale(1.08); }
+  /* Item card shimmer skeleton for loading states */
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.06) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  /* Cart bounce with scale pop */
+  .animate-cart-pop {
+    animation: cartPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
 }
+
 
 @keyframes cartBounce {
   0%, 100% { transform: scale(1); }
