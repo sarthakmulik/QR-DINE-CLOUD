@@ -86,7 +86,7 @@ export default function HistoryPage() {
             )}
           </div>
         </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] px-5 py-3 text-right flex-shrink-0">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-white/[0.07] px-5 py-3 text-right flex-shrink-0">
           <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 font-medium uppercase tracking-wider">Total Revenue</p>
           <p className="text-xl font-bold text-brand-600 mt-0.5">
             {formatINR(totalRevenue)}
@@ -95,16 +95,16 @@ export default function HistoryPage() {
       </div>
 
       {fetchError && (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border dark:border-zinc-800-red-200 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
           <AlertCircle size={16} className="flex-shrink-0" />
           Failed to load order history. Please refresh the page.
         </div>
       )}
 
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-white/[0.07] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
-            <thead className="bg-gray-50 dark:bg-zinc-900/50 border dark:border-zinc-800-b border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07]">
+            <thead className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-white/[0.07]">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 dark:text-zinc-500">Table</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 dark:text-zinc-500">Items</th>

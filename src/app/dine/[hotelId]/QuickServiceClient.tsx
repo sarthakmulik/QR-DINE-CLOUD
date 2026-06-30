@@ -512,7 +512,7 @@ export default function QuickServiceClient({
                     <p className="text-slate-500 font-medium mb-8">Please complete your payment to send the order to the kitchen.</p>
                     
                     {isProcessing || isVerifying ? (
-                      <div className="w-full flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="w-full flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100 dark:border-zinc-800/50">
                         <div className="w-12 h-12 relative mb-4">
                           <div className="absolute inset-0 rounded-full border-4 border-brand-200"></div>
                           <div className="absolute inset-0 rounded-full border-4 border-brand-600 border-t-transparent animate-orbit"></div>
@@ -537,7 +537,7 @@ export default function QuickServiceClient({
                 ) : ((activeOrder as any).paymentMethod === "UPI" || activeOrder.payment_method === "UPI") && (hotel as any)?.upiId ? (
                   <>
                     <h3 className={`text-2xl font-black tracking-tight mb-4 ${t.textMain}`}>Scan to Pay</h3>
-                    <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 inline-block mb-6 relative group">
+                    <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 dark:border-zinc-800/50 inline-block mb-6 relative group">
                       <div className="absolute inset-0 bg-brand-500 blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl"></div>
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${(hotel as any).upiId}&pn=${hotel?.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
                     </div>
@@ -765,7 +765,7 @@ export default function QuickServiceClient({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
-            <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 dark:border-zinc-800/50 rounded-full flex items-center justify-center mb-6">
               <Search className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className={`text-xl font-bold mb-2 tracking-tight ${t.textMain}`}>Nothing found</h3>
@@ -908,7 +908,7 @@ export default function QuickServiceClient({
                     <h4 className={`font-bold text-base tracking-tight ${t.textMain}`}>{method.title}</h4>
                     <p className={`text-xs font-medium mt-0.5 ${t.textSub}`}>{method.desc}</p>
                   </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method.id ? "border-brand-500 bg-brand-500" : "border-slate-300 bg-white"}`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method.id ? "border-brand-500 bg-brand-500" : "border-slate-300 dark:border-zinc-700 bg-white"}`}>
                     {paymentMethod === method.id && <div className="w-2 h-2 bg-white rounded-full"></div>}
                   </div>
                 </label>

@@ -178,7 +178,7 @@ export default function CouponsPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             Discount Coupons
-            <span className="text-xs bg-brand-50 text-brand-700 border border dark:border-zinc-800-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+            <span className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
               {currentPlan}
             </span>
           </h1>
@@ -192,7 +192,7 @@ export default function CouponsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isSkeletons ? (
           [...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-5 shadow-sm h-48 animate-pulse flex flex-col justify-between">
+            <div key={i} className="bg-white dark:bg-zinc-900 border rounded-2xl p-5 shadow-sm h-48 animate-pulse flex flex-col justify-between">
               <div>
                 <div className="h-6 w-24 bg-gray-200 dark:bg-zinc-800/70 rounded" />
                 <div className="mt-4 space-y-1.5">
@@ -200,7 +200,7 @@ export default function CouponsPage() {
                   <div className="h-4 w-32 bg-gray-100 dark:bg-zinc-800/50 rounded" />
                 </div>
               </div>
-              <div className="mt-6 pt-4 border dark:border-zinc-800-t flex justify-between items-center">
+              <div className="mt-6 pt-4 border-t flex justify-between items-center">
                 <div className="h-6 w-16 bg-gray-200 dark:bg-zinc-800/70 rounded-full" />
                 <div className="h-6 w-12 bg-gray-200 dark:bg-zinc-800/70 rounded" />
               </div>
@@ -210,7 +210,7 @@ export default function CouponsPage() {
           coupons.map((coupon) => (
             <div
               key={coupon.id}
-              className={`bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
+              className={`bg-white dark:bg-zinc-900 border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
                 !coupon.is_active ? "opacity-60" : ""
               }`}
             >
@@ -235,14 +235,14 @@ export default function CouponsPage() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border dark:border-zinc-800-t flex items-center justify-between">
+              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between">
                 <button
                   onClick={() => handleToggleStatus(coupon)}
                   disabled={togglingId === coupon.id}
                   className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider transition-all disabled:opacity-50 ${
                     coupon.is_active
-                      ? "bg-green-50 text-green-700 border border dark:border-zinc-800-green-200 hover:bg-green-100"
-                      : "bg-slate-100 text-slate-500 border border dark:border-zinc-800-slate-200 hover:bg-slate-200"
+                      ? "bg-green-50 dark:bg-emerald-500/10 text-green-700 dark:text-emerald-400 border border-green-200 dark:border-emerald-500/20 hover:bg-green-100 dark:hover:bg-emerald-500/20"
+                      : "bg-slate-100 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700"
                   }`}
                 >
                   {togglingId === coupon.id ? "…" : coupon.is_active ? "Active" : "Inactive"}
@@ -270,7 +270,7 @@ export default function CouponsPage() {
         )}
 
         {!isSkeletons && coupons.length === 0 && (
-          <div className="col-span-full flex flex-col items-center justify-center text-center py-16 bg-slate-50 border dark:border-zinc-800 border dark:border-zinc-800-dashed rounded-2xl text-gray-400 dark:text-zinc-500">
+          <div className="col-span-full flex flex-col items-center justify-center text-center py-16 bg-slate-50 border border-dashed rounded-2xl text-gray-400 dark:text-zinc-500">
             <Tag size={40} className="opacity-30 mb-3" />
             <p className="font-semibold text-gray-500 dark:text-zinc-400 dark:text-zinc-500 text-sm">No coupon codes yet</p>
             <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Create your first promo code to drive more orders</p>
@@ -290,7 +290,7 @@ export default function CouponsPage() {
               type="text"
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2 uppercase font-black"
+              className="w-full border rounded-lg px-3 py-2 uppercase font-black"
               required
               placeholder="e.g. WELCOME50"
             />
@@ -304,7 +304,7 @@ export default function CouponsPage() {
               step="0.01"
               value={form.discountPercent}
               onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-3 py-2"
               required
               placeholder="e.g. 15"
             />
@@ -317,7 +317,7 @@ export default function CouponsPage() {
               step="0.01"
               value={form.minBill}
               onChange={(e) => setForm({ ...form, minBill: e.target.value })}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-3 py-2"
               required
               placeholder="e.g. 500"
             />
@@ -328,7 +328,7 @@ export default function CouponsPage() {
               id="isActive"
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-              className="rounded border dark:border-zinc-800-gray-300 dark:border dark:border-zinc-800-white/[0.08] text-brand-600 focus:ring-brand-500"
+              className="rounded border-gray-300 dark:border-white/[0.08] text-brand-600 focus:ring-brand-500"
             />
             <label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-zinc-300">
               Active and visible at checkout

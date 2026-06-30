@@ -270,8 +270,8 @@ export default function TablesPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-sm border border dark:border-zinc-800-slate-200 flex flex-col items-center justify-center max-w-lg mx-auto mt-10">
-          <div className="bg-slate-50 p-6 rounded-xl border border dark:border-zinc-800-slate-100 mb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center max-w-lg mx-auto mt-10">
+          <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 dark:border-zinc-800/50 mb-6">
             {genericQrCode ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={genericQrCode} alt="Store QR Code" className="w-64 h-64 object-contain rounded-lg" />
@@ -304,7 +304,7 @@ export default function TablesPage() {
               {copied === "generic" ? "Copied!" : "Copy Link"}
             </Button>
           </div>
-          <div className="mt-6 w-full pt-6 border dark:border-zinc-800-t border dark:border-zinc-800-slate-100 flex justify-between items-center">
+          <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-zinc-800/50 flex justify-between items-center">
              <div>
                 <h4 className="font-bold text-slate-800 text-sm">Regenerate QR</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-[200px]">Invalidate old QR codes and generate a new one.</p>
@@ -371,7 +371,7 @@ export default function TablesPage() {
       </div>
 
       {limitReached && (
-        <div className="bg-amber-50 border border dark:border-zinc-800-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm animate-fade-in">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm animate-fade-in">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-500 mt-0.5" />
           <div>
             <p className="font-bold">Table Limit Reached</p>
@@ -385,7 +385,7 @@ export default function TablesPage() {
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {isSkeletons ? (
           Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border dark:border-zinc-800-slate-200 animate-pulse">
+            <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-zinc-800 animate-pulse">
               <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
               <div className="h-6 bg-slate-200 rounded w-2/3 mb-4"></div>
               <div className="aspect-square bg-slate-100 rounded-xl mb-4"></div>
@@ -399,7 +399,7 @@ export default function TablesPage() {
           tables.map((table) => (
             <div
               key={table.id}
-              className="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border dark:border-zinc-800-slate-200 hover:shadow-md transition-all duration-300 group flex flex-col h-full relative overflow-hidden"
+              className="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-zinc-800 hover:shadow-md transition-all duration-300 group flex flex-col h-full relative overflow-hidden"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -429,7 +429,7 @@ export default function TablesPage() {
                 </div>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 rounded-xl p-4 mb-4 border border dark:border-zinc-800-slate-100 relative group/qr">
+              <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100 dark:border-zinc-800/50 relative group/qr">
                 {regenerating === table.id ? (
                   <div className="flex flex-col items-center justify-center h-32 space-y-3">
                     <RefreshCw className="animate-spin text-brand-500" size={24} />
@@ -494,7 +494,7 @@ export default function TablesPage() {
             </div>
           ))
         ) : (
-          <div className="col-span-full bg-white dark:bg-zinc-900 rounded-3xl border dark:border-zinc-800 border dark:border-zinc-800-dashed border dark:border-zinc-800-slate-300 py-20 flex flex-col items-center justify-center text-center px-4">
+          <div className="col-span-full bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-slate-300 dark:border-zinc-700 py-20 flex flex-col items-center justify-center text-center px-4">
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
               <Plus size={32} className="text-slate-400" />
             </div>
@@ -517,7 +517,7 @@ export default function TablesPage() {
               type="number"
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-3 py-2"
               required
               min={1}
             />
@@ -530,7 +530,7 @@ export default function TablesPage() {
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder={`Table ${tableNumber || "?"}`}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-3 py-2"
             />
           </div>
           <Button type="submit" className="w-full">Create Table & QR</Button>
@@ -545,7 +545,7 @@ export default function TablesPage() {
               type="number"
               value={editTableNumber}
               onChange={(e) => setEditTableNumber(e.target.value)}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-3 py-2"
               required
               min={1}
             />
@@ -556,7 +556,7 @@ export default function TablesPage() {
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
               placeholder={`Table ${editTableNumber || "?"}`}
-              className="w-full border dark:border-zinc-800 rounded-lg px-3 py-2"
+              className="w-full border rounded-lg px-3 py-2"
               required
             />
           </div>

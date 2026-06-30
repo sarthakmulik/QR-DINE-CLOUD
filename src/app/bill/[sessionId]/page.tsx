@@ -71,7 +71,7 @@ export default async function BillPage({
         <PrintButton />
       </div>
 
-      <div className="text-center border-b border-dashed border-slate-300 pb-4 mb-4">
+      <div className="text-center border-b border-dashed border-slate-300 dark:border-zinc-700 pb-4 mb-4">
         {hotel?.logo && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -99,7 +99,7 @@ export default async function BillPage({
 
       <table className="w-full text-sm mb-4">
         <thead>
-          <tr className="border-b border-dashed border-slate-300">
+          <tr className="border-b border-dashed border-slate-300 dark:border-zinc-700">
             <th className="text-left py-2">Item</th>
             <th className="text-center py-2">Qty</th>
             <th className="text-right py-2">Rate</th>
@@ -108,7 +108,7 @@ export default async function BillPage({
         </thead>
         <tbody>
           {sessionItems.map((item) => (
-            <tr key={item.id} className="border-b border-dashed border-slate-200">
+            <tr key={item.id} className="border-b border-dashed border-slate-200 dark:border-zinc-800">
               <td className="py-2">{item.name}</td>
               <td className="text-center py-2">{item.quantity}</td>
               <td className="text-right py-2">{formatINR(Number(item.price))}</td>
@@ -120,7 +120,7 @@ export default async function BillPage({
         </tbody>
       </table>
 
-      <div className="border-t border-dashed border-slate-300 pt-3 space-y-1 text-sm">
+      <div className="border-t border-dashed border-slate-300 dark:border-zinc-700 pt-3 space-y-1 text-sm">
         <div className="flex justify-between">
           <span>Subtotal</span>
           <span>{formatINR(Number(session.subtotal))}</span>
@@ -133,7 +133,7 @@ export default async function BillPage({
           <span>SGST @ {sgst}%</span>
           <span>{formatINR(Number(session.tax_amount) / 2)}</span>
         </div>
-        <div className="flex justify-between font-bold text-lg pt-2 border-t border-dashed border-slate-300">
+        <div className="flex justify-between font-bold text-lg pt-2 border-t border-dashed border-slate-300 dark:border-zinc-700">
           <span>Grand Total</span>
           <span>{formatINR(Number(session.total))}</span>
         </div>
@@ -151,7 +151,7 @@ export default async function BillPage({
         </div>
       )}
 
-      <div className="text-center mt-8 pt-4 border-t border-dashed border-slate-300 text-gray-500 text-sm">
+      <div className="text-center mt-8 pt-4 border-t border-dashed border-slate-300 dark:border-zinc-700 text-gray-500 text-sm">
         <p>Thank you for dining with us!</p>
         <p className="mt-1">Please visit again 🙏</p>
       </div>

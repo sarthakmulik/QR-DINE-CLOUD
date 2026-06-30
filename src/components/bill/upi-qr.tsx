@@ -50,7 +50,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQr
 
   return (
     <>
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 max-w-sm mx-auto shadow-sm">
+      <div className="bg-slate-50 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 max-w-sm mx-auto shadow-sm">
         <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm tracking-wide uppercase">
           <QrIcon size={16} className="text-brand-600" />
           <span>Pay via UPI App</span>
@@ -62,8 +62,8 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQr
             <img src={qrCodeUrl} alt="UPI Payment QR Code" className="h-44 w-44 object-contain" />
           </div>
         ) : (
-          <div className="h-44 w-44 bg-white dark:bg-zinc-900/50 border dark:border-zinc-700/80 rounded-xl flex items-center justify-center">
-            <div className="animate-pulse h-8 w-8 rounded-full border-2 border-slate-200 border-t-brand-600"></div>
+          <div className="h-44 w-44 bg-white dark:bg-zinc-900/50 border rounded-xl flex items-center justify-center">
+            <div className="animate-pulse h-8 w-8 rounded-full border-2 border-slate-200 dark:border-zinc-800 border-t-brand-600"></div>
           </div>
         )}
 
@@ -92,7 +92,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, initialQr
 
       {/* Print-only clean UPI QR Code */}
       {qrCodeUrl && (
-        <div className="print-only-flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 pt-4">
+        <div className="print-only-flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 dark:border-zinc-700 pt-4">
           <p className="text-[10px] uppercase font-bold tracking-wider mb-2">Scan to Pay via UPI</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 

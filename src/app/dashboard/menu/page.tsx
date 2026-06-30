@@ -345,7 +345,7 @@ export default function MenuPage() {
       </div>
 
       {limitReached && (
-        <div className="bg-amber-50 border border dark:border-zinc-800-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm animate-fade-in shadow-sm">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 text-sm animate-fade-in shadow-sm">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-500 mt-0.5" />
           <div>
             <p className="font-bold">Menu Item Limit Reached</p>
@@ -357,7 +357,7 @@ export default function MenuPage() {
       )}
 
       {categories.length === 0 ? (
-        <div className="bg-white dark:bg-[#16161A] rounded-3xl border dark:border-zinc-800 border dark:border-zinc-800-dashed border dark:border-zinc-800-slate-300 dark:border dark:border-zinc-800-white/10 py-24 flex flex-col items-center justify-center text-center px-4 transition-colors duration-200">
+        <div className="bg-white dark:bg-[#16161A] rounded-3xl border border-dashed border-slate-300 dark:border-zinc-800 py-24 flex flex-col items-center justify-center text-center px-4 transition-colors duration-200">
           <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
             <Plus size={32} className="text-slate-400 dark:text-slate-500" />
           </div>
@@ -372,8 +372,8 @@ export default function MenuPage() {
       ) : (
         <div className="space-y-8">
           {categories.map((category) => (
-            <div key={category.id} className="bg-white dark:bg-[#16161A] border border dark:border-zinc-800-slate-200 dark:border dark:border-zinc-800-white/5 rounded-[1.5rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] overflow-hidden group/cat transition-colors duration-200">
-              <div className="flex justify-between items-center p-5 bg-slate-50/50 dark:bg-white/[0.02] border dark:border-zinc-800-b border dark:border-zinc-800-slate-100 dark:border dark:border-zinc-800-white/5">
+            <div key={category.id} className="bg-white dark:bg-[#16161A] border border-slate-200 dark:border-zinc-800/50 rounded-[1.5rem] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] overflow-hidden group/cat transition-colors duration-200">
+              <div className="flex justify-between items-center p-5 bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-zinc-800/50">
                 <div className="flex items-center gap-3 min-w-0">
                   <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight break-words">{category.name}</h2>
                   <span className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded text-xs font-bold shrink-0">
@@ -408,7 +408,7 @@ export default function MenuPage() {
 
               <div className="p-5">
                 {(!category.items || category.items.length === 0) ? (
-                  <div className="text-center py-8 text-slate-400 dark:text-slate-500 border dark:border-zinc-800-2 border dark:border-zinc-800-dashed border dark:border-zinc-800-slate-100 dark:border dark:border-zinc-800-white/5 rounded-xl">
+                  <div className="text-center py-8 text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-100 dark:border-zinc-800/50 rounded-xl">
                     <p className="text-sm font-medium">No items in this category.</p>
                   </div>
                 ) : (
@@ -416,7 +416,7 @@ export default function MenuPage() {
                     {category.items.map((item) => (
                       <div
                         key={item.id}
-                        className={`flex items-center justify-between p-4 border border dark:border-zinc-800-slate-100 dark:border dark:border-zinc-800-white/5 rounded-2xl group transition-all duration-300 hover:border dark:border-zinc-800-slate-200 dark:hover:border dark:border-zinc-800-white/10 ${
+                        className={`flex items-center justify-between p-4 border border-slate-100 dark:border-zinc-800/50 rounded-2xl group transition-all duration-300 hover:border-slate-200 dark:border-zinc-800 dark:hover:border-white/10 ${
                           !item.isAvailable ? "opacity-60 bg-slate-50/50 dark:bg-[#1A1A1F] grayscale-[50%]" : "bg-white dark:bg-[#16161A]"
                         }`}
                       >
@@ -446,7 +446,7 @@ export default function MenuPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6 shrink-0 pl-4 border dark:border-zinc-800-l border dark:border-zinc-800-slate-100 dark:border dark:border-zinc-800-white/5 ml-4">
+                        <div className="flex items-center gap-6 shrink-0 pl-4 border-l border-slate-100 dark:border-zinc-800 ml-4">
                           <div className="flex items-center gap-3">
                             <span className={`text-[11px] font-bold uppercase tracking-wider ${item.isAvailable ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
                               {item.isAvailable ? 'In Stock' : 'Out'}
@@ -500,7 +500,7 @@ export default function MenuPage() {
               type="text"
               value={catName}
               onChange={(e) => setCatName(e.target.value)}
-              className="w-full rounded-xl border dark:border-zinc-800-slate-300 shadow-sm focus:border dark:border-zinc-800-brand-500 focus:ring-brand-500 h-11"
+              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
               placeholder="e.g. Starters, Main Course"
               required
             />
@@ -534,7 +534,7 @@ export default function MenuPage() {
               type="text"
               value={editCatName}
               onChange={(e) => setEditCatName(e.target.value)}
-              className="w-full rounded-xl border dark:border-zinc-800-slate-300 shadow-sm focus:border dark:border-zinc-800-brand-500 focus:ring-brand-500 h-11"
+              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
               required
             />
           </div>
@@ -567,7 +567,7 @@ export default function MenuPage() {
               type="text"
               value={itemForm.name}
               onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-              className="w-full rounded-xl border dark:border-zinc-800-slate-300 shadow-sm focus:border dark:border-zinc-800-brand-500 focus:ring-brand-500 h-11"
+              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
               placeholder="e.g. Paneer Tikka"
               required
             />
@@ -582,7 +582,7 @@ export default function MenuPage() {
                 step="0.01"
                 value={itemForm.price}
                 onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                className="w-full rounded-xl border dark:border-zinc-800-slate-300 shadow-sm focus:border dark:border-zinc-800-brand-500 focus:ring-brand-500 h-11"
+                className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
                 required
               />
             </div>
@@ -591,7 +591,7 @@ export default function MenuPage() {
               <select
                 value={itemForm.categoryId}
                 onChange={(e) => setItemForm({ ...itemForm, categoryId: e.target.value })}
-                className="w-full rounded-xl border dark:border-zinc-800-slate-300 shadow-sm focus:border dark:border-zinc-800-brand-500 focus:ring-brand-500 h-11"
+                className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
                 required
               >
                 {categories.map((c) => (
@@ -608,7 +608,7 @@ export default function MenuPage() {
             <textarea
               value={itemForm.description}
               onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-              className="w-full rounded-xl border dark:border-zinc-800-slate-300 shadow-sm focus:border dark:border-zinc-800-brand-500 focus:ring-brand-500"
+              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500"
               rows={2}
             />
           </div>
@@ -616,7 +616,7 @@ export default function MenuPage() {
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Image (Optional)</label>
             {itemForm.imageUrl ? (
-              <div className="relative w-full h-40 bg-slate-100 rounded-xl overflow-hidden border border dark:border-zinc-800-slate-200">
+              <div className="relative w-full h-40 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={itemForm.imageUrl}
@@ -638,10 +638,10 @@ export default function MenuPage() {
                   accept="image/jpeg, image/png, image/webp"
                   onChange={handleImageFile}
                   disabled={saving}
-                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border dark:border-zinc-800-0 file:text-sm file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition-all cursor-pointer"
+                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition-all cursor-pointer"
                 />
                 {imageError && (
-                  <p className="text-red-500 text-xs mt-2 font-medium bg-red-50 p-2 rounded-lg border border dark:border-zinc-800-red-100">{imageError}</p>
+                  <p className="text-red-500 text-xs mt-2 font-medium bg-red-50 p-2 rounded-lg border border-red-100">{imageError}</p>
                 )}
                 <p className="text-[10px] text-slate-500 mt-2 font-medium">
                   JPEG, PNG, or WebP. Max 5MB. Images are automatically compressed.
@@ -650,7 +650,7 @@ export default function MenuPage() {
             )}
           </div>
 
-          <div className="border dark:border-zinc-800-t border dark:border-zinc-800-slate-100 p-4 space-y-4 bg-slate-50/50 rounded-xl mt-4">
+          <div className="border-t border-slate-100 dark:border-zinc-800/50 p-4 space-y-4 bg-slate-50/50 rounded-xl mt-4">
             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">Item Attributes</h4>
             
             <div className="grid grid-cols-2 gap-3">
@@ -660,7 +660,7 @@ export default function MenuPage() {
                   id="isAvailable"
                   checked={itemForm.isAvailable}
                   onChange={(e) => setItemForm({ ...itemForm, isAvailable: e.target.checked })}
-                  className="w-4 h-4 text-brand-600 border dark:border-zinc-800-slate-300 rounded focus:ring-brand-500 cursor-pointer"
+                  className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
                 />
                 <label htmlFor="isAvailable" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
                   Available in Stock
@@ -673,10 +673,10 @@ export default function MenuPage() {
                   id="isVegetarian"
                   checked={itemForm.isVegetarian}
                   onChange={(e) => setItemForm({ ...itemForm, isVegetarian: e.target.checked })}
-                  className="w-4 h-4 text-emerald-600 border dark:border-zinc-800-slate-300 rounded focus:ring-emerald-500 cursor-pointer"
+                  className="w-4 h-4 text-emerald-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-emerald-500 cursor-pointer"
                 />
                 <label htmlFor="isVegetarian" className="text-sm font-bold text-slate-700 cursor-pointer flex items-center gap-1 select-none">
-                  <span className="w-3 h-3 border border dark:border-zinc-800-emerald-600 rounded flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div></span>
+                  <span className="w-3 h-3 border border-emerald-600 rounded flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div></span>
                   Vegetarian
                 </label>
               </div>
@@ -687,7 +687,7 @@ export default function MenuPage() {
                   id="isGlutenFree"
                   checked={itemForm.isGlutenFree}
                   onChange={(e) => setItemForm({ ...itemForm, isGlutenFree: e.target.checked })}
-                  className="w-4 h-4 text-brand-600 border dark:border-zinc-800-slate-300 rounded focus:ring-brand-500 cursor-pointer"
+                  className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
                 />
                 <label htmlFor="isGlutenFree" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
                   🌾 Gluten Free
@@ -700,7 +700,7 @@ export default function MenuPage() {
                   id="containsNuts"
                   checked={itemForm.containsNuts}
                   onChange={(e) => setItemForm({ ...itemForm, containsNuts: e.target.checked })}
-                  className="w-4 h-4 text-brand-600 border dark:border-zinc-800-slate-300 rounded focus:ring-brand-500 cursor-pointer"
+                  className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
                 />
                 <label htmlFor="containsNuts" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
                   🥜 Contains Nuts
@@ -714,7 +714,7 @@ export default function MenuPage() {
                 id="isRecommended"
                 checked={itemForm.isRecommended}
                 onChange={(e) => setItemForm({ ...itemForm, isRecommended: e.target.checked })}
-                className="w-4 h-4 text-brand-600 border dark:border-zinc-800-slate-300 rounded focus:ring-brand-500 cursor-pointer"
+                className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
               />
               <label htmlFor="isRecommended" className="text-sm font-bold text-slate-700 cursor-pointer flex items-center gap-1 select-none">
                 ⭐ Chef&apos;s Recommendation / Signature
@@ -722,7 +722,7 @@ export default function MenuPage() {
             </div>
 
             {/* Spice Level */}
-            <div className="space-y-2 pt-2 border dark:border-zinc-800-t border dark:border-zinc-800-slate-200">
+            <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-zinc-800">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">Spice Intensity</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
@@ -735,10 +735,10 @@ export default function MenuPage() {
                     key={opt.level ?? "none"}
                     type="button"
                     onClick={() => setItemForm({ ...itemForm, spicyLevel: opt.level })}
-                    className={`py-2 px-1 text-[10px] text-center font-bold rounded-xl border dark:border-zinc-800 transition-all ${
+                    className={`py-2 px-1 text-[10px] text-center font-bold rounded-xl border transition-all ${
                       itemForm.spicyLevel === opt.level
-                        ? "bg-brand-50 border dark:border-zinc-800-brand-500 text-brand-700 shadow-sm"
-                        : "bg-white dark:bg-zinc-900 border dark:border-zinc-800-slate-200 text-slate-600 hover:bg-slate-50"
+                        ? "bg-brand-50 border-brand-500 text-brand-700 shadow-sm"
+                        : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 hover:bg-slate-50"
                     }`}
                   >
                     {opt.label}
@@ -748,7 +748,7 @@ export default function MenuPage() {
             </div>
 
             {/* Preparation Time */}
-            <div className="space-y-2 pt-2 border dark:border-zinc-800-t border dark:border-zinc-800-slate-200">
+            <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-zinc-800">
               <div className="flex justify-between items-center text-xs font-black text-slate-500 uppercase tracking-wider">
                 <span>Preparation Time</span>
                 <span className="text-brand-600">{itemForm.prepTime} mins</span>
@@ -767,7 +767,7 @@ export default function MenuPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border dark:border-zinc-800-t border dark:border-zinc-800-slate-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800/50">
             <Button
               type="button"
               variant="secondary"

@@ -84,7 +84,7 @@ export default function FeedbackPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           Customer Reviews
-          <span className="text-xs bg-brand-50 text-brand-700 border border dark:border-zinc-800-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+          <span className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
             {currentPlan}
           </span>
         </h1>
@@ -94,7 +94,7 @@ export default function FeedbackPage() {
       {isSkeletons ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
           {/* Summary Column Skeleton */}
-          <div className="bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center h-64">
+          <div className="bg-white dark:bg-zinc-900 border rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center h-64">
             <div className="h-4 w-28 bg-gray-200 dark:bg-zinc-800/70 rounded mb-2" />
             <div className="h-10 w-16 bg-gray-200 dark:bg-zinc-800/70 rounded mt-2" />
             <div className="flex gap-1 mt-3">
@@ -110,7 +110,7 @@ export default function FeedbackPage() {
             <div className="h-5 w-32 bg-gray-200 dark:bg-zinc-800/70 rounded" />
             <div className="space-y-4">
               {[...Array(2)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
+                <div key={i} className="bg-white dark:bg-zinc-900 border rounded-2xl p-5 shadow-sm space-y-3">
                   <div className="flex justify-between items-center">
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, j) => (
@@ -128,7 +128,7 @@ export default function FeedbackPage() {
       ) : totalReviews > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Summary Column */}
-          <div className="bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center h-fit">
+          <div className="bg-white dark:bg-zinc-900 border rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center h-fit">
             <p className="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Average Rating</p>
             <h3 className="text-5xl font-black text-slate-900 mt-2">{avgRating}</h3>
             <div className="flex gap-1 mt-3">
@@ -173,7 +173,7 @@ export default function FeedbackPage() {
             <h2 className="text-base font-bold text-slate-800 uppercase tracking-wider">Guest Comments</h2>
             <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
+                <div key={review.id} className="bg-white dark:bg-zinc-900 border rounded-2xl p-5 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, i) => (
@@ -199,7 +199,7 @@ export default function FeedbackPage() {
                   </div>
 
                   {review.comment ? (
-                    <p className="text-sm text-slate-800 leading-relaxed font-medium bg-slate-50/50 rounded-xl p-3 border border dark:border-zinc-800-slate-100 flex gap-2">
+                    <p className="text-sm text-slate-800 leading-relaxed font-medium bg-slate-50/50 rounded-xl p-3 border border-slate-100 dark:border-zinc-800/50 flex gap-2">
                       <MessageSquare size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />
                       {review.comment}
                     </p>
@@ -212,7 +212,7 @@ export default function FeedbackPage() {
           </div>
         </div>
       ) : (
-        <div className="text-center py-16 bg-slate-50 border dark:border-zinc-800 border dark:border-zinc-800-dashed rounded-2xl text-gray-400 dark:text-zinc-500">
+        <div className="text-center py-16 bg-slate-50 border border-dashed rounded-2xl text-gray-400 dark:text-zinc-500">
           <MessageSquare size={40} className="mx-auto opacity-30 mb-3" />
           <p className="font-semibold text-gray-500 dark:text-zinc-400 dark:text-zinc-500 text-sm">No feedback yet</p>
           <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Guest reviews will appear here after billing</p>

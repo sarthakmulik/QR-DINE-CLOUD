@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
 
         {/* Date Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="bg-gray-100 dark:bg-zinc-800/50 rounded-lg p-1 flex border dark:border-zinc-800 text-sm">
+          <div className="bg-gray-100 dark:bg-zinc-800/50 rounded-lg p-1 flex border text-sm">
             {(["today", "week", "month", "custom"] as const).map((r) => (
               <button
                 key={r}
@@ -274,14 +274,14 @@ export default function AnalyticsPage() {
           </div>
 
           {range === "custom" && (
-            <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg p-1.5 shadow-sm text-sm">
+            <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border rounded-lg p-1.5 shadow-sm text-sm">
               <Calendar size={16} className="text-gray-400 dark:text-zinc-500" />
               <input
                 type="date"
                 value={customFrom}
                 max={customTo || new Date().toISOString().split("T")[0]}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="focus:outline-none border dark:border-zinc-800-none text-gray-700 dark:text-zinc-300 bg-transparent text-xs"
+                className="focus:outline-none border-none text-gray-700 dark:text-zinc-300 bg-transparent text-xs"
               />
               <span className="text-gray-400 dark:text-zinc-500">to</span>
               <input
@@ -290,7 +290,7 @@ export default function AnalyticsPage() {
                 min={customFrom}
                 max={new Date().toISOString().split("T")[0]}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="focus:outline-none border dark:border-zinc-800-none text-gray-700 dark:text-zinc-300 bg-transparent text-xs"
+                className="focus:outline-none border-none text-gray-700 dark:text-zinc-300 bg-transparent text-xs"
               />
             </div>
           )}
@@ -299,7 +299,7 @@ export default function AnalyticsPage() {
 
       {loading && !data ? (
         <div className="h-64 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border dark:border-zinc-800-t-2 border dark:border-zinc-800-b-2 border dark:border-zinc-800-brand-600"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-600"></div>
         </div>
       ) : data ? (
         <>
@@ -310,21 +310,21 @@ export default function AnalyticsPage() {
               value={formatINR(data.totalRevenue)}
               icon={<IndianRupee size={22} className="text-sky-500" />}
               bgColor="bg-sky-50"
-              borderColor="border dark:border-zinc-800-sky-100"
+              borderColor="border-sky-100"
             />
             <StatCard
               title="Total Sessions"
               value={String(data.totalSessions)}
               icon={<ShoppingBag size={22} className="text-emerald-500" />}
               bgColor="bg-emerald-50"
-              borderColor="border dark:border-zinc-800-emerald-100"
+              borderColor="border-emerald-100"
             />
             <StatCard
               title="Average Order Value"
               value={formatINR(data.avgOrderValue)}
               icon={<TrendingUp size={22} className="text-indigo-500" />}
               bgColor="bg-indigo-50"
-              borderColor="border dark:border-zinc-800-indigo-100"
+              borderColor="border-indigo-100"
             />
             <StatCard
               title="Top Selling Item"
@@ -332,14 +332,14 @@ export default function AnalyticsPage() {
               subtext={data.topItem.count > 0 ? `${data.topItem.count} portions sold` : ""}
               icon={<Award size={22} className="text-amber-500" />}
               bgColor="bg-amber-50"
-              borderColor="border dark:border-zinc-800-amber-100"
+              borderColor="border-amber-100"
             />
           </div>
 
           {/* CHARTS SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Daily Revenue Line Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Daily Revenue Trends</h2>
               <div className="h-72 relative">
                 <canvas ref={revenueCanvasRef} />
@@ -347,7 +347,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Top 5 Items Horizontal Bar Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] rounded-2xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Top 5 Items</h2>
               <div className="h-72 relative">
                 <canvas ref={topItemsCanvasRef} />
@@ -357,11 +357,11 @@ export default function AnalyticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Table Performance */}
-            <div className="bg-white dark:bg-zinc-900 border border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Table Performance</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-zinc-900/50 text-gray-600 dark:text-zinc-400 dark:text-zinc-500 uppercase text-[10px] tracking-wider border dark:border-zinc-800-b">
+                  <thead className="bg-gray-50 dark:bg-zinc-900/50 text-gray-600 dark:text-zinc-400 dark:text-zinc-500 uppercase text-[10px] tracking-wider border-b">
                     <tr>
                       <th className="px-4 py-3">Table Number</th>
                       <th className="px-4 py-3 text-right">Orders Served</th>
@@ -393,7 +393,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Hourly Performance Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] rounded-2xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Orders by Hour (Load distribution)</h2>
               <div className="h-72 relative">
                 <canvas ref={hourlyCanvasRef} />
@@ -408,7 +408,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* Powered by footer */}
-      <footer className="pt-8 border dark:border-zinc-800-t border dark:border-zinc-800-gray-200 dark:border dark:border-zinc-800-white/[0.07] flex items-center justify-center">
+      <footer className="pt-8 border-t border-gray-200 dark:border-white/[0.07] flex items-center justify-center">
         <p className="text-xs font-black tracking-widest uppercase text-gray-400 dark:text-zinc-500">
           Powered by QR Dine Cloud
         </p>
@@ -433,13 +433,13 @@ function StatCard({
   borderColor: string;
 }) {
   return (
-    <div className={`bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex items-start justify-between`}>
+    <div className={`bg-white dark:bg-zinc-900 border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex items-start justify-between`}>
       <div className="space-y-2 max-w-[70%]">
         <span className="text-gray-400 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider block">{title}</span>
         <h3 className="text-2xl font-black text-gray-900 dark:text-zinc-100 truncate tracking-tight">{value}</h3>
         {subtext && <p className="text-xs font-semibold text-emerald-500 mt-1">{subtext}</p>}
       </div>
-      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center border dark:border-zinc-800 ${bgColor} ${borderColor} shadow-sm flex-shrink-0`}>
+      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center border ${bgColor} ${borderColor} shadow-sm flex-shrink-0`}>
         {icon}
       </div>
     </div>
