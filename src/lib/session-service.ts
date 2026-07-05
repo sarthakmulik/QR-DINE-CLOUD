@@ -209,10 +209,11 @@ export async function addItemToSession(
       
       // 60-second merge window
       if (now - addedTime <= 60000) {
+        const newQuantity = Math.min(999, existing.quantity + item.quantity);
         const { error: updateErr } = await sb
           .from("session_items")
           .update({ 
-            quantity: existing.quantity + item.quantity,
+            quantity: newQuantity,
             added_at: new Date().toISOString() // Refresh timestamp so the debounce window rolls forward
           })
           .eq("id", existing.id);

@@ -50,6 +50,7 @@ export async function PATCH(
       .from("menu_items")
       .update(updates)
       .eq("id", id)
+      .eq("hotel_id", hotelId)
       .select("*")
       .single<MenuItem>();
 
@@ -81,7 +82,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await sb.from("menu_items").delete().eq("id", id);
+    await sb.from("menu_items").delete().eq("id", id).eq("hotel_id", hotelId);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

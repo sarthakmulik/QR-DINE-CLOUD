@@ -49,6 +49,7 @@ export async function POST(
         end_time: now,
       })
       .eq("id", id)
+      .eq("hotel_id", hotelId)
       .select("*")
       .single<TableSession>();
 
