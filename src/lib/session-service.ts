@@ -383,12 +383,10 @@ export async function autoCleanupSessions(hotelId: string) {
   const sb = admin();
   const now = Date.now();
   const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
-  // BUG FIX: Changed from 10 minutes to 30 minutes for payment_pending cancellation.
-  // For Quick Service, start_time is stamped when the draft session is created (before
-  // the customer even finishes browsing). A 10-minute window was too aggressive and
-  // could auto-cancel a legitimately placed order almost immediately if the customer
-  // spent time browsing before checkout. 30 minutes is a safe threshold for abandonment.
-  const thirtyMinsAgo = new Date(now - 30 * 60 * 1000).toISOString();
+  // 2. Auto-cancel unpaid QS orders abandoned for 10 minutes.
+  // start_time is reset when the customer initiates checkout (confirmQuickServiceOrder),
+  // so this strictly means 10 minutes from the time they clicked "Pay Online".
+  const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
   const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
 
   // 1. Auto-collect ready orders forgotten for 5 mins
@@ -398,13 +396,12 @@ export async function autoCleanupSessions(hotelId: string) {
     .eq("status", "ready_for_pickup")
     .lt("start_time", fiveMinsAgo);
 
-  // 2. Auto-cancel unpaid QS orders abandoned for 30 minutes.
-  // Uses start_time because QS sessions are created as drafts before checkout.
+  // 2. Auto-cancel unpaid QS orders abandoned for 10 mins
   await sb.from("table_sessions")
     .update({ status: "cancelled", closed_at: new Date().toISOString() })
     .eq("hotel_id", hotelId)
     .eq("status", "payment_pending")
-    .lt("start_time", thirtyMinsAgo);
+    .lt("start_time", tenMinsAgo);
     
   // 3. Auto-discard stale drafts that were never submitted
   await sb.from("table_sessions")
@@ -471,15 +468,17 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
   // We explicitly DO NOT assign order_number here to prevent "ghost" orders from skipping numbers.
   // order_number will be assigned later when payment is successfully confirmed.
 
+  // Reset start_time so the 10-minute auto-cancel window starts from checkout time
   const { data: updated, error: updateErr } = await sb
     .from("table_sessions")
     .update({ 
       status: "payment_pending", 
-      payment_method: paymentMethod,
+      payment_method: paymentMethod, 
       subtotal, 
       discount_amount: discountAmount, 
       tax_amount: taxAmount, 
-      total 
+      total,
+      start_time: new Date().toISOString()
     })
     .eq("id", sessionId).select("*").single<TableSession>();
     

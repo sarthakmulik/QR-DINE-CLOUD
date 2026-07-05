@@ -50,7 +50,7 @@ export async function GET(
     // ------------------------------------------
 
     // 1. Fetch tables and open sessions in parallel
-    const [tablesRes, sessionsRes] = await Promise.all([
+    const [tablesRes, sessionsRes, cancelledSessionsRes] = await Promise.all([
       sb
         .from("restaurant_tables")
         .select("*")
@@ -61,6 +61,13 @@ export async function GET(
         .eq("hotel_id", hotelId)
         .in("status", ["open", "payment_pending"])
         .order("start_time", { ascending: true }),
+      // Fetch recently cancelled sessions (last 15 mins) to strike-through ghost tickets
+      sb
+        .from("table_sessions")
+        .select("*")
+        .eq("hotel_id", hotelId)
+        .eq("status", "cancelled")
+        .gte("closed_at", new Date(Date.now() - 15 * 60 * 1000).toISOString())
     ]);
 
     if (sessionsRes.error) {
@@ -69,7 +76,13 @@ export async function GET(
     }
 
     const tables = (tablesRes.data || []) as RestaurantTable[];
-    const sessions = (sessionsRes.data || []) as TableSession[];
+    const activeSessions = (sessionsRes.data || []) as TableSession[];
+    const cancelledSessions = (cancelledSessionsRes?.data || []) as TableSession[];
+    
+    // Sort cancelled sessions at the end or by their original start time
+    const sessions = [...activeSessions, ...cancelledSessions].sort(
+      (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    );
 
     // 2. Fetch all session items in a single query
     const sessionIds = sessions.map((s) => s.id);

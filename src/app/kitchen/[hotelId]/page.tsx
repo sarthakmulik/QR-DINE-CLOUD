@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, use } from "react";
-import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote } from "lucide-react";
+import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle } from "lucide-react";
 
 interface SessionItem {
   id: string;
@@ -482,27 +482,57 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             {sortedSessions.map((session) => {
               const isReady = isSessionComplete(session);
               const overdue = !isReady && isOverdue(session.startTime);
+              const isGhost = session.status === "payment_pending";
+              const isCancelled = session.status === "cancelled";
 
               return (
                 <div
                   key={session.id}
-                  className={`bg-slate-900 border rounded-2xl transition-all duration-500 shadow-xl flex flex-col break-inside-avoid ${
-                    isReady
+                  className={`bg-slate-900 border rounded-2xl transition-all duration-500 shadow-xl flex flex-col break-inside-avoid relative overflow-hidden ${
+                    isCancelled
+                      ? "border-red-500/50 ring-2 ring-red-500/10 opacity-60 grayscale"
+                      : isGhost
+                      ? "border-amber-500 border-dashed border-2 ring-4 ring-amber-500/20"
+                      : isReady
                       ? "border-emerald-500 ring-2 ring-emerald-500/20 scale-[0.98] opacity-75"
                       : overdue
                       ? "border-amber-500/60 ring-2 ring-amber-500/10"
                       : "border-slate-800 hover:border-slate-750"
                   } ${viewMode === "timeline" ? "flex-row md:items-center p-4 gap-6" : ""}`}
                 >
+                  {isCancelled && (
+                    <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden">
+                      <div className="w-[150%] h-1.5 bg-red-500/70 rotate-[-12deg] shadow-[0_0_15px_rgba(239,68,68,0.8)]"></div>
+                    </div>
+                  )}
+
+                  {/* Ghost Ticket / Cancelled Banner */}
+                  {isGhost && viewMode !== "timeline" && (
+                    <div className="bg-amber-500 text-amber-950 px-4 py-1.5 flex items-center justify-center gap-2 font-black text-xs tracking-[0.15em] uppercase w-full">
+                      <Zap size={14} className="animate-bounce" />
+                      PRE-FIRE: GHOST TICKET
+                      <Zap size={14} className="animate-bounce" />
+                    </div>
+                  )}
+                  {isCancelled && viewMode !== "timeline" && (
+                    <div className="bg-red-500 text-white px-4 py-1.5 flex items-center justify-center gap-2 font-black text-xs tracking-[0.15em] uppercase w-full">
+                      <XCircle size={14} />
+                      CANCELLED - STOP PREP
+                    </div>
+                  )}
                   {/* Card Header */}
                   <div
                     className={`p-4 border-b flex justify-between items-center ${
-                      isReady
+                      isCancelled
+                        ? "border-red-500/20 bg-red-500/5"
+                        : isGhost
+                        ? "border-amber-500/20 bg-amber-500/10"
+                        : isReady
                         ? "border-emerald-500/20 bg-emerald-500/5 rounded-t-2xl"
                         : overdue
                         ? "border-amber-500/25 bg-amber-500/5 rounded-t-2xl"
                         : "border-slate-800 bg-slate-900/50 rounded-t-2xl"
-                    } ${viewMode === "timeline" ? "border-b-0 bg-transparent flex-col justify-center items-start p-0 flex-shrink-0 w-32" : ""}`}
+                    } ${viewMode === "timeline" ? "border-b-0 bg-transparent flex-col justify-center items-start p-0 flex-shrink-0 w-32" : (isGhost || isCancelled ? "rounded-none" : "rounded-t-2xl")}`}
                   >
                     <div>
                       {session.tableNumber === 0 ? (
@@ -594,11 +624,11 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                   </div>
 
                   {/* Card Badge / Status Banner */}
-                  {session.status === "payment_pending" && (
+                  {isGhost && (
                     <div className="bg-amber-500/20 text-amber-400 border-t border-amber-500/20 px-4 py-3 flex flex-col items-center justify-center gap-2 rounded-b-2xl">
-                      <div className="flex items-center gap-1.5 text-xs font-black tracking-widest uppercase">
+                      <div className="flex items-center gap-1.5 text-xs font-black tracking-widest uppercase animate-pulse">
                         <Banknote size={14} />
-                        Awaiting Payment
+                        AWAITING PAYMENT
                       </div>
                       <button
                         onClick={async () => {
@@ -623,7 +653,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                     </div>
                   )}
 
-                  {isReady && session.status !== "payment_pending" && (
+                  {isReady && !isGhost && !isCancelled && (
                     <div
                       className={`bg-emerald-500 text-slate-950 px-4 py-2 text-center text-xs font-black tracking-widest uppercase rounded-b-2xl flex items-center justify-center gap-1.5 animate-pulse ${
                         viewMode === "timeline" ? "rounded-b-none rounded-r-2xl h-full flex-col w-32 border-l border-emerald-500" : ""
