@@ -38,6 +38,10 @@ export async function sendStaffPush(
                 title: payloadData.title,
                 body: payloadData.body,
               },
+              data: {
+                url: payloadData.url || "",
+                tag: payloadData.tag || ""
+              },
               android: {
                 priority: "high",
                 notification: {
@@ -69,10 +73,6 @@ export async function sendStaffPush(
     console.error("Push notification dispatch failed (non-critical):", err);
   }
 }
-
-// In-memory map to track the last assigned index for sequential round-robin routing
-const lastAssignedIndex = new Map<string, number>();
-
 /** Fire a push notification to exactly ONE subscribed staff for this hotel sequentially */
 export async function sendStaffPushSequential(
   hotelId: string,
@@ -83,14 +83,18 @@ export async function sendStaffPushSequential(
     const { data: subscriptions } = await sb
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
-      .eq("hotel_id", hotelId);
+      .eq("hotel_id", hotelId)
+      .order("endpoint", { ascending: true }); // Ensure stable ordering
 
     if (!subscriptions || subscriptions.length === 0) return;
 
-    // Determine which subscription gets the notification
-    const currentIndex = lastAssignedIndex.get(hotelId) ?? -1;
-    const nextIndex = (currentIndex + 1) % subscriptions.length;
-    lastAssignedIndex.set(hotelId, nextIndex);
+    // Use DB state for stateless round-robin (Serverless safe)
+    const { count } = await sb
+      .from("waiter_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("hotel_id", hotelId);
+
+    const nextIndex = (count || 0) % subscriptions.length;
     
     const sub = subscriptions[nextIndex];
     console.log(`[Push] Routing sequential notification to index ${nextIndex} (of ${subscriptions.length}) for hotel ${hotelId}`);
@@ -106,6 +110,10 @@ export async function sendStaffPushSequential(
           notification: {
             title: payloadData.title,
             body: payloadData.body,
+          },
+          data: {
+            url: payloadData.url || "",
+            tag: payloadData.tag || ""
           },
           android: {
             priority: "high",
