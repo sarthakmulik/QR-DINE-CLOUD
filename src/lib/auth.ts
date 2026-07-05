@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AuthUser } from "@/lib/types";
 import { findProfileForUser } from "@/lib/profile";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { cache } from "react";
 
 export const SUPER_ADMIN_EMAIL = "sarthakmulik16@gmail.com";
@@ -29,8 +30,36 @@ export const getAuthUser = cache(async function (): Promise<AuthUser | null> {
         };
       }
     } catch {
-      return null;
+      // Fallthrough
     }
+    
+    // Stateless Header Fallback (For Android Capacitor WebView which strictly drops cookies)
+    try {
+      const headersList = await headers();
+      const staffId = headersList.get("x-staff-id");
+      if (staffId) {
+        const sb = createAdminClient();
+        const { data: staff } = await sb
+          .from("staff")
+          .select("*, hotels(plan)")
+          .eq("id", staffId)
+          .maybeSingle();
+
+        if (staff) {
+          return {
+            id: staff.id,
+            email: staff.email,
+            name: staff.name,
+            role: "staff",
+            hotelId: staff.hotel_id,
+            hotelPlan: (staff.hotels as any)?.plan || "pro",
+          };
+        }
+      }
+    } catch {
+      // Fallthrough
+    }
+
     return null;
   }
   const profile = await findProfileForUser(user.id, user.email);

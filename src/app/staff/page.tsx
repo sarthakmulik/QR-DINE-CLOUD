@@ -43,6 +43,14 @@ interface WaiterRequest {
 
 export default function StaffPanelPage() {
   const router = useRouter();
+
+  const authFetch = async (url: string, options: RequestInit = {}) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("staff_token") : null;
+    const headers = { ...options.headers } as any;
+    if (token) headers["x-staff-id"] = token;
+    return fetch(url, { ...options, headers });
+  };
+
   const [tables, setTables] = useState<TableData[]>([]);
   const [waiterRequests, setWaiterRequests] = useState<WaiterRequest[]>([]);
   const [hotelName, setHotelName] = useState("");
@@ -104,7 +112,7 @@ export default function StaffPanelPage() {
         });
         
         PushNotifications.addListener('registration', async (token) => {
-          const res = await fetch("/api/staff/push-subscribe", {
+          const res = await authFetch("/api/staff/push-subscribe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fcmToken: token.value })
@@ -131,7 +139,7 @@ export default function StaffPanelPage() {
           });
         }
 
-        const res = await fetch("/api/staff/push-subscribe", {
+        const res = await authFetch("/api/staff/push-subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: sub.endpoint, keys: sub.toJSON().keys })
@@ -153,7 +161,7 @@ export default function StaffPanelPage() {
     if (!sessionToOpen) return;
     setOpeningSession(true);
     try {
-      const res = await fetch("/api/hotel/sessions", {
+      const res = await authFetch("/api/hotel/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tableNumber: sessionToOpen.tableNumber }),
@@ -175,7 +183,7 @@ export default function StaffPanelPage() {
   async function loadMenu() {
     if (menuCategories.length > 0) return;
     try {
-      const res = await fetch("/api/staff/menu");
+      const res = await authFetch("/api/staff/menu");
       if (res.ok) {
         const data = await res.json();
         setMenuCategories(data.categories);
@@ -208,7 +216,7 @@ export default function StaffPanelPage() {
         return;
       }
 
-      await fetch("/api/staff/order", {
+      await authFetch("/api/staff/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -274,7 +282,7 @@ export default function StaffPanelPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const res = await fetch("/api/staff/overview");
+      const res = await authFetch("/api/staff/overview");
       if (res.status === 401 || res.status === 403) {
         // Session expired or locked
         router.push("/staff/login");
@@ -323,7 +331,7 @@ export default function StaffPanelPage() {
 
   async function handleCompleteRequest(id: string) {
     try {
-      await fetch(`/api/staff/requests/${id}`, {
+      await authFetch(`/api/staff/requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed" }),
@@ -337,7 +345,7 @@ export default function StaffPanelPage() {
   async function handleCheckout(sessionId: string) {
     setPerformingAction(true);
     try {
-      await fetch(`/api/hotel/sessions/${sessionId}/checkout`, { method: "POST" });
+      await authFetch(`/api/hotel/sessions/${sessionId}/checkout`, { method: "POST" });
       setSelectedTable(null);
       loadData();
     } finally {
@@ -349,7 +357,7 @@ export default function StaffPanelPage() {
     if (!confirm("Close session and mark this table as Vacant?")) return;
     setPerformingAction(true);
     try {
-      await fetch(`/api/hotel/sessions/${sessionId}/pay`, {
+      await authFetch(`/api/hotel/sessions/${sessionId}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentMethod: "Cash" }),
@@ -370,7 +378,7 @@ export default function StaffPanelPage() {
     localStorage.removeItem("staff_overview");
 
     // 2. Clear the server-side staff_session httpOnly cookie
-    await fetch("/api/auth/staff-logout", { method: "POST" });
+    await authFetch("/api/auth/staff-logout", { method: "POST" });
 
     // 3. Redirect to staff login (not /login — staff have their own auth flow)
     router.push("/staff/login");
