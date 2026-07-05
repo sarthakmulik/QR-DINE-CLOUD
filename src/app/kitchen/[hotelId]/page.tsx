@@ -161,6 +161,28 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     });
   };
 
+  // 4. Ghost KDS Vanishing Fix: Dynamically re-evaluate completed sessions.
+  // If a session gets new items (e.g. drinks ordered later), it becomes incomplete.
+  // This hook ensures it is immediately wiped from completedSessions so it reappears.
+  useEffect(() => {
+    setCompletedSessions((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      
+      sessions.forEach((session) => {
+        if (!isSessionComplete(session)) {
+          // It's incomplete! If it was previously marked complete, wipe it.
+          if (next[session.id]) {
+            delete next[session.id];
+            changed = true;
+          }
+        }
+      });
+      
+      return changed ? next : prev;
+    });
+  }, [sessions, itemStatus]);
+
   // Handle individual item status toggle
   const toggleItemStatus = async (itemId: string, sessionId: string) => {
     const current = itemStatus[itemId] || "preparing";

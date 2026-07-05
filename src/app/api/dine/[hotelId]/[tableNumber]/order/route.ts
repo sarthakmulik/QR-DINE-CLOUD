@@ -4,6 +4,7 @@ import { getOrCreateOpenSession, addItemToSession } from "@/lib/session-service"
 import type { Hotel, MenuItem, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 import { verifyTableSignature } from "@/lib/crypto";
+import { sendStaffPush } from "@/lib/push";
 import crypto from "crypto";
 
 const lastOrderHash = new Map<string, { hash: string; timestamp: number }>();
@@ -86,7 +87,7 @@ export async function POST(
     // Batch-fetch all menu items + hotel status in PARALLEL (not serial per item)
     const [menuItemsRes, hotelRes] = await Promise.all([
       sb.from("menu_items")
-        .select("id, name, price, is_available")
+        .select("id, name, price, is_available, menu_categories(name)")
         .in("id", menuItemIds)
         .eq("hotel_id", hotelId)
         .eq("is_available", true),
@@ -110,7 +111,12 @@ export async function POST(
     }
 
     // Build a lookup map for O(1) price lookup
-    const menuItemMap = new Map<string, { id: string; name: string; price: number }>((menuItemsRes.data || []).map((m: any) => [m.id, m]));
+    const menuItemMap = new Map<string, { id: string; name: string; price: number; category_name?: string }>(
+      (menuItemsRes.data || []).map((m: any) => [
+        m.id, 
+        { ...m, category_name: m.menu_categories?.name }
+      ])
+    );
 
     // Get or create session
     const sessionResult = await getOrCreateOpenSession(hotelId, tableNumber, expectedSessionId);
@@ -136,9 +142,18 @@ export async function POST(
 
     // Add items sequentially (each recalculates totals — can't parallelise as each depends on previous)
     let lastResult = null;
+    let hasDrinks = false;
+
     for (const cartItem of items) {
       const menuItem = menuItemMap.get(cartItem.menuItemId);
       if (!menuItem) continue; // Skip unavailable items
+
+      if (menuItem.category_name) {
+        const cat = menuItem.category_name.toLowerCase();
+        if (cat.includes("drink") || cat.includes("beverage")) {
+          hasDrinks = true;
+        }
+      }
 
       const qty = Math.max(1, Math.min(99, parseInt(String(cartItem.quantity)) || 1));
       try {
@@ -160,6 +175,16 @@ export async function POST(
 
     // Return the last recalculated session directly — no extra DB fetch
     if (lastResult) {
+      // Background: If any drinks were ordered, send a direct push to all waiters immediately
+      if (hasDrinks) {
+        sendStaffPush(hotelId, {
+          title: "New Drink Order 🥤",
+          body: `Table ${tableNumber} just ordered drinks. Please serve immediately!`,
+          tag: `drink-${session.id}`,
+          url: `/staff/${hotelId}?tab=orders`
+        });
+      }
+
       return NextResponse.json(lastResult);
     }
 
