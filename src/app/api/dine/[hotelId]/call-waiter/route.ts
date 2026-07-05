@@ -82,7 +82,8 @@ export async function POST(
 
     if (error) throw error;
 
-    sendStaffPushSequential(hotelId, {
+    // MUST await this so serverless environments (Vercel) don't kill the Firebase JWT handshake!
+    await sendStaffPushSequential(hotelId, {
       title: `🔔 Table ${parsedTableNum} — Waiter Needed!`,
       body: `Table ${parsedTableNum} is calling for assistance.`,
       tag: `waiter-${hotelId}-${parsedTableNum}`,

@@ -177,7 +177,8 @@ export async function POST(
     if (lastResult) {
       // Background: If any drinks were ordered, send a direct push to all waiters immediately
       if (hasDrinks) {
-        sendStaffPush(hotelId, {
+        // MUST await this so serverless environments don't kill the Firebase JWT handshake!
+        await sendStaffPush(hotelId, {
           title: "New Drink Order 🥤",
           body: `Table ${tableNumber} just ordered drinks. Please serve immediately!`,
           tag: `drink-${session.id}`,
