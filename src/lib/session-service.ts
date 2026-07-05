@@ -188,14 +188,52 @@ export async function addItemToSession(
 
   if (session.status !== "open" && session.status !== "draft") throw new Error("SESSION_NOT_OPEN");
 
-  const { error } = await sb.from("session_items").insert({
-    session_id: sessionId,
-    menu_item_id: item.menuItemId || null,
-    name: item.name,
-    price: item.price,
-    quantity: item.quantity,
-  });
-  if (error) throw new Error(error.message);
+  // Smart Kitchen Batching (Debounce Engine)
+  // Check if the exact same item was added to this session within the last 60 seconds
+  // and is still in a mutable state ("pending" or "preparing").
+  let merged = false;
+  if (item.menuItemId) {
+    const { data: existingItems } = await sb
+      .from("session_items")
+      .select("id, quantity, added_at, status")
+      .eq("session_id", sessionId)
+      .eq("menu_item_id", item.menuItemId)
+      .in("status", ["pending", "preparing"])
+      .order("added_at", { ascending: false })
+      .limit(1);
+
+    if (existingItems && existingItems.length > 0) {
+      const existing = existingItems[0];
+      const addedTime = new Date(existing.added_at).getTime();
+      const now = Date.now();
+      
+      // 60-second merge window
+      if (now - addedTime <= 60000) {
+        const { error: updateErr } = await sb
+          .from("session_items")
+          .update({ 
+            quantity: existing.quantity + item.quantity,
+            added_at: new Date().toISOString() // Refresh timestamp so the debounce window rolls forward
+          })
+          .eq("id", existing.id);
+          
+        if (updateErr) throw new Error(updateErr.message);
+        merged = true;
+      }
+    }
+  }
+
+  // Fallback: If not merged, create a new row
+  if (!merged) {
+    const { error } = await sb.from("session_items").insert({
+      session_id: sessionId,
+      menu_item_id: item.menuItemId || null,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    });
+    if (error) throw new Error(error.message);
+  }
   return recalculateSessionTotals(sessionId, hotel);
 }
 
