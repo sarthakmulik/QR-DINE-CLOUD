@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTableSignature } from "@/lib/crypto";
-import { sendStaffPushSequential } from "@/lib/push";
+import { sendStaffPushSequential, sendStaffPush } from "@/lib/push";
 
 const lastWaiterCalls = new Map<string, number>();
 
@@ -89,6 +89,48 @@ export async function POST(
       url: "/staff",
       channelId: "waiter_alerts"
     });
+
+    // Background Escalation Matrix
+    // Because Next.js `next start` is a persistent Node process, we can safely use setTimeout.
+    const requestId = request.id;
+    
+    // Level 1 Escalation: 3 Minutes (Broadcast to all waiters)
+    setTimeout(async () => {
+      try {
+        const checkSb = createAdminClient();
+        const { data: check } = await checkSb.from("waiter_requests").select("status").eq("id", requestId).single();
+        if (check && check.status === "pending") {
+          sendStaffPush(hotelId, {
+            title: `⚠️ ESCALATION: Table ${parsedTableNum}`,
+            body: `Table ${parsedTableNum} has been waiting for 3 minutes!`,
+            tag: `waiter-${hotelId}-${parsedTableNum}`,
+            url: "/staff",
+            channelId: "waiter_alerts"
+          });
+        }
+      } catch (e) {
+        // silent fail for background task
+      }
+    }, 3 * 60 * 1000);
+
+    // Level 2 Escalation: 5 Minutes (Critical Broadcast)
+    setTimeout(async () => {
+      try {
+        const checkSb = createAdminClient();
+        const { data: check } = await checkSb.from("waiter_requests").select("status").eq("id", requestId).single();
+        if (check && check.status === "pending") {
+          sendStaffPush(hotelId, {
+            title: `🚨 CRITICAL: Table ${parsedTableNum}`,
+            body: `Table ${parsedTableNum} has been ignored for 5 minutes!`,
+            tag: `waiter-${hotelId}-${parsedTableNum}`,
+            url: "/staff",
+            channelId: "waiter_alerts"
+          });
+        }
+      } catch (e) {
+        // silent fail for background task
+      }
+    }, 5 * 60 * 1000);
 
     return NextResponse.json(request);
   } catch (err: any) {
