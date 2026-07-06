@@ -36,18 +36,8 @@ export async function PATCH(
 
     if (updateError) throw updateError;
 
-    // Check if all items in session are served/ready
-    const { data: allItems } = await sb
-      .from("session_items")
-      .select("status")
-      .eq("session_id", item.session_id);
-
-    if (allItems && allItems.length > 0) {
-      const allReadyOrServed = allItems.every(i => i.status === "ready" || i.status === "served");
-      if (allReadyOrServed) {
-        await sb.from("table_sessions").update({ status: "ready_for_pickup" }).eq("id", item.session_id);
-      }
-    }
+    // We do not transition the session status here.
+    // Dine-in sessions remain 'open' until the waiter or customer explicitly initiates checkout.
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
