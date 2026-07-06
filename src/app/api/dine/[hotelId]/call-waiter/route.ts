@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTableSignature } from "@/lib/crypto";
-import { sendStaffPushSequential, sendStaffPush } from "@/lib/push";
+import { sendStaffPush } from "@/lib/push";
 
 const lastWaiterCalls = new Map<string, number>();
 
@@ -83,7 +83,7 @@ export async function POST(
     if (error) throw error;
 
     // MUST await this so serverless environments (Vercel) don't kill the Firebase JWT handshake!
-    await sendStaffPushSequential(hotelId, {
+    await sendStaffPush(hotelId, {
       title: `🔔 Table ${parsedTableNum} — Waiter Needed!`,
       body: `Table ${parsedTableNum} is calling for assistance.`,
       tag: `waiter-${hotelId}-${parsedTableNum}`,
