@@ -342,6 +342,17 @@ export default function StaffPanelPage() {
     }
   }
 
+  async function handleMarkServed(itemId: string) {
+    try {
+      await authFetch(`/api/staff/items/${itemId}/serve`, {
+        method: "PATCH"
+      });
+      loadData();
+    } catch (err) {
+      console.error("Error marking item served:", err);
+    }
+  }
+
   async function handleCheckout(sessionId: string) {
     setPerformingAction(true);
     try {
@@ -388,6 +399,21 @@ export default function StaffPanelPage() {
   const isSkeletons = loading && tables.length === 0;
 
   const pendingRequests = waiterRequests.filter((r) => r.status === "pending");
+
+  const activeOrders = tables.flatMap(table => {
+    if (!table.currentSession) return [];
+    return table.currentSession.items
+      .filter(item => item.status !== "served")
+      .map(item => ({
+        ...item,
+        tableNumber: table.tableNumber,
+        tableLabel: table.label
+      }));
+  }).sort((a, b) => {
+    const timeA = a.addedAt ? new Date(a.addedAt).getTime() : 0;
+    const timeB = b.addedAt ? new Date(b.addedAt).getTime() : 0;
+    return timeB - timeA; // newest first
+  });
 
   return (
     <div className="min-h-screen bg-[#0C0C0E] text-white font-sans flex flex-col">
@@ -453,6 +479,50 @@ export default function StaffPanelPage() {
                   </Button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Active Orders / Drinks to Serve */}
+        {activeOrders.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest px-0.5">Orders to Serve</p>
+            <div className="bg-[#111113] border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className="divide-y divide-white/[0.04] max-h-[300px] overflow-y-auto">
+                {activeOrders.map((item: any) => (
+                  <div key={item.id} className="p-3 flex justify-between items-center hover:bg-white/[0.02] transition-colors">
+                    <div>
+                      <p className="font-semibold text-sm text-white flex items-center gap-2">
+                        <span className="text-brand-400">{item.tableLabel}</span>
+                        <span>{item.quantity}x {item.name}</span>
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
+                          item.status === "ready" ? "bg-emerald-500/15 text-emerald-400"
+                          : item.status === "preparing" ? "bg-blue-500/15 text-blue-400"
+                          : "bg-amber-500/15 text-amber-400"
+                        }`}>
+                          {item.status || "pending"}
+                        </span>
+                        {item.addedAt && (
+                          <span className="text-[10px] text-gray-500">
+                            {new Date(item.addedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {item.status === "ready" ? (
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 px-3 shadow-lg shadow-emerald-500/20" onClick={() => handleMarkServed(item.id)}>
+                        Serve
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="dark-secondary" className="font-medium text-xs h-8 px-3" onClick={() => handleMarkServed(item.id)}>
+                        Mark Served
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

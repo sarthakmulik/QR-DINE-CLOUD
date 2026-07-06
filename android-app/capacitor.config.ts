@@ -8,6 +8,10 @@ const config: CapacitorConfig = {
     url: 'https://qr-dine-cloud.vercel.app',
     cleartext: true
   },
+  android: {
+    webContentsDebuggingEnabled: false,
+    appendUserAgent: "QRDineApp"
+  },
   plugins: {
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],

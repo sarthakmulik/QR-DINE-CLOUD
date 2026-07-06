@@ -143,19 +143,22 @@ export async function POST(
     // Add items sequentially (each recalculates totals — can't parallelise as each depends on previous)
     let lastResult = null;
     let hasDrinks = false;
+    const orderedDrinks: string[] = [];
 
     for (const cartItem of items) {
       const menuItem = menuItemMap.get(cartItem.menuItemId);
       if (!menuItem) continue; // Skip unavailable items
 
+      const qty = Math.max(1, Math.min(99, parseInt(String(cartItem.quantity)) || 1));
+
       if (menuItem.category_name) {
         const cat = menuItem.category_name.toLowerCase();
         if (cat.includes("drink") || cat.includes("beverage")) {
           hasDrinks = true;
+          orderedDrinks.push(`${qty}x ${menuItem.name}`);
         }
       }
 
-      const qty = Math.max(1, Math.min(99, parseInt(String(cartItem.quantity)) || 1));
       try {
         lastResult = await addItemToSession(
           session.id,
@@ -173,14 +176,14 @@ export async function POST(
       }
     }
 
-    // Return the last recalculated session directly — no extra DB fetch
     if (lastResult) {
       // Background: If any drinks were ordered, send a direct push to all waiters immediately
       if (hasDrinks) {
+        const drinkListString = orderedDrinks.join(", ");
         // MUST await this so serverless environments don't kill the Firebase JWT handshake!
         await sendStaffPush(hotelId, {
           title: "New Drink Order 🥤",
-          body: `Table ${tableNumber} just ordered drinks. Please serve immediately!`,
+          body: `Table ${tableNumber} ordered: ${drinkListString}`,
           tag: `drink-${session.id}`,
           url: `/staff/${hotelId}?tab=orders`
         });
