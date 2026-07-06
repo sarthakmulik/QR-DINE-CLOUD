@@ -43,19 +43,7 @@ export default async function BillPage({
   const taxRate = hotel?.tax_rate !== undefined && hotel?.tax_rate !== null ? Number(hotel.tax_rate) : 5;
   const cgst = taxRate / 2;
   const sgst = taxRate / 2;
-  const rawSessionItems = (items || []) as SessionItem[];
-
-  const groupedItems = Object.values(
-    rawSessionItems.reduce((acc, item) => {
-      const key = `${item.menu_item_id}-${item.price}`;
-      if (!acc[key]) {
-        acc[key] = { ...item };
-      } else {
-        acc[key].quantity += item.quantity;
-      }
-      return acc;
-    }, {} as Record<string, SessionItem>)
-  );
+  const sessionItems = (items || []) as SessionItem[];
 
   let qrCodeUrl = "";
   if (hotel?.upi_id) {
@@ -119,7 +107,7 @@ export default async function BillPage({
           </tr>
         </thead>
         <tbody>
-          {groupedItems.map((item) => (
+          {sessionItems.map((item) => (
             <tr key={item.id} className="border-b border-dashed border-slate-200 dark:border-zinc-800">
               <td className="py-2">{item.name}</td>
               <td className="text-center py-2">{item.quantity}</td>

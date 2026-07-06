@@ -400,15 +400,6 @@ export default function StaffPanelPage() {
 
   const pendingRequests = waiterRequests.filter((r) => r.status === "pending");
 
-  const groupedModalItems = selectedTable?.currentSession ? Object.values(
-    selectedTable.currentSession.items.reduce((acc: any, item: any) => {
-      const key = `${item.menuItemId}-${item.price}-${item.status}`;
-      if (!acc[key]) acc[key] = { ...item };
-      else acc[key].quantity += item.quantity;
-      return acc;
-    }, {})
-  ) as any[] : [];
-
   const activeOrders = tables.flatMap(table => {
     if (!table.currentSession) return [];
     return table.currentSession.items
@@ -622,7 +613,7 @@ export default function StaffPanelPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.04]">
-                      {groupedModalItems.map((item: any) => (
+                      {selectedTable.currentSession.items.map((item: any) => (
                         <tr key={item.id} className="hover:bg-white/[0.02]">
                           <td className="px-3 py-2.5 font-medium text-gray-100">{item.name}</td>
                           <td className="px-3 py-2.5 text-center">
