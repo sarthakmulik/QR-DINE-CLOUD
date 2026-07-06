@@ -38,10 +38,6 @@ export async function sendStaffPush(
                 title: payloadData.title,
                 body: payloadData.body,
               },
-              data: {
-                url: payloadData.url || "",
-                tag: payloadData.tag || ""
-              },
               android: {
                 priority: "high",
                 notification: {
@@ -115,10 +111,6 @@ export async function sendStaffPushSequential(
             notification: {
               title: payloadData.title,
               body: payloadData.body,
-            },
-            data: {
-              url: payloadData.url || "",
-              tag: payloadData.tag || ""
             },
             android: {
               priority: "high",
