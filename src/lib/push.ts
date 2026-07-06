@@ -76,13 +76,21 @@ export async function sendStaffPushSequential(
 ) {
   try {
     const sb = createAdminClient();
-    const { data: subscriptions } = await sb
+    let { data: subscriptions } = await sb
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("hotel_id", hotelId)
       .order("endpoint", { ascending: true }); // Ensure stable ordering
 
     if (!subscriptions || subscriptions.length === 0) return;
+
+    // EXCLUSIVE ANDROID ROUTING: 
+    // To completely prevent "Ghost" Web Browsers from swallowing round-robin notifications,
+    // if ANY Android (FCM) devices exist, we exclusively round-robin between Android devices!
+    const fcmSubs = subscriptions.filter(s => s.p256dh === "fcm");
+    if (fcmSubs.length > 0) {
+      subscriptions = fcmSubs;
+    }
 
     // Use DB state for stateless round-robin (Serverless safe)
     const { count } = await sb
