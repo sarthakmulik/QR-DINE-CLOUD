@@ -212,8 +212,8 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className={`px-4 py-3.5 flex items-center justify-between gap-3 transition-all duration-200 cursor-pointer group relative ${
-                  isDark ? "hover:bg-white/[0.03]" : "hover:bg-brand-50/30"
+                className={`px-4 py-3.5 flex items-center justify-between gap-3 transition-all duration-300 ease-bounce cursor-pointer group relative ${
+                  isDark ? "hover:bg-white/[0.04] active:bg-white/[0.08]" : "hover:bg-brand-50/40 active:bg-brand-100/50"
                 }`}
               >
                 {/* Left: thumb + info */}
@@ -292,10 +292,10 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className={`flex flex-col rounded-[1.75rem] border overflow-hidden relative transition-all duration-300 group cursor-pointer ${
+                className={`flex flex-col rounded-[2rem] border overflow-hidden relative transition-all duration-500 ease-bounce group cursor-pointer hover:-translate-y-1 ${
                   isDark
-                    ? "bg-slate-900 border-white/[0.06] shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:border-brand-500/30 hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
-                    : "bg-white border-gray-200/60 shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:border-brand-300/50"
+                    ? "bg-slate-900 border-white/[0.06] shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:border-brand-500/30 hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)]"
+                    : "bg-white border-gray-200/60 shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.1)] hover:border-brand-300/50"
                 }`}
               >
                 {/* Image zone */}
@@ -387,10 +387,10 @@ const CategorySection = React.memo(function CategorySection({
                   if (target.closest(".qty-controller") || target.closest(".add-btn")) return;
                   setSelectedItem(item);
                 }}
-                className={`flex flex-col rounded-[2rem] overflow-hidden h-64 relative transition-all duration-300 group cursor-pointer ${
+                className={`flex flex-col rounded-[2rem] overflow-hidden h-72 relative transition-all duration-500 ease-bounce group cursor-pointer active:scale-95 hover:-translate-y-1 ${
                   isDark
-                    ? "shadow-[0_12px_40px_rgba(0,0,0,0.8)] hover:shadow-[0_16px_48px_rgba(var(--brand-rgb),0.25)]"
-                    : "shadow-[0_8px_28px_rgba(0,0,0,0.15)] hover:shadow-[0_14px_40px_rgba(0,0,0,0.22)]"
+                    ? "shadow-[0_12px_40px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_rgba(var(--brand-rgb),0.35)]"
+                    : "shadow-[0_8px_28px_rgba(0,0,0,0.15)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
                 }`}
               >
                 {item.isRecommended && (
@@ -470,7 +470,7 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="group relative cursor-pointer rounded-[2rem] border border-white/[0.05] p-4 flex gap-4 transition-all duration-300 hover:border-brand-500/40 overflow-hidden"
+                className="group relative cursor-pointer snap-center rounded-[2rem] border border-white/[0.05] p-4 flex gap-4 transition-all duration-500 ease-bounce hover:border-brand-500/40 hover:-translate-y-1 overflow-hidden"
                 style={{ background: "linear-gradient(135deg, rgba(15,15,25,0.98), rgba(8,8,18,1))", boxShadow: "0 12px 40px -6px rgba(0,0,0,0.85)" }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem]" />
@@ -520,10 +520,10 @@ const CategorySection = React.memo(function CategorySection({
                       ) : (
                         <button
                           onClick={() => addToCart(item)}
-                          className={`px-5 py-2 rounded-full font-black text-xs flex items-center gap-1.5 active:scale-95 transition-all border border-brand-500/40 text-brand-300 hover:border-brand-400 hover:text-brand-100 hover:bg-brand-500/25 ${
+                          className={`px-5 py-2 rounded-full font-black text-xs flex items-center gap-1.5 active:scale-95 transition-all duration-300 border border-brand-500/40 text-brand-300 hover:border-brand-400 hover:text-white hover:bg-brand-500/40 hover:shadow-[0_4px_16px_rgba(var(--brand-rgb),0.3)] animate-gradient-x ${
                             bounceId === item.id ? "animate-cart-bounce" : ""
                           }`}
-                          style={{ background: "linear-gradient(135deg, rgba(var(--brand-rgb),0.12), rgba(var(--brand-rgb),0.06))" }}
+                          style={{ background: "linear-gradient(135deg, rgba(var(--brand-rgb),0.2), rgba(var(--brand-rgb),0.05), rgba(var(--brand-rgb),0.2))", backgroundSize: "200% 200%" }}
                         >
                           <Plus className="w-3.5 h-3.5" /> Add
                         </button>
@@ -550,10 +550,10 @@ const CategorySection = React.memo(function CategorySection({
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className={`rounded-[1.75rem] border p-3.5 flex gap-4 transition-all duration-300 cursor-pointer group ${
+              className={`rounded-[1.75rem] border p-3.5 flex gap-4 transition-all duration-500 ease-bounce cursor-pointer group hover:-translate-y-1 active:scale-95 ${
                 isDark
-                  ? "bg-slate-900/80 border-white/[0.06] hover:border-white/[0.12] hover:bg-slate-800/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]"
-                  : "bg-white border-gray-150/70 hover:border-brand-200/60 hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.1)] shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)]"
+                  ? "bg-slate-900/80 border-white/[0.06] hover:border-white/[0.12] hover:bg-slate-800/80 shadow-[inset_0_1px_3px_rgba(255,255,255,0.02),0_4px_24px_-4px_rgba(0,0,0,0.5)] hover:shadow-[inset_0_1px_3px_rgba(255,255,255,0.02),0_12px_40px_-4px_rgba(0,0,0,0.6)]"
+                  : "bg-white border-gray-150/70 hover:border-brand-200/60 hover:shadow-[inset_0_1px_3px_rgba(0,0,0,0.01),0_16px_50px_-8px_rgba(0,0,0,0.12)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.01),0_2px_12px_-2px_rgba(0,0,0,0.03)]"
               }`}
             >
               <div className="relative flex-shrink-0">
@@ -2369,8 +2369,8 @@ export default function DineClient({
           onClick={() => setShowCart(false)}
         >
           <div
-            className={`w-full max-w-md rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl border-t overflow-hidden animate-slide-up modal-scroll ${
-              isDark ? "bg-slate-900 border-white/5" : "bg-white border-gray-100"
+            className={`w-full max-w-md rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl border-t overflow-hidden animate-slide-up transition-all duration-500 ease-bounce modal-scroll ${
+              isDark ? "bg-slate-900 border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]" : "bg-white border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
