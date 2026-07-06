@@ -493,6 +493,15 @@ Thank you for dining with us!`;
     ...(stats.hourlyDistribution || []).map((h) => h.count)
   );
 
+  const groupedModalItems = selected?.currentSession ? Object.values(
+    selected.currentSession.items.reduce((acc: any, item: any) => {
+      const key = `${item.menuItemId}-${item.price}-${item.status}`;
+      if (!acc[key]) acc[key] = { ...item };
+      else acc[key].quantity += item.quantity;
+      return acc;
+    }, {})
+  ) as any[] : [];
+
   return (
     <div className="space-y-7 pb-12">
       {/* HEADER SECTION */}
@@ -756,7 +765,7 @@ Thank you for dining with us!`;
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
-                  {selected.currentSession.items.map((item) => (
+                  {groupedModalItems.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30">
                       <td className="px-3 py-2.5 text-gray-900 dark:text-zinc-100">{item.name}</td>
                       <td className="px-3 py-2.5 text-right text-gray-700 dark:text-zinc-300">{item.quantity}</td>
