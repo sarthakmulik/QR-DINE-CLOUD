@@ -651,10 +651,10 @@ export default function QuickServiceClient({
         </div>
 
         {categories.length > 0 && !searchQuery && (
-          <div className="overflow-x-auto hide-scrollbar px-5 pb-4 flex gap-2.5 scroll-smooth">
+          <div className="overflow-x-auto hide-scrollbar px-5 pb-4 flex gap-2.5 scroll-smooth snap-x snap-mandatory">
             <button
               onClick={() => setActiveCategory("all")}
-              className={`whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === "all" ? t.pillActive : t.pillInactive}`}
+              className={`snap-start whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === "all" ? t.pillActive : t.pillInactive}`}
             >
               All Items
             </button>
@@ -662,7 +662,7 @@ export default function QuickServiceClient({
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === cat.id ? t.pillActive : t.pillInactive}`}
+                className={`snap-start whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === cat.id ? t.pillActive : t.pillInactive}`}
               >
                 {cat.name}
               </button>
