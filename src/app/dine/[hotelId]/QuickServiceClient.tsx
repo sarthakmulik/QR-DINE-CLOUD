@@ -48,8 +48,39 @@ export default function QuickServiceClient({
   const [loading, setLoading] = useState(true);
   const [hotel, setHotel] = useState<Partial<Hotel> | null>(initialHotel || null);
   const [categories, setCategories] = useState<CategoryWithItems[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // 1. Add cart initialization from localStorage
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(`qr_dine_qs_cart_${hotelId}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          // Check expiry (2 hours)
+          if (parsed.expiry && parsed.expiry > Date.now()) {
+            return parsed.cart || [];
+          } else {
+            localStorage.removeItem(`qr_dine_qs_cart_${hotelId}`);
+          }
+        }
+      } catch (e) {
+        console.error("Cart restore error:", e);
+      }
+    }
+    return [];
+  });
   
+  // 2. Add effect to save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (cart.length > 0) {
+      localStorage.setItem(`qr_dine_qs_cart_${hotelId}`, JSON.stringify({
+        cart,
+        expiry: Date.now() + 2 * 60 * 60 * 1000 // 2 hours
+      }));
+    } else {
+      localStorage.removeItem(`qr_dine_qs_cart_${hotelId}`);
+    }
+  }, [cart, hotelId]);
+
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -80,7 +111,19 @@ export default function QuickServiceClient({
         const data = await res.json();
         if (res.ok) {
           setHotel(data.hotel);
+          
+          // Verify cart items still exist and are available in the fetched menu
           setCategories(data.categories || []);
+          if (typeof window !== "undefined") {
+            setCart(prev => {
+              const allFetchedItems = (data.categories || []).flatMap((c: any) => c.items);
+              const validCart = prev.filter(cartItem => 
+                allFetchedItems.some((validItem: any) => validItem.id === cartItem.id && validItem.isAvailable)
+              );
+              // Only update if something was removed to avoid unnecessary re-renders
+              return validCart.length === prev.length ? prev : validCart;
+            });
+          }
         } else {
           alert(data.error);
         }

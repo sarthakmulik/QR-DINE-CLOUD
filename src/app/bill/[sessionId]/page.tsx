@@ -6,12 +6,19 @@ import UpiQr from "@/components/bill/upi-qr";
 import type { Hotel, RestaurantTable, SessionItem, TableSession } from "@/lib/types";
 import QRCode from "qrcode";
 
+import { getAuthUser } from "@/lib/auth";
+
 export default async function BillPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { sessionId } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const isView = sp.view === "1";
+
   const sb = createAdminClient();
 
   const { data: session } = await sb
@@ -21,6 +28,13 @@ export default async function BillPage({
     .maybeSingle<TableSession>();
 
   if (!session) notFound();
+
+  if (isView) {
+    const user = await getAuthUser();
+    if (!user || (user.role !== "superadmin" && user.hotelId !== session.hotel_id)) {
+      notFound();
+    }
+  }
 
   const { data: items } = await sb
     .from("session_items")
@@ -137,6 +151,12 @@ export default async function BillPage({
           <span>Subtotal</span>
           <span>{formatINR(Number(session.subtotal))}</span>
         </div>
+        {Number(session.discount_amount) > 0 && (
+          <div className="flex justify-between text-gray-600">
+            <span>Discount{session.coupon_code ? ` (${session.coupon_code})` : ""}</span>
+            <span>-{formatINR(Number(session.discount_amount))}</span>
+          </div>
+        )}
         <div className="flex justify-between text-gray-600">
           <span>CGST @ {cgst}%</span>
           <span>{formatINR(Number(session.tax_amount) / 2)}</span>
@@ -149,6 +169,11 @@ export default async function BillPage({
           <span>Grand Total</span>
           <span>{formatINR(Number(session.total))}</span>
         </div>
+        {session.payment_method && (
+          <div className="mt-4 pt-2 border-t border-slate-200 dark:border-zinc-800 text-center font-bold tracking-widest text-xs">
+            PAID — {session.payment_method.toUpperCase()}
+          </div>
+        )}
       </div>
 
       {hotel?.upi_id && (

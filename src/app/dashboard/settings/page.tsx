@@ -642,6 +642,55 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
+
+              {/* Desktop App Native Printing */}
+              {typeof window !== "undefined" && (window as any).electronAPI && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/[0.07] space-y-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
+                      Desktop Native Printing
+                      <span className="bg-emerald-100 text-emerald-800 text-[9px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">Active</span>
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                      Select the printer to use for silent background printing.
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-2 items-center">
+                    <select
+                      value={form.customizations?.desktopPrinter || ""}
+                      onChange={(e) => setForm({
+                        ...form,
+                        customizations: { ...form.customizations, desktopPrinter: e.target.value }
+                      })}
+                      className="flex-1 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm"
+                    >
+                      <option value="">Select a printer (Default OS printer)</option>
+                      <DesktopPrintersList />
+                    </select>
+                    
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      onClick={async () => {
+                        const printer = form.customizations?.desktopPrinter;
+                        try {
+                          const res = await (window as any).electronAPI.testPrint(printer);
+                          if (res.success) {
+                            alert("Test print sent successfully to " + (printer || "default printer"));
+                          } else {
+                            alert("Print failed: " + res.error);
+                          }
+                        } catch (e) {
+                          alert("Failed to send test print");
+                        }
+                      }}
+                    >
+                      Test Print
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -1419,5 +1468,25 @@ function Field({
         className="w-full border rounded-lg px-3 py-2"
       />
     </div>
+  );
+}
+
+function DesktopPrintersList() {
+  const [printers, setPrinters] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).electronAPI) {
+      (window as any).electronAPI.getPrinters().then(setPrinters).catch(console.error);
+    }
+  }, []);
+
+  return (
+    <>
+      {printers.map((p: any) => (
+        <option key={p.name} value={p.name}>
+          {p.displayName || p.name}
+        </option>
+      ))}
+    </>
   );
 }

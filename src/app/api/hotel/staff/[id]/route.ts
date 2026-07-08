@@ -1,11 +1,7 @@
+import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import crypto from "crypto";
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
 
 export async function PATCH(
   req: NextRequest,
@@ -60,7 +56,7 @@ export async function PATCH(
     if (body.role) updates.role = body.role;
     if (body.email) updates.email = String(body.email).trim().toLowerCase();
     if (body.password) {
-      updates.password_hash = hashPassword(body.password);
+      updates.password_hash = await bcrypt.hash(body.password, 12);
     }
 
     const { data: staff, error: staffError } = await sb

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 
 // Live production URL
@@ -15,6 +15,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
+      preload: path.join(__dirname, 'preload.js'),
     },
     show: false, // Don't show until ready-to-show
   });
@@ -44,8 +45,77 @@ app.whenReady().then(() => {
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+  setupIpcHandlers();
 });
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
+
+function setupIpcHandlers() {
+  ipcMain.handle('get-printers', async (event) => {
+    if (!mainWindow) return [];
+    return mainWindow.webContents.getPrintersAsync();
+  });
+
+  ipcMain.handle('print-html', async (event, html, printerName) => {
+    return new Promise((resolve, reject) => {
+      let printWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          nodeIntegration: false,
+        }
+      });
+      
+      const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+      
+      printWindow.loadURL(dataUrl);
+      
+      printWindow.webContents.on('did-finish-load', () => {
+        const options = {
+          silent: true,
+          deviceName: printerName,
+          margins: { marginType: 'none' }
+        };
+        
+        printWindow.webContents.print(options, (success, failureReason) => {
+          if (!success) {
+            console.error('Print failed:', failureReason);
+            resolve({ success: false, error: failureReason });
+          } else {
+            resolve({ success: true });
+          }
+          printWindow.close();
+        });
+      });
+    });
+  });
+
+  ipcMain.handle('test-print', async (event, printerName) => {
+    const testHtml = `
+      <html>
+        <body style="font-family: monospace; text-align: center; margin: 0; padding: 20px;">
+          <h2>TEST PRINT</h2>
+          <p>--------------------------------</p>
+          <p>QR DINE CLOUD</p>
+          <p>Printer integration successful!</p>
+          <p>--------------------------------</p>
+          <p>${new Date().toLocaleString()}</p>
+        </body>
+      </html>
+    `;
+    
+    return new Promise((resolve, reject) => {
+      let printWindow = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false } });
+      printWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(testHtml));
+      
+      printWindow.webContents.on('did-finish-load', () => {
+        printWindow.webContents.print({ silent: true, deviceName: printerName }, (success, reason) => {
+          resolve({ success, error: reason });
+          printWindow.close();
+        });
+      });
+    });
+  });
+}

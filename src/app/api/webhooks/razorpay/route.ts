@@ -99,12 +99,25 @@ export async function POST(req: NextRequest) {
 
     await assignOrderNumber(sessionId);
 
-    await sb.from("table_sessions").update({ 
+    // Atomic update to ensure idempotency
+    const { data: updated, error: updateError } = await sb.from("table_sessions").update({ 
       status: "open", 
       // Preserve the payment_method set at checkout (UPI or Card)
       payment_method: session.payment_method ?? "UPI",
       payment_reference: entity.id
-    }).eq("id", sessionId);
+    })
+    .eq("id", sessionId)
+    .neq("status", "open")
+    .select("id")
+    .maybeSingle();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    if (!updated) {
+       return NextResponse.json({ success: true, message: "Already processed" });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

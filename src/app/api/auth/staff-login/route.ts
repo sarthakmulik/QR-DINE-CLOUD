@@ -1,12 +1,9 @@
+import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import { checkLoginRateLimit, recordLoginFailure, resetLoginAttempts } from "@/lib/rate-limit";
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +24,7 @@ export async function POST(req: NextRequest) {
     const ipKey = `ip:${ip}`;
     const emailKey = `email:${String(email).trim().toLowerCase()}`;
 
-    const ipLimit = checkLoginRateLimit(ipKey);
+    const ipLimit = await checkLoginRateLimit(ipKey);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: `Too many login attempts from this IP. Please try again in ${Math.ceil(ipLimit.lockTimeLeft / 60)} minutes.` },
@@ -35,7 +32,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const emailLimit = checkLoginRateLimit(emailKey);
+    const emailLimit = await checkLoginRateLimit(emailKey);
     if (!emailLimit.allowed) {
       return NextResponse.json(
         { error: `This account is temporarily locked due to too many failed login attempts. Please try again in ${Math.ceil(emailLimit.lockTimeLeft / 60)} minutes.` },
@@ -53,8 +50,8 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (error || !staff) {
-      recordLoginFailure(ipKey);
-      recordLoginFailure(emailKey);
+      await recordLoginFailure(ipKey);
+      await recordLoginFailure(emailKey);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
@@ -70,16 +67,35 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Verify password hash
-    const inputHash = hashPassword(password);
-    if (staff.password_hash !== inputHash) {
-      recordLoginFailure(ipKey);
-      recordLoginFailure(emailKey);
+    let isValid = false;
+    let needsUpgrade = false;
+
+    if (staff.password_hash.startsWith("$2a$") || staff.password_hash.startsWith("$2b$")) {
+      isValid = await bcrypt.compare(password, staff.password_hash);
+    } else {
+      // Legacy SHA-256 validation
+      const inputHash = crypto.createHash("sha256").update(password).digest("hex");
+      if (staff.password_hash === inputHash) {
+        isValid = true;
+        needsUpgrade = true;
+      }
+    }
+
+    if (!isValid) {
+      await recordLoginFailure(ipKey);
+      await recordLoginFailure(emailKey);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
+    if (needsUpgrade) {
+      // Upgrade to bcrypt transparently
+      const newHash = await bcrypt.hash(password, 12);
+      await sb.from("staff").update({ password_hash: newHash }).eq("id", staff.id);
+    }
+
     // Reset login attempts on successful credentials validation
-    resetLoginAttempts(ipKey);
-    resetLoginAttempts(emailKey);
+    await resetLoginAttempts(ipKey);
+    await resetLoginAttempts(emailKey);
 
     // 4. Set staff session cookie
     const sessionData = {

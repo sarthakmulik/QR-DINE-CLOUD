@@ -375,9 +375,11 @@ export default function TablesDashboardPage() {
         (data.hotel?.printerSize as PrinterSize) ||
         "80mm";
       const html = generateBillHTML(data, size, paymentMethod);
-      silentPrint(html);
+      await silentPrint(html);
     } catch (e) {
       console.error("Silent bill print error:", e);
+      alert("Thermal print failed. Please check printer connection or print dialog.");
+      throw e;
     }
   }
 
@@ -385,7 +387,10 @@ export default function TablesDashboardPage() {
     if (!selected?.currentSession || isPrinting) return;
     setIsPrinting(true);
     try {
-      // Register the print on the server (marks session as bill_printed)
+      // Silent thermal print — no new tab
+      await silentBillPrint(selected.currentSession.id);
+
+      // Register the print on the server (marks session as bill_printed) AFTER print succeeds
       const res = await fetch(
         `/api/hotel/sessions/${selected.currentSession.id}/print`,
         { method: "POST" }
@@ -394,12 +399,13 @@ export default function TablesDashboardPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to register print");
       }
-      // Silent thermal print — no new tab
-      await silentBillPrint(selected.currentSession.id);
       pollTables();
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Failed to print bill");
+      // alert is already handled by silentBillPrint if it fails there
+      if (!err.message?.includes("Thermal print failed")) {
+        alert(err.message || "Failed to print bill");
+      }
     } finally {
       setIsPrinting(false);
     }
@@ -748,9 +754,7 @@ Thank you for dining with us!`;
               </Badge>
               <span className="text-sm text-gray-500">
                 Session started{" "}
-                {formatDateTime(
-                  selected.currentSession.items[0]?.addedAt || new Date().toISOString()
-                )}
+                {formatDateTime(selected.currentSession.startTime)}
               </span>
             </div>
 

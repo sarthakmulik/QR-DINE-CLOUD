@@ -59,8 +59,8 @@ export default function AnalyticsPage() {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       fromStr = monthAgo.toISOString();
     } else if (range === "custom") {
-      if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000Z").toISOString();
-      if (customTo) toStr = new Date(customTo + "T23:59:59.999Z").toISOString();
+      if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000+05:30").toISOString();
+      if (customTo) toStr = new Date(customTo + "T23:59:59.999+05:30").toISOString();
     }
 
     const cacheKey = `admin_analytics_${range}_${customFrom}_${customTo}`;

@@ -1,11 +1,7 @@
+import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import crypto from "crypto";
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
 
 export async function GET() {
   try {
@@ -117,7 +113,7 @@ export async function POST(req: NextRequest) {
         name: String(name).trim(),
         role,
         email: String(email).trim().toLowerCase(),
-        password_hash: hashPassword(password),
+        password_hash: await bcrypt.hash(password, 12),
       })
       .select("id, name, role, email")
       .single();

@@ -191,28 +191,62 @@ export function generateBillHTML(
 }
 
 /**
- * Silently prints an HTML string using a hidden iframe with srcdoc.
- * Does NOT open a new tab. Auto-removes the iframe after printing.
+ * Silently prints an HTML string.
+ * If running in Desktop App, it uses electronAPI for native thermal printing.
+ * Otherwise, uses a hidden iframe with srcdoc for browser printing.
  */
-export function silentPrint(html: string): void {
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText =
-    "position:fixed;top:0;left:0;width:1px;height:1px;border:none;opacity:0;pointer-events:none;";
-  iframe.setAttribute("srcdoc", html);
-  document.body.appendChild(iframe);
-
-  iframe.onload = () => {
+export async function silentPrint(html: string): Promise<void> {
+  // Check for desktop app printing first
+  if (typeof window !== "undefined" && (window as any).electronAPI) {
     try {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    } catch (e) {
-      console.error("Silent print failed:", e);
+      const cached = sessionStorage.getItem("admin_profile");
+      let desktopPrinter = "";
+      if (cached) {
+        const profile = JSON.parse(cached);
+        desktopPrinter = profile.customizations?.desktopPrinter || "";
+      }
+      
+      const res = await (window as any).electronAPI.printHtml(html, desktopPrinter);
+      if (!res.success) {
+        console.error("Desktop printing failed:", res.error);
+        throw new Error(res.error || "Desktop printing failed");
+      }
+      return;
+    } catch (err) {
+      console.error("Electron API print failed, falling back to browser print", err);
     }
-    // Remove iframe after print dialog closes (afterprint) or after timeout
-    const cleanup = () => {
+  }
+
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText =
+      "position:fixed;top:0;left:0;width:1px;height:1px;border:none;opacity:0;pointer-events:none;";
+    iframe.setAttribute("srcdoc", html);
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        resolve();
+      } catch (e) {
+        console.error("Silent print failed:", e);
+        reject(e);
+      }
+      
+      const cleanup = () => {
+        try { document.body.removeChild(iframe); } catch {}
+      };
+      
+      if (iframe.contentWindow) {
+        iframe.contentWindow.addEventListener("afterprint", cleanup);
+      }
+      setTimeout(cleanup, 30000);
+    };
+
+    iframe.onerror = (e) => {
+      reject(e);
       try { document.body.removeChild(iframe); } catch {}
     };
-    iframe.contentWindow?.addEventListener("afterprint", cleanup);
-    setTimeout(cleanup, 30000); // fallback cleanup after 30s
-  };
+  });
 }

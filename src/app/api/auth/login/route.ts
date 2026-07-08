@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const ipKey = `ip:${ip}`;
   const emailKey = `email:${email.trim().toLowerCase()}`;
 
-  const ipLimit = checkLoginRateLimit(ipKey);
+  const ipLimit = await checkLoginRateLimit(ipKey);
   if (!ipLimit.allowed) {
     return NextResponse.json(
       { error: `Too many login attempts from this IP. Please try again in ${Math.ceil(ipLimit.lockTimeLeft / 60)} minutes.` },
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const emailLimit = checkLoginRateLimit(emailKey);
+  const emailLimit = await checkLoginRateLimit(emailKey);
   if (!emailLimit.allowed) {
     return NextResponse.json(
       { error: `This account is temporarily locked due to too many failed login attempts. Please try again in ${Math.ceil(emailLimit.lockTimeLeft / 60)} minutes.` },
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
   });
 
   if (signInError) {
-    recordLoginFailure(ipKey);
-    recordLoginFailure(emailKey);
+    await recordLoginFailure(ipKey);
+    await recordLoginFailure(emailKey);
     return NextResponse.json(
       { error: "Invalid email or password" },
       { status: 401 }
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Reset login attempts on successful credentials validation
-  resetLoginAttempts(ipKey);
-  resetLoginAttempts(emailKey);
+  await resetLoginAttempts(ipKey);
+  await resetLoginAttempts(emailKey);
 
   const {
     data: { user },

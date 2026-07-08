@@ -238,6 +238,26 @@ export async function addItemToSession(
   return recalculateSessionTotals(sessionId, hotel);
 }
 
+export async function removeItemFromSession(sessionId: string, itemId: string, hotelId: string) {
+  const sb = admin();
+  const { data: sessionData, error: sessionErr } = await sb
+    .from("table_sessions")
+    .select("*, hotels(*)")
+    .eq("id", sessionId)
+    .eq("hotel_id", hotelId)
+    .single();
+
+  if (sessionErr || !sessionData) throw new Error("Session not found");
+  
+  const session = sessionData as TableSession;
+  if (session.status === "closed") throw new Error("Cannot modify closed session");
+  
+  const { error } = await sb.from("session_items").delete().eq("id", itemId).eq("session_id", sessionId);
+  if (error) throw new Error(error.message);
+  
+  return recalculateSessionTotals(sessionId, (sessionData as any).hotels as Hotel);
+}
+
 export async function initiateCheckout(sessionId: string, preVerifiedSession?: TableSession | null) {
   const sb = admin();
   let session: TableSession;

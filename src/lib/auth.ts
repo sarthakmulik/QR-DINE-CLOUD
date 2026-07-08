@@ -20,14 +20,25 @@ export const getAuthUser = cache(async function (): Promise<AuthUser | null> {
       const staffSession = cookieStore.get("staff_session")?.value;
       if (staffSession) {
         const parsed = JSON.parse(staffSession);
-        return {
-          id: parsed.id,
-          email: parsed.email,
-          name: parsed.name,
-          role: "staff",
-          hotelId: parsed.hotelId,
-          hotelPlan: parsed.hotelPlan || "pro",
-        };
+        
+        // Validate against DB to prevent cookie forgery
+        const sb = createAdminClient();
+        const { data: staff } = await sb
+          .from("staff")
+          .select("*, hotels(plan)")
+          .eq("id", parsed.id)
+          .maybeSingle();
+
+        if (staff) {
+          return {
+            id: staff.id,
+            email: staff.email,
+            name: staff.name,
+            role: "staff",
+            hotelId: staff.hotel_id,
+            hotelPlan: (staff.hotels as any)?.plan || "pro",
+          };
+        }
       }
     } catch {
       // Fallthrough

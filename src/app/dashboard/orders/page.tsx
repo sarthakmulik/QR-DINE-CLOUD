@@ -13,7 +13,7 @@ interface Session {
   startTime: string;
   subtotal: number;
   total: number;
-  items: { name: string; quantity: number; price: number; addedAt: string }[];
+  items: { id: string; name: string; quantity: number; price: number; addedAt: string }[];
   table: { label: string };
 }
 
@@ -249,7 +249,7 @@ export default function LiveOrdersPage() {
                   {session.items.length > 0 ? (
                     <div className="space-y-3 relative z-10 max-h-[220px] overflow-y-auto scrollbar-none">
                       {session.items.map((item, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
+                        <div key={(item as any).id || i} className="flex justify-between items-center text-sm group/item">
                           <div className="flex gap-3 items-center min-w-0">
                             <span className="font-black text-slate-500 dark:text-slate-400 bg-white dark:bg-[#16161A] border border-slate-200 dark:border-zinc-800/60 dark:border-zinc-800 px-1.5 py-0.5 rounded-md text-[11px] min-w-[28px] text-center flex-shrink-0 shadow-sm">
                               {item.quantity}×
@@ -260,6 +260,29 @@ export default function LiveOrdersPage() {
                             <span className="text-xs font-black text-slate-500">
                               {formatINR(item.price * item.quantity)}
                             </span>
+                            {/* Remove item button for staff (only if unpaid or open) */}
+                            {session.status !== "closed" && session.status !== "checkout_initiated" && session.status !== "bill_printed" && (item as any).id && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Are you sure you want to remove ${item.name}?`)) return;
+                                  try {
+                                    const res = await fetch(`/api/hotel/sessions/${session.id}/items/${(item as any).id}`, { method: "DELETE" });
+                                    if (res.ok) {
+                                      load(true);
+                                    } else {
+                                      alert("Failed to remove item");
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                  }
+                                }}
+                                className="w-6 h-6 flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover/item:opacity-100"
+                                title="Remove item"
+                              >
+                                <AlertCircle size={14} className="hidden" />
+                                <span className="text-sm font-black">&times;</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}

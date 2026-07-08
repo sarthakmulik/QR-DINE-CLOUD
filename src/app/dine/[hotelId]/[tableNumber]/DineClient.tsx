@@ -71,9 +71,15 @@ function getCartKey(hotelId: string, tableNumber: string) {
 
 function loadCart(hotelId: string, tableNumber: string): CartItem[] {
   try {
-    const raw = sessionStorage.getItem(getCartKey(hotelId, tableNumber));
+    const raw = localStorage.getItem(getCartKey(hotelId, tableNumber));
     if (!raw) return [];
-    return JSON.parse(raw) as CartItem[];
+    const parsed = JSON.parse(raw);
+    if (parsed.expiry && parsed.expiry > Date.now()) {
+      return parsed.cart as CartItem[];
+    } else {
+      localStorage.removeItem(getCartKey(hotelId, tableNumber));
+      return [];
+    }
   } catch {
     return [];
   }
@@ -82,12 +88,15 @@ function loadCart(hotelId: string, tableNumber: string): CartItem[] {
 function saveCart(hotelId: string, tableNumber: string, cart: CartItem[]) {
   try {
     if (cart.length === 0) {
-      sessionStorage.removeItem(getCartKey(hotelId, tableNumber));
+      localStorage.removeItem(getCartKey(hotelId, tableNumber));
     } else {
-      sessionStorage.setItem(getCartKey(hotelId, tableNumber), JSON.stringify(cart));
+      localStorage.setItem(getCartKey(hotelId, tableNumber), JSON.stringify({
+        cart,
+        expiry: Date.now() + 2 * 60 * 60 * 1000 // 2 hours
+      }));
     }
   } catch {
-    // sessionStorage quota error — silently ignore
+    // localStorage quota error — silently ignore
   }
 }
 
