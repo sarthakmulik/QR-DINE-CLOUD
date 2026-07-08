@@ -32,6 +32,7 @@ interface TableData {
     discountAmount?: number;
     taxAmount: number;
     total: number;
+    startTime: string;
     couponCode?: string | null;
     discountPercent?: number;
     items: {
