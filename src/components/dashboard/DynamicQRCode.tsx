@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from "react";
 import QRCodeStyling, { Options } from "qr-code-styling";
 
 export interface DynamicQRCodeRef {
@@ -21,58 +21,16 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
   ({ url, width = 300, height = 300, logo, dotsColor = "#000000", cornersColor = "#000000", className }, ref) => {
     const qrRef = useRef<HTMLDivElement>(null);
     const qrCode = useRef<QRCodeStyling | null>(null);
+    const [finalImage, setFinalImage] = useState<string>(logo || "/icon.png");
 
+    // 1. Asynchronously build the composite logo
     useEffect(() => {
-      if (typeof window === "undefined") return;
-
-      // Safe initialization function
-      const initQr = (finalImage: string) => {
-        if (!qrCode.current) {
-          qrCode.current = new QRCodeStyling({
-            width,
-            height,
-            type: "canvas",
-            data: url,
-            image: finalImage,
-            qrOptions: { errorCorrectionLevel: "H" },
-            dotsOptions: { color: dotsColor, type: "dots" },
-            backgroundOptions: { color: "transparent" },
-            imageOptions: { margin: 8, imageSize: 0.5, crossOrigin: "anonymous" },
-            cornersSquareOptions: { color: cornersColor, type: "extra-rounded" },
-            cornersDotOptions: { color: cornersColor, type: "dot" }
-          });
-          if (qrRef.current) {
-            qrRef.current.innerHTML = "";
-            qrCode.current.append(qrRef.current);
-          }
-        } else {
-          qrCode.current.update({
-            data: url,
-            width,
-            height,
-            image: finalImage,
-            qrOptions: { errorCorrectionLevel: "H" },
-            dotsOptions: { color: dotsColor, type: "dots" },
-            imageOptions: { margin: 8, imageSize: 0.5, crossOrigin: "anonymous" },
-            cornersSquareOptions: { color: cornersColor, type: "extra-rounded" },
-            cornersDotOptions: { color: cornersColor, type: "dot" }
-          });
-          if (qrRef.current && qrRef.current.innerHTML === "") {
-            qrCode.current.append(qrRef.current);
-          }
-        }
-      };
-
       let isMounted = true;
       const logoUrl = logo || "/icon.png";
 
-      // 1. Immediately render the safe default QR code to prevent blanking
-      initQr(logoUrl);
-
-      // 2. Asynchronously build and apply the composite logo
       const applyCompositeLogo = async () => {
         try {
-          const finalLogo = await new Promise<string>((resolve) => {
+          const generatedLogo = await new Promise<string>((resolve) => {
             const img = new Image();
             if (logoUrl.startsWith("http")) img.crossOrigin = "anonymous";
             
@@ -85,25 +43,39 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
                 const ctx = canvas.getContext("2d");
                 if (!ctx) return resolve(logoUrl);
 
+                // Make canvas perfectly square for QR Code center hole
                 const size = 300;
-                const textHeight = 60;
                 canvas.width = size;
-                canvas.height = size + textHeight;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.height = size;
+                ctx.clearRect(0, 0, size, size);
+
+                // Draw logo in the top portion
+                const logoSize = 200;
+                const logoX = (size - logoSize) / 2;
+                const logoY = 10;
 
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
                 ctx.closePath();
                 ctx.clip();
-                ctx.drawImage(img, 0, 0, size, size);
+                
+                // Fill background white so transparent logos don't blend weirdly
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fill();
+                
+                ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
                 ctx.restore();
 
-                ctx.font = "bold 32px sans-serif";
+                // Draw "Powered by QR Dine" text in the bottom portion
+                ctx.font = "bold 26px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillStyle = "#000000";
-                ctx.fillText("Powered by QR Dine", size / 2, size + (textHeight / 2));
+                ctx.fillStyle = "#334155"; // Slate 700
+                ctx.fillText("Powered by", size / 2, size - 45);
+                
+                ctx.fillStyle = "#f97316"; // Brand orange
+                ctx.fillText("QR Dine", size / 2, size - 15);
 
                 resolve(canvas.toDataURL("image/png"));
               } catch (e) {
@@ -117,11 +89,11 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
             img.src = logoUrl;
           });
 
-          if (isMounted && qrCode.current) {
-            qrCode.current.update({ image: finalLogo });
+          if (isMounted) {
+            setFinalImage(generatedLogo);
           }
         } catch (e) {
-          // Fallback handled
+          if (isMounted) setFinalImage(logoUrl);
         }
       };
 
@@ -130,7 +102,56 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
       return () => {
         isMounted = false;
       };
-    }, [url, width, height, logo, dotsColor, cornersColor]);
+    }, [logo]);
+
+    // 2. Initialize QR Code EXACTLY as before
+    useEffect(() => {
+      if (typeof window !== "undefined" && !qrCode.current) {
+        qrCode.current = new QRCodeStyling({
+          width,
+          height,
+          type: "svg", // Keep SVG, it is reliable and scalable
+          data: url,
+          image: finalImage,
+          qrOptions: { errorCorrectionLevel: "H" },
+          dotsOptions: {
+            color: dotsColor,
+            type: "dots"
+          },
+          backgroundOptions: {
+            color: "transparent",
+          },
+          imageOptions: {
+            crossOrigin: "anonymous",
+            margin: 4,
+            imageSize: 0.5 // Larger logo
+          },
+          cornersSquareOptions: {
+            color: cornersColor,
+            type: "extra-rounded"
+          },
+          cornersDotOptions: {
+            color: cornersColor,
+            type: "dot"
+          }
+        });
+
+        if (qrRef.current) {
+          qrRef.current.innerHTML = "";
+          qrCode.current.append(qrRef.current);
+        }
+      }
+    }, [width, height, dotsColor, cornersColor]); // Do NOT recreate on URL/image changes
+
+    // 3. Safely update data and image when they change
+    useEffect(() => {
+      if (qrCode.current) {
+        qrCode.current.update({
+          data: url,
+          image: finalImage
+        });
+      }
+    }, [url, finalImage]);
 
     useImperativeHandle(ref, () => ({
       download: (filename = "qr-code", extension = "png") => {
