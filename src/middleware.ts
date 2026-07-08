@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https:;
     font-src 'self' data: https://fonts.gstatic.com;
-    connect-src 'self' https: wss:;
+    connect-src 'self' https: wss: data: blob:;
     frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com;
     frame-ancestors 'none';
   `.replace(/\s{2,}/g, " ").trim();
