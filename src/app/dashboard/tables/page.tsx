@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Plus, Download, RefreshCw, Copy, Check, ShieldAlert, Pencil, Trash2 } from "lucide-react";
+import { Edit2, Plus, RefreshCw, Trash2, ShieldAlert, Download, Copy, Check, Info, Pencil } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import QRCode from "qrcode";
+import DynamicQRCode, { DynamicQRCodeRef } from "@/components/dashboard/DynamicQRCode";
 
 interface TableData {
   id: string;
@@ -35,6 +36,9 @@ export default function TablesPage() {
 
   const [genericQrCode, setGenericQrCode] = useState<string | null>(null);
   const [genericDineUrl, setGenericDineUrl] = useState<string>("");
+  
+  const qrRefs = useRef<{ [key: string]: DynamicQRCodeRef | null }>({});
+  const genericQrRef = useRef<DynamicQRCodeRef>(null);
 
   const isSkeletons = loading && tables.length === 0;
 
@@ -152,11 +156,8 @@ export default function TablesPage() {
   }
 
   function downloadQR(table: TableData) {
-    if (!table.qrCodeUrl) return;
-    const link = document.createElement("a");
-    link.href = table.qrCodeUrl;
-    link.download = `table-${table.tableNumber}-qr.png`;
-    link.click();
+    if (!table.dineUrl) return;
+    qrRefs.current[table.id]?.download(`table-${table.tableNumber}-qr`, "png");
   }
 
   function openEditTable(table: TableData) {
@@ -272,9 +273,8 @@ export default function TablesPage() {
 
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center max-w-lg mx-auto mt-10">
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 dark:border-zinc-800/50 mb-6">
-            {genericQrCode ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={genericQrCode} alt="Store QR Code" className="w-64 h-64 object-contain rounded-lg" />
+            {genericDineUrl ? (
+              <DynamicQRCode ref={genericQrRef} url={genericDineUrl} width={256} height={256} />
             ) : (
               <div className="w-64 h-64 flex items-center justify-center text-slate-400">
                 <RefreshCw className="animate-spin" size={32} />
@@ -285,11 +285,8 @@ export default function TablesPage() {
             <Button
               className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold h-12"
               onClick={() => {
-                if (genericQrCode) {
-                  const link = document.createElement("a");
-                  link.href = genericQrCode;
-                  link.download = `store-qr-code.png`;
-                  link.click();
+                if (genericDineUrl) {
+                  genericQrRef.current?.download("store-qr-code", "png");
                 }
               }}
             >
@@ -435,13 +432,16 @@ export default function TablesPage() {
                     <RefreshCw className="animate-spin text-brand-500" size={24} />
                     <span className="text-xs font-bold text-slate-500 animate-pulse">Generating...</span>
                   </div>
-                ) : table.qrCodeUrl ? (
-                  <div className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={table.qrCodeUrl}
-                      alt={`QR for ${table.label}`}
-                      className="w-32 h-32 object-contain rounded-lg transition-transform group-hover/qr:scale-105"
+                ) : table.dineUrl ? (
+                  <div className="relative w-32 h-32 flex items-center justify-center">
+                    <DynamicQRCode
+                      ref={(el) => {
+                        qrRefs.current[table.id] = el;
+                      }}
+                      url={table.dineUrl}
+                      width={128}
+                      height={128}
+                      className="transition-transform group-hover/qr:scale-105"
                     />
                     <div className="absolute inset-0 bg-white/80 opacity-0 group-hover/qr:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm rounded-lg gap-2">
                       <button

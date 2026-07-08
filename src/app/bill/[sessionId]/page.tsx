@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/bill/print-button";
 import UpiQr from "@/components/bill/upi-qr";
 import type { Hotel, RestaurantTable, SessionItem, TableSession } from "@/lib/types";
-import QRCode from "qrcode";
 
 import { getAuthUser } from "@/lib/auth";
 
@@ -71,24 +70,8 @@ export default async function BillPage({
     }, {} as Record<string, SessionItem>)
   );
 
-  let qrCodeUrl = "";
   if (hotel?.upi_id) {
-    const upiLink = `upi://pay?pa=${hotel.upi_id}&pn=${encodeURIComponent(
-      hotel.name
-    )}&am=${Number(session.total).toFixed(2)}&cu=INR&tn=Table%20${session.table_number}`;
-
-    try {
-      qrCodeUrl = await QRCode.toDataURL(upiLink, {
-        width: 256,
-        margin: 1,
-        color: {
-          dark: "#0f172a",
-          light: "#ffffff",
-        },
-      });
-    } catch (err) {
-      console.error("Error generating UPI QR Code on server:", err);
-    }
+    // We rely on the client to generate the QR code dynamically
   }
 
   return (
@@ -183,7 +166,6 @@ export default async function BillPage({
             hotelName={hotel.name}
             amount={Number(session.total)}
             tableNumber={session.table_number ?? 0}
-            initialQrCodeUrl={qrCodeUrl}
           />
         </div>
       )}
