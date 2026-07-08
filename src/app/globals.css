@@ -22,6 +22,12 @@
   }
 }
 
+@layer base {
+  *, ::before, ::after {
+    @apply border-gray-200 dark:border-zinc-800/50;
+  }
+}
+
 @layer components {
   /* ─── Form Controls ──────────────────────────────────────────────────────── */
   .input-base {
