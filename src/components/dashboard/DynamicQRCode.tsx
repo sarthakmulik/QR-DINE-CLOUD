@@ -75,7 +75,7 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
                 ctx.fillText("Powered by", size / 2, size - 45);
                 
                 ctx.fillStyle = "#f97316"; // Brand orange
-                ctx.fillText("QR Dine", size / 2, size - 15);
+                ctx.fillText("QR Dine Cloud", size / 2, size - 15);
 
                 resolve(canvas.toDataURL("image/png"));
               } catch (e) {
