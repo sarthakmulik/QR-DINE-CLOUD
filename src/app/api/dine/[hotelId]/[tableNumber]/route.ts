@@ -4,6 +4,8 @@ import { mapHotel, mapMenuItem, mapTableSession } from "@/lib/types";
 import type { Hotel, MenuCategory, MenuItem, RestaurantTable, SessionItem, TableSession } from "@/lib/types";
 import { verifyTableSignature } from "@/lib/crypto";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ hotelId: string; tableNumber: string }> }
