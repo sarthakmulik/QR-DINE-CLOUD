@@ -56,15 +56,15 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
                 if (!ctx) return resolve(logoUrl);
 
                 // Make canvas perfectly square for QR Code center hole
-                const size = 300;
+                const size = 1024;
                 canvas.width = size;
                 canvas.height = size;
                 ctx.clearRect(0, 0, size, size);
 
                 // Draw logo in the top portion
-                const logoSize = 200;
+                const logoSize = 680;
                 const logoX = (size - logoSize) / 2;
-                const logoY = 10;
+                const logoY = 34;
 
                 ctx.save();
                 ctx.beginPath();
@@ -80,14 +80,14 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
                 ctx.restore();
 
                 // Draw "Powered by QR Dine" text in the bottom portion
-                ctx.font = "bold 26px sans-serif";
+                ctx.font = "bold 90px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillStyle = "#334155"; // Slate 700
-                ctx.fillText("Powered by", size / 2, size - 45);
+                ctx.fillText("Powered by", size / 2, size - 150);
                 
                 ctx.fillStyle = "#f97316"; // Brand orange
-                ctx.fillText("QR Dine Cloud", size / 2, size - 15);
+                ctx.fillText("QR Dine Cloud", size / 2, size - 50);
 
                 resolve(canvas.toDataURL("image/png"));
               } catch (e) {
@@ -173,9 +173,39 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
 
     useImperativeHandle(ref, () => ({
       download: (filename = "qr-code", extension = "png") => {
-        if (qrCode.current) {
-          qrCode.current.download({ name: filename, extension });
-        }
+        if (!url) return;
+        
+        // Create a temporary high-resolution QR code just for downloading
+        const tempQrCode = new QRCodeStyling({
+          width: 1024,
+          height: 1024,
+          type: "svg", // Reliable rendering
+          data: url,
+          image: finalImage,
+          qrOptions: { errorCorrectionLevel: "H" },
+          dotsOptions: {
+            color: dotsColor,
+            type: "dots"
+          },
+          backgroundOptions: {
+            color: "transparent",
+          },
+          imageOptions: {
+            crossOrigin: "anonymous",
+            margin: 4,
+            imageSize: 0.5
+          },
+          cornersSquareOptions: {
+            color: cornersColor,
+            type: "extra-rounded"
+          },
+          cornersDotOptions: {
+            color: cornersColor,
+            type: "dot"
+          }
+        });
+        
+        tempQrCode.download({ name: filename, extension });
       }
     }));
 
