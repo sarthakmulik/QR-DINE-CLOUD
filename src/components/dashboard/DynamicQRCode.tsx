@@ -27,47 +27,69 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
 
       const generateCompositeLogo = (logoUrl: string): Promise<string> => {
         return new Promise((resolve) => {
+          let resolved = false;
+          const finish = (res: string) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(res);
+          };
+
+          // Fallback timeout in case image takes too long to load or hangs
+          setTimeout(() => finish(logoUrl), 3000);
+
           const img = new Image();
-          img.crossOrigin = "anonymous";
+          if (logoUrl.startsWith("http")) {
+            img.crossOrigin = "anonymous";
+          }
+          
           img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return resolve(logoUrl);
+            try {
+              const canvas = document.createElement("canvas");
+              const ctx = canvas.getContext("2d");
+              if (!ctx) return finish(logoUrl);
 
-            const size = 300;
-            const textHeight = 50;
-            canvas.width = size;
-            canvas.height = size + textHeight;
+              const size = 300;
+              const textHeight = 60;
+              canvas.width = size;
+              canvas.height = size + textHeight;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw logo image (with circular crop)
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-            ctx.closePath();
-            ctx.clip();
-            ctx.drawImage(img, 0, 0, size, size);
-            ctx.restore();
+              // Draw logo image (with circular crop)
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+              ctx.closePath();
+              ctx.clip();
+              ctx.drawImage(img, 0, 0, size, size);
+              ctx.restore();
 
-            // Draw text
-            ctx.font = "bold 32px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillStyle = "#000000";
-            ctx.fillText("Powered by QR Dine Cloud", size / 2, size + (textHeight / 2));
+              // Draw text
+              ctx.font = "bold 32px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillStyle = "#000000";
+              ctx.fillText("Powered by QR Dine", size / 2, size + (textHeight / 2));
 
-            resolve(canvas.toDataURL("image/png"));
+              finish(canvas.toDataURL("image/png"));
+            } catch (err) {
+              console.error("Canvas taint error:", err);
+              finish(logoUrl); // Fallback to raw logo
+            }
           };
           img.onerror = () => {
-            resolve(logoUrl);
+            finish(logoUrl);
           };
           img.src = logoUrl;
         });
       };
 
+      let isMounted = true;
+
       const initQRCode = async () => {
         const finalLogo = await generateCompositeLogo(logo || "/icon.png");
+        
+        if (!isMounted) return;
 
         if (!qrCode.current) {
           qrCode.current = new QRCodeStyling({
@@ -77,7 +99,7 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
             data: url,
             image: finalLogo,
             qrOptions: {
-              errorCorrectionLevel: "H" // Use high error correction to support larger center logo
+              errorCorrectionLevel: "H"
             },
             dotsOptions: {
               color: dotsColor,
@@ -89,7 +111,7 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
             imageOptions: {
               crossOrigin: "anonymous",
               margin: 8,
-              imageSize: 0.5 // Allow logo and text to be clearly visible
+              imageSize: 0.4
             },
             cornersSquareOptions: {
               color: cornersColor,
@@ -106,25 +128,21 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
             qrCode.current.append(qrRef.current);
           }
         } else {
-          // If it already exists, just update it with new logo
           qrCode.current.update({
-            image: finalLogo
+            image: finalLogo,
+            data: url,
+            width,
+            height
           });
         }
       };
 
       initQRCode();
+      
+      return () => {
+        isMounted = false;
+      };
     }, [url, width, height, logo, dotsColor, cornersColor]);
-
-    useEffect(() => {
-      if (qrCode.current) {
-        qrCode.current.update({
-          data: url,
-          width,
-          height
-        });
-      }
-    }, [url, width, height]);
 
     useImperativeHandle(ref, () => ({
       download: (filename = "qr-code", extension = "png") => {
