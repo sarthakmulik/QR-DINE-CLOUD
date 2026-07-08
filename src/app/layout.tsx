@@ -25,7 +25,6 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
         <meta name="theme-color" content="#111827" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>{children}</Providers>
@@ -43,7 +42,7 @@ export default function RootLayout({
             `,
           }}
         />
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );
