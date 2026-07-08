@@ -272,16 +272,21 @@ export default function TablesPage() {
         </div>
 
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center max-w-lg mx-auto mt-10">
-          <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 dark:border-zinc-800/50 mb-6">
+          <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 dark:border-zinc-800/50 mb-6 relative">
             {genericDineUrl ? (
-              <DynamicQRCode ref={genericQrRef} url={genericDineUrl} width={256} height={256} logo={hotelLogo || undefined} />
+              <>
+                <DynamicQRCode ref={genericQrRef} url={genericDineUrl} width={256} height={256} logo={hotelLogo || undefined} />
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm whitespace-nowrap">
+                  Powered by QR Dine
+                </div>
+              </>
             ) : (
               <div className="w-64 h-64 flex items-center justify-center text-slate-400">
                 <RefreshCw className="animate-spin" size={32} />
               </div>
             )}
           </div>
-          <div className="flex gap-4 w-full">
+          <div className="flex gap-4 w-full mt-6">
             <Button
               className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold h-12"
               onClick={() => {
@@ -444,7 +449,10 @@ export default function TablesPage() {
                       logo={hotelLogo || undefined}
                       className="transition-transform group-hover/qr:scale-105"
                     />
-                    <div className="absolute inset-0 bg-white/80 opacity-0 group-hover/qr:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm rounded-lg gap-2">
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 whitespace-nowrap shadow-sm">
+                      Powered by QR Dine
+                    </div>
+                    <div className="absolute inset-0 bg-white/80 opacity-0 group-hover/qr:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm rounded-lg gap-2 z-10">
                       <button
                         onClick={() => downloadQR(table)}
                         className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 shadow-md transform hover:scale-110 transition-all"

@@ -38,8 +38,11 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, logo }: U
           <span>Pay via UPI App</span>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-700/80 shadow-inner">
+        <div className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-700/80 shadow-inner relative flex flex-col items-center">
           <DynamicQRCode url={upiLink} width={176} height={176} logo={logo} />
+          <div className="absolute -bottom-3 text-[10px] font-bold text-slate-500 bg-white px-3 py-0.5 rounded-full border border-slate-200 shadow-sm whitespace-nowrap z-10">
+            Powered by QR Dine
+          </div>
         </div>
 
         <div className="space-y-1">
@@ -66,10 +69,15 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber, logo }: U
       </div>
 
       {/* Print-only clean UPI QR Code */}
-      <div className="print-only-flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 dark:border-zinc-700 pt-4">
+      <div className="print-only-flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 dark:border-zinc-700 pt-4 relative">
         <p className="text-[10px] uppercase font-bold tracking-wider mb-2">Scan to Pay via UPI</p>
-        <DynamicQRCode url={upiLink} width={128} height={128} logo={logo} className="mx-auto" />
-        <p className="text-[9px] text-gray-700 mt-2 font-bold font-mono">UPI ID: {upiId}</p>
+        <div className="relative flex flex-col items-center">
+          <DynamicQRCode url={upiLink} width={128} height={128} logo={logo} className="mx-auto" />
+          <div className="absolute -bottom-2 text-[8px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-sm whitespace-nowrap z-10">
+            Powered by QR Dine
+          </div>
+        </div>
+        <p className="text-[9px] text-gray-700 mt-4 font-bold font-mono">UPI ID: {upiId}</p>
       </div>
     </>
   );
