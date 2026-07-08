@@ -1279,7 +1279,7 @@ export default function SettingsPage() {
 
               {/* Header */}
               <div className={`border-b px-3 py-2 flex items-center justify-between mt-3 transition-colors duration-300 ${
-                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white dark:bg-zinc-900 border-gray-100 dark:border-white/[0.06]"
+                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800/50"
               }`}>
                 <div className="flex items-center gap-1.5">
                   {form.logo ? (
@@ -1287,7 +1287,7 @@ export default function SettingsPage() {
                     <img
                       src={form.logo}
                       alt=""
-                      className="w-6 h-6 rounded-full object-cover border border-gray-100 dark:border-white/[0.06] shadow-sm"
+                      className="w-6 h-6 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-xs shadow-inner">
@@ -1360,7 +1360,7 @@ export default function SettingsPage() {
                   </div>
                 ) : form.customizations?.layout === "masonry" || form.customizations?.layout === "fullscreen_story" ? (
                   <div className="grid grid-cols-2 gap-2 space-y-0">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-white/[0.06] overflow-hidden flex flex-col shadow-sm">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 overflow-hidden flex flex-col shadow-sm">
                       <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🧀</div>
                       <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
                         <h6 className="font-bold text-[8px] text-gray-900 dark:text-zinc-100 line-clamp-1">Paneer Tikka</h6>
@@ -1373,7 +1373,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-white/[0.06] overflow-hidden flex flex-col shadow-sm">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 overflow-hidden flex flex-col shadow-sm">
                       <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🌯</div>
                       <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
                         <h6 className="font-bold text-[8px] text-gray-900 dark:text-zinc-100 line-clamp-1">Spring Rolls</h6>
@@ -1409,7 +1409,7 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-white/[0.06] p-2.5 flex items-center justify-between shadow-sm">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-gray-950">Tandoori Paneer Tikka</h6>
                         <p className="text-[8px] font-black text-brand-600">₹280</p>
@@ -1418,7 +1418,7 @@ export default function SettingsPage() {
                         ADD
                       </div>
                     </div>
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-white/[0.06] p-2.5 flex items-center justify-between shadow-sm">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-gray-955">Crispy Spring Rolls</h6>
                         <p className="text-[8px] font-black text-brand-600">₹180</p>
@@ -1433,7 +1433,7 @@ export default function SettingsPage() {
 
               {/* Footer View Cart Bar */}
               <div className={`border-t p-2.5 flex items-center justify-between rounded-b-[28px] mt-auto transition-colors duration-300 ${
-                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white dark:bg-zinc-900 border-gray-100 dark:border-white/[0.06]"
+                form.customizations?.layout === "dark_slider" ? "bg-slate-900 border-white/5" : "bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800/50"
               }`}>
                 <span className="text-[8px] text-gray-400 dark:text-zinc-500 font-bold">1 item in cart</span>
                 <div className="bg-brand-600 text-white font-extrabold text-[8px] px-3 py-1.5 rounded-lg flex items-center gap-1">

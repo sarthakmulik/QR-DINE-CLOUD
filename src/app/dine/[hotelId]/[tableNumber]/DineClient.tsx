@@ -331,7 +331,7 @@ const CategorySection = React.memo(function CategorySection({
                     )}
                     {item.isVegetarian && (
                       <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/90 border border-white/30 shadow-sm">
-                        <span className="w-2 h-2 rounded-full bg-white" />
+                        <span className="w-2 h-2 rounded-full bg-white dark:bg-[#16161A]" />
                       </span>
                     )}
                   </div>
@@ -1356,7 +1356,7 @@ export default function DineClient({
   if (state.type === "paused") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100/50 px-4">
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 p-8 shadow-xl shadow-gray-200/50 max-w-md w-full text-center space-y-6 relative overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 dark:border-zinc-800/50 p-8 shadow-xl shadow-gray-200/50 max-w-md w-full text-center space-y-6 relative overflow-hidden">
           {/* Subtle background decoration */}
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-brand-50 rounded-full blur-3xl opacity-60" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-rose-50 rounded-full blur-3xl opacity-60" />
@@ -1374,8 +1374,8 @@ export default function DineClient({
             </p>
           </div>
           
-          <div className="bg-gray-50/80 border border-gray-100 rounded-2xl p-4 flex items-center gap-3.5 text-left shadow-sm">
-            <div className="text-2xl bg-white w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border border-gray-100">⏳</div>
+          <div className="bg-gray-50/80 border border-gray-100 dark:border-zinc-800/50 rounded-2xl p-4 flex items-center gap-3.5 text-left shadow-sm">
+            <div className="text-2xl bg-white dark:bg-[#16161A] w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-zinc-800/50">⏳</div>
             <div>
               <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Please check back later</h4>
               <p className="text-[11px] text-gray-400 mt-0.5 leading-normal font-semibold">Contact the restaurant staff or waiter directly if you are seated.</p>
@@ -1414,7 +1414,7 @@ export default function DineClient({
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100/50 px-4">
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 p-8 shadow-xl shadow-gray-200/50 max-w-md w-full text-center space-y-6 relative overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 dark:border-zinc-800/50 p-8 shadow-xl shadow-gray-200/50 max-w-md w-full text-center space-y-6 relative overflow-hidden">
           {/* Subtle background decoration */}
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-brand-50 rounded-full blur-3xl opacity-60" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-60" />
@@ -1466,7 +1466,7 @@ export default function DineClient({
                   value={feedbackComment}
                   onChange={(e) => setFeedbackComment(e.target.value)}
                   rows={3}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder-gray-400 resize-none font-medium transition-all focus:bg-white"
+                  className="w-full bg-gray-50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder-gray-400 resize-none font-medium transition-all focus:bg-white"
                 />
               </div>
 
@@ -1481,7 +1481,7 @@ export default function DineClient({
                 </button>
                 <button
                   onClick={() => setFeedbackSubmitted(true)}
-                  className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-100 text-gray-500 py-3 rounded-2xl text-sm font-bold transition-all active:scale-98"
+                  className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-100 dark:border-zinc-800/50 text-gray-500 py-3 rounded-2xl text-sm font-bold transition-all active:scale-98"
                 >
                   Skip
                 </button>
@@ -1548,7 +1548,7 @@ export default function DineClient({
                 <img
                   src={state.hotelLogo}
                   alt=""
-                  className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                  className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
                 />
               </>
             ) : (
@@ -1590,13 +1590,13 @@ export default function DineClient({
           </div>
 
           {/* Receipt Summary */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 space-y-4 relative overflow-hidden">
+          <div className="bg-white dark:bg-[#16161A] rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800/50 p-5 space-y-4 relative overflow-hidden">
             {/* Top decorative receipt cutouts */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-600 to-brand-500" />
             <h3 className="font-extrabold text-xs text-gray-450 uppercase tracking-widest">Bill Summary</h3>
             
             {/* Items List */}
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-100 dark:divide-zinc-800/50">
               {state.items.map((item, idx) => (
                 <div key={idx} className="py-3 flex justify-between text-sm items-center">
                   <div>
@@ -1613,7 +1613,7 @@ export default function DineClient({
             </div>
 
             {/* Dashed Separator */}
-            <div className="border-t border-dashed border-gray-200 my-2" />
+            <div className="border-t border-dashed border-gray-200 dark:border-zinc-800/50 my-2" />
 
             {/* Calculations */}
             <div className="pt-2 space-y-2.5 text-sm font-semibold text-gray-500">
@@ -1637,7 +1637,7 @@ export default function DineClient({
                 <span className="text-gray-800 font-bold">{formatINR(taxAmount)}</span>
               </div>
 
-              <div className="flex justify-between font-black text-lg text-gray-950 pt-3 border-t border-gray-100">
+              <div className="flex justify-between font-black text-lg text-gray-950 pt-3 border-t border-gray-100 dark:border-zinc-800/50">
                 <span>Total Amount</span>
                 <span className="text-brand-600 font-black tracking-tight">{formatINR(finalTotal)}</span>
               </div>
@@ -1646,7 +1646,7 @@ export default function DineClient({
 
           {/* Coupon Input Area (Pro/Elite only) */}
           {!isBasic && (
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 space-y-4">
+            <div className="bg-white dark:bg-[#16161A] rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800/50 p-5 space-y-4">
               <h3 className="font-extrabold text-sm text-gray-900 tracking-tight">Apply Coupon</h3>
               {appliedCoupon ? (
                 <div className="bg-emerald-50/50 border border-emerald-150 rounded-2xl p-4 flex items-center justify-between shadow-inner">
@@ -1904,7 +1904,7 @@ export default function DineClient({
               <img
                 src={state.hotelLogo}
                 alt=""
-                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
               />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
             </div>

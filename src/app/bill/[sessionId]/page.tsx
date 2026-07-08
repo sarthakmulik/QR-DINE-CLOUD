@@ -75,7 +75,7 @@ export default async function BillPage({
   }
 
   return (
-    <div className="min-h-screen bg-white p-4 md:p-8 max-w-lg mx-auto receipt-print-layout">
+    <div className="min-h-screen bg-white dark:bg-[#16161A] p-4 md:p-8 max-w-lg mx-auto receipt-print-layout">
       <div className="no-print mb-4 flex justify-end">
         <PrintButton />
       </div>

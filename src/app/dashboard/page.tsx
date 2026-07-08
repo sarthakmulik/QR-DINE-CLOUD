@@ -550,7 +550,7 @@ Thank you for dining with us!`;
 
       {/* STATS OVERVIEW CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-emerald-500 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/50 rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-emerald-500 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
             <IndianRupee size={18} />
           </div>
@@ -566,7 +566,7 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-sky-500 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/50 rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-sky-500 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center flex-shrink-0">
             <ShoppingBag size={18} />
           </div>
@@ -582,7 +582,7 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-orange-500 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/50 rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-orange-500 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-500 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
             <Activity size={18} />
           </div>
@@ -598,7 +598,7 @@ Thank you for dining with us!`;
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-white/[0.06] rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-amber-500 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/50 rounded-xl p-5 flex items-center gap-4 border-l-4 border-l-amber-500 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
             <Star size={18} />
           </div>
@@ -624,14 +624,14 @@ Thank you for dining with us!`;
       </div>
 
       {/* HOURLY SALES CHART SECTION */}
-      <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-white/[0.06] rounded-xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/50 rounded-xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">Today&apos;s Hourly Orders</h2>
         </div>
 
         {hasFeedbackAccess ? (
           isSkeletons ? (
-            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-100 dark:border-white/[0.06] animate-pulse">
+            <div className="h-28 flex items-end gap-1.5 pt-4 border-b border-gray-100 dark:border-zinc-800/50 animate-pulse">
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center">
                   <div className="w-full bg-gray-100 dark:bg-zinc-800/50 rounded-t-md" style={{ height: "40px" }} />
@@ -640,7 +640,7 @@ Thank you for dining with us!`;
             </div>
           ) : (
             <div className="overflow-x-auto -mx-1">
-              <div className="h-28 flex items-end gap-2 pt-4 border-b border-gray-100 dark:border-white/[0.06] min-w-[500px]">
+              <div className="h-28 flex items-end gap-2 pt-4 border-b border-gray-100 dark:border-zinc-800/50 min-w-[500px]">
                 {stats.hourlyDistribution?.map((h) => {
                   const hourName = h.hour % 12 || 12;
                   const ampm = h.hour >= 12 ? "pm" : "am";
@@ -664,7 +664,7 @@ Thank you for dining with us!`;
             </div>
           )
         ) : (
-          <div className="h-28 bg-gray-50 dark:bg-white/[0.03] rounded-lg flex flex-col items-center justify-center border border-dashed border-gray-200 dark:border-white/[0.06]">
+          <div className="h-28 bg-gray-50 dark:bg-white/[0.03] rounded-lg flex flex-col items-center justify-center border border-dashed border-gray-200 dark:border-zinc-800/50">
             <Zap size={18} className="mb-2 text-brand-400" />
             <p className="text-xs font-medium text-gray-600 dark:text-zinc-400">Upgrade to Pro or Elite Plan</p>
             <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">Unlock hourly order distribution charts.</p>
@@ -684,7 +684,7 @@ Thank you for dining with us!`;
           [...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border border-gray-100 dark:border-white/[0.06] p-4 text-left h-[88px] bg-white dark:bg-zinc-900 animate-pulse"
+              className="rounded-xl border border-gray-100 dark:border-zinc-800/50 p-4 text-left h-[88px] bg-white dark:bg-zinc-900 animate-pulse"
             >
               <div className="h-4 bg-gray-100 dark:bg-zinc-800/70 rounded w-16 mb-3" />
               <div className="h-3 bg-gray-100 dark:bg-zinc-800/70 rounded w-10" />
@@ -703,7 +703,7 @@ Thank you for dining with us!`;
               }}
               className={`rounded-xl border p-4 text-left transition-all cursor-pointer group ${
                 table.status === 'free'
-                  ? 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-white/[0.06] hover:border-brand-300 dark:hover:border-brand-500/40'
+                  ? 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800/50 hover:border-brand-300 dark:hover:border-brand-500/40'
                   : table.status === 'occupied'
                   ? 'bg-orange-50 dark:bg-orange-500/[0.07] border-orange-200 dark:border-orange-500/20'
                   : 'bg-red-50 dark:bg-red-500/[0.07] border-red-200 dark:border-red-500/20'
@@ -821,7 +821,7 @@ Thank you for dining with us!`;
               )}
             </div>
 
-            <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-white/[0.06] rounded-lg p-4 space-y-2 text-sm">
+            <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800/50 rounded-lg p-4 space-y-2 text-sm">
               <div className="flex justify-between text-gray-600 dark:text-zinc-400">
                 <span>Subtotal</span>
                 <span>{formatINR(selected.currentSession.subtotal)}</span>

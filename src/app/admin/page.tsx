@@ -354,7 +354,7 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <div className="bg-white rounded-xl border p-5">
+    <div className="bg-white dark:bg-[#16161A] rounded-xl border p-5">
       <div className="flex items-center gap-3 mb-2">{icon}</div>
       <p className="text-2xl font-bold">{value}</p>
       <p className="text-sm text-gray-500">{label}</p>

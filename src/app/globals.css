@@ -45,10 +45,10 @@
   }
   /* ─── Cards ──────────────────────────────────────────────────────────────── */
   .card {
-    @apply bg-white dark:bg-zinc-900 border border-gray-100 dark:border-white/[0.06] rounded-xl;
+    @apply bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/50 rounded-xl;
   }
   .card-section {
-    @apply bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-white/[0.06] rounded-lg;
+    @apply bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800/50 rounded-lg;
   }
   /* ─── Table primitives ───────────────────────────────────────────────────── */
   .table-head {

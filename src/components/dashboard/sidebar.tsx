@@ -78,9 +78,9 @@ export function DashboardSidebar({
   return (
     <>
       {/* ===== DESKTOP SIDEBAR (md and above) ===== */}
-      <aside className="hidden md:flex w-60 bg-white dark:bg-[#111113] border-r border-gray-200 dark:border-white/[0.06] flex-col flex-shrink-0 transition-colors duration-200">
+      <aside className="hidden md:flex w-60 bg-white dark:bg-[#111113] border-r border-gray-200 dark:border-zinc-800/50 flex-col flex-shrink-0 transition-colors duration-200">
         {/* Branding */}
-        <div className="px-5 py-5 border-b border-gray-100 dark:border-white/[0.06]">
+        <div className="px-5 py-5 border-b border-gray-100 dark:border-zinc-800/50">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs tracking-tight flex-shrink-0">
               QR
@@ -120,7 +120,7 @@ export function DashboardSidebar({
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-gray-100 dark:border-white/[0.06] space-y-0.5">
+        <div className="p-3 border-t border-gray-100 dark:border-zinc-800/50 space-y-0.5">
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -141,7 +141,7 @@ export function DashboardSidebar({
       </aside>
 
       {/* ===== MOBILE TOP HEADER (below md) ===== */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#111113] border-b border-gray-200 dark:border-white/[0.06] flex items-center justify-between px-4 h-14 transition-colors duration-200">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-[#111113] border-b border-gray-200 dark:border-zinc-800/50 flex items-center justify-between px-4 h-14 transition-colors duration-200">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
             QR
@@ -169,8 +169,8 @@ export function DashboardSidebar({
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sheet */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#111113] z-50 shadow-2xl flex flex-col border-l border-gray-200 dark:border-white/[0.06] transition-colors duration-200">
-            <div className="px-4 py-4 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
+          <div className="md:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#111113] z-50 shadow-2xl flex flex-col border-l border-gray-200 dark:border-zinc-800/50 transition-colors duration-200">
+            <div className="px-4 py-4 border-b border-gray-100 dark:border-zinc-800/50 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                   QR
@@ -214,7 +214,7 @@ export function DashboardSidebar({
               })}
             </nav>
 
-            <div className="p-3 border-t border-gray-100 dark:border-white/[0.06] space-y-0.5">
+            <div className="p-3 border-t border-gray-100 dark:border-zinc-800/50 space-y-0.5">
               {mounted && (
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -237,7 +237,7 @@ export function DashboardSidebar({
       )}
 
       {/* ===== MOBILE BOTTOM NAV BAR (below md) ===== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#111113] border-t border-gray-200 dark:border-white/[0.06] flex items-center justify-around h-16 px-1 transition-colors duration-200">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#111113] border-t border-gray-200 dark:border-zinc-800/50 flex items-center justify-around h-16 px-1 transition-colors duration-200">
         {bottomNavLinks.map((link) => {
           const active =
             link.href === "/dashboard"

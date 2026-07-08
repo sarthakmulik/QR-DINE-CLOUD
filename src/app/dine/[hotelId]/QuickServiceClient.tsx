@@ -580,7 +580,7 @@ export default function QuickServiceClient({
                 ) : ((activeOrder as any).paymentMethod === "UPI" || activeOrder.payment_method === "UPI") && (hotel as any)?.upiId ? (
                   <>
                     <h3 className={`text-2xl font-black tracking-tight mb-4 ${t.textMain}`}>Scan to Pay</h3>
-                    <div className="bg-white p-5 rounded-3xl shadow-sm border-2 border-slate-100 dark:border-zinc-800/50 inline-block mb-6 relative group">
+                    <div className="bg-white dark:bg-[#16161A] p-5 rounded-3xl shadow-sm border-2 border-slate-100 dark:border-zinc-800/50 inline-block mb-6 relative group">
                       <div className="absolute inset-0 bg-brand-500 blur-xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl"></div>
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${(hotel as any).upiId}&pn=${hotel?.name}&am=${activeOrder.total}&cu=INR`)}`} alt="UPI QR" className="w-48 h-48 relative z-10" />
                     </div>
@@ -808,7 +808,7 @@ export default function QuickServiceClient({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
-            <div className="w-20 h-20 bg-white shadow-sm border border-slate-100 dark:border-zinc-800/50 rounded-full flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-white dark:bg-[#16161A] shadow-sm border border-slate-100 dark:border-zinc-800/50 rounded-full flex items-center justify-center mb-6">
               <Search className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className={`text-xl font-bold mb-2 tracking-tight ${t.textMain}`}>Nothing found</h3>
@@ -833,7 +833,7 @@ export default function QuickServiceClient({
                 <span className="font-black text-xl tracking-tight leading-none text-white">{formatINR(cartTotal)}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 font-bold bg-white text-brand-600 px-4 py-2.5 rounded-xl relative z-10 shadow-sm">
+            <div className="flex items-center gap-2 font-bold bg-white dark:bg-[#16161A] text-brand-600 px-4 py-2.5 rounded-xl relative z-10 shadow-sm">
               Checkout <ArrowRight size={16} strokeWidth={3} />
             </div>
           </button>
@@ -845,7 +845,7 @@ export default function QuickServiceClient({
         <div className={`fixed ${cart.length > 0 && !showCart ? 'bottom-28' : 'bottom-6'} left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-40 animate-slide-up transition-all duration-300`}>
           <button
             onClick={() => setShowMenuWhileTracking(false)}
-            className={`w-full p-3.5 flex items-center justify-between active:scale-[0.98] transition-all bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-brand-500 overflow-hidden relative group`}
+            className={`w-full p-3.5 flex items-center justify-between active:scale-[0.98] transition-all bg-white dark:bg-[#16161A] shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-brand-500 overflow-hidden relative group`}
           >
             <div className="absolute inset-0 bg-brand-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center gap-3 relative z-10">
@@ -952,7 +952,7 @@ export default function QuickServiceClient({
                     <p className={`text-xs font-medium mt-0.5 ${t.textSub}`}>{method.desc}</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method.id ? "border-brand-500 bg-brand-500" : "border-slate-300 dark:border-zinc-700 bg-white"}`}>
-                    {paymentMethod === method.id && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                    {paymentMethod === method.id && <div className="w-2 h-2 bg-white dark:bg-[#16161A] rounded-full"></div>}
                   </div>
                 </label>
               ))}
