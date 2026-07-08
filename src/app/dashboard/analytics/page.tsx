@@ -339,7 +339,7 @@ export default function AnalyticsPage() {
           {/* CHARTS SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Daily Revenue Line Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm lg:col-span-2">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Daily Revenue Trends</h2>
               <div className="h-72 relative">
                 <canvas ref={revenueCanvasRef} />
@@ -347,7 +347,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Top 5 Items Horizontal Bar Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Top 5 Items</h2>
               <div className="h-72 relative">
                 <canvas ref={topItemsCanvasRef} />
@@ -357,7 +357,7 @@ export default function AnalyticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Table Performance */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm lg:col-span-2">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm lg:col-span-2">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Table Performance</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
@@ -393,7 +393,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Hourly Performance Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/[0.07] rounded-2xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
               <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Orders by Hour (Load distribution)</h2>
               <div className="h-72 relative">
                 <canvas ref={hourlyCanvasRef} />
@@ -408,7 +408,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* Powered by footer */}
-      <footer className="pt-8 border-t border-gray-200 dark:border-white/[0.07] flex items-center justify-center">
+      <footer className="pt-8 border-t border-gray-200 dark:border-zinc-800 flex items-center justify-center">
         <p className="text-xs font-black tracking-widest uppercase text-gray-400 dark:text-zinc-500">
           Powered by QR Dine Cloud
         </p>

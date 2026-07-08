@@ -328,7 +328,7 @@ export default function CouponsPage() {
               id="isActive"
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-              className="rounded border-gray-300 dark:border-white/[0.08] text-brand-600 focus:ring-brand-500"
+              className="rounded border-gray-300 dark:border-zinc-700 text-brand-600 focus:ring-brand-500"
             />
             <label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-zinc-300">
               Active and visible at checkout

@@ -330,7 +330,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-7 space-y-6">
           <form onSubmit={handleSave} className="bg-white dark:bg-zinc-900 rounded-xl border p-6 space-y-4">
             {/* Store Status Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-white/[0.07]">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-zinc-800">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-900 dark:text-zinc-100">Accepting Orders</span>
@@ -431,7 +431,7 @@ export default function SettingsPage() {
                 id="secureQr"
                 checked={form.secureQr || false}
                 onChange={(e) => setForm({ ...form, secureQr: e.target.checked })}
-                className="mt-1.5 h-4 w-4 rounded border-gray-300 dark:border-white/[0.08] text-brand-600 focus:ring-brand-500 cursor-pointer"
+                className="mt-1.5 h-4 w-4 rounded border-gray-300 dark:border-zinc-700 text-brand-600 focus:ring-brand-500 cursor-pointer"
               />
               <div className="space-y-1">
                 <label htmlFor="secureQr" className="block text-sm font-bold text-gray-800 dark:text-zinc-200 cursor-pointer">
@@ -447,7 +447,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Payment Integrations */}
-            <div className="border border-gray-200 dark:border-white/[0.07] rounded-xl p-4 space-y-4">
+            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
                   💳 Payment Integration
@@ -602,7 +602,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Thermal Printer Size */}
-            <div className="border border-gray-200 dark:border-white/[0.07] rounded-xl p-4 space-y-3">
+            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
                   🖨️ Thermal Receipt Printer Size
@@ -633,7 +633,7 @@ export default function SettingsPage() {
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
                         selected
                           ? "border-brand-500 bg-brand-50 text-brand-700"
-                          : "border-gray-200 dark:border-white/[0.07] hover:border-gray-300 dark:border-white/[0.08] text-gray-700 dark:text-zinc-300"
+                          : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
                       }`}
                     >
                       <div className="font-bold text-sm">{opt.label}</div>
@@ -645,7 +645,7 @@ export default function SettingsPage() {
 
               {/* Desktop App Native Printing */}
               {typeof window !== "undefined" && (window as any).electronAPI && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/[0.07] space-y-3">
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-zinc-800 space-y-3">
                   <div>
                     <h4 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
                       Desktop Native Printing
@@ -711,7 +711,7 @@ export default function SettingsPage() {
 
             {/* Menu Layout Preset Selector (Dine-In Only) */}
             {form.serviceType !== "quick_service" && (
-              <div className="border-t border-gray-200 dark:border-white/[0.07] pt-4 space-y-4">
+              <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-2">
                   Menu Layout Preset
@@ -793,8 +793,8 @@ export default function SettingsPage() {
                         isSelected
                           ? "border-brand-600 bg-brand-50/10 shadow-sm"
                           : layout.allowed
-                          ? "border-gray-200 dark:border-white/[0.07] bg-white dark:bg-zinc-900 hover:bg-slate-50/50 hover:border-gray-300 dark:border-white/[0.08]"
-                          : "border-gray-200 dark:border-white/[0.07] bg-gray-50/30 opacity-60 cursor-not-allowed"
+                          ? "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50/50 hover:border-gray-300 dark:border-zinc-700"
+                          : "border-gray-200 dark:border-zinc-800 bg-gray-50/30 opacity-60 cursor-not-allowed"
                       }`}
                     >
                       <div className="flex-1 pr-12">
@@ -822,7 +822,7 @@ export default function SettingsPage() {
                             ✓
                           </div>
                         ) : layout.allowed ? (
-                          <div className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-white/[0.08] bg-white dark:bg-zinc-900" />
+                          <div className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900" />
                         ) : (
                           <div className="text-xs">🔒</div>
                         )}
@@ -837,7 +837,7 @@ export default function SettingsPage() {
             {/* Elite Whitelabel Customization (Dine-In Only) */}
             {form.serviceType !== "quick_service" && (
               <>
-                <div className="border-t border-gray-200 dark:border-white/[0.07] pt-4 space-y-4">
+                <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-4">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 uppercase tracking-wider">
                       Dine-In Elite Whitelabel
@@ -890,7 +890,7 @@ export default function SettingsPage() {
                             className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
                               isSelected
                                 ? "border-brand-600 bg-brand-50/20 shadow-sm"
-                                : "border-gray-200 dark:border-white/[0.07] hover:bg-gray-50 dark:bg-zinc-900/50"
+                                : "border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900/50"
                             }`}
                           >
                             <p className="font-bold text-gray-900 dark:text-zinc-100">{preset.name}</p>
@@ -1072,7 +1072,7 @@ export default function SettingsPage() {
 
             {/* Quick Service Themes */}
             {(form.serviceType === "quick_service" || form.serviceType === "both") && (
-              <div className="border-t border-gray-200 dark:border-white/[0.07] pt-4 space-y-4 mb-8">
+              <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-4 mb-8">
                 <label className="block text-sm font-bold text-gray-800 dark:text-zinc-200 uppercase tracking-wider mb-3 flex items-center gap-2">
                   Quick Service Aesthetic
                   <span className="text-[10px] bg-sky-100 text-sky-600 px-2 py-0.5 rounded-full font-black tracking-normal uppercase">
@@ -1098,7 +1098,7 @@ export default function SettingsPage() {
                         className={`p-3 rounded-xl border text-left text-xs transition-all ${
                           isSelected
                             ? "border-sky-500 bg-sky-50 shadow-sm ring-1 ring-sky-500/20"
-                            : "border-gray-200 dark:border-white/[0.07] hover:bg-gray-50 dark:bg-zinc-900/50"
+                            : "border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:bg-zinc-900/50"
                         }`}
                       >
                         <div className="flex justify-between items-start mb-1">
@@ -1122,7 +1122,7 @@ export default function SettingsPage() {
                         type="color"
                         value={form.customizations?.qsPrimaryColor || "#ea580c"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsPrimaryColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 dark:border-white/[0.07] cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border-gray-200 dark:border-zinc-800 cursor-pointer p-0.5"
                       />
                     </div>
                     <div>
@@ -1131,7 +1131,7 @@ export default function SettingsPage() {
                         type="color"
                         value={form.customizations?.qsBgColor || "#f4f4f0"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsBgColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 dark:border-white/[0.07] cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border-gray-200 dark:border-zinc-800 cursor-pointer p-0.5"
                       />
                     </div>
                     <div>
@@ -1140,7 +1140,7 @@ export default function SettingsPage() {
                         type="color"
                         value={form.customizations?.qsTextColor || "#000000"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsTextColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 dark:border-white/[0.07] cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border-gray-200 dark:border-zinc-800 cursor-pointer p-0.5"
                       />
                     </div>
                     <div>
@@ -1149,7 +1149,7 @@ export default function SettingsPage() {
                         type="color"
                         value={form.customizations?.qsCardBgColor || "#ffffff"}
                         onChange={(e) => setForm({ ...form, customizations: { ...form.customizations, qsCardBgColor: e.target.value } })}
-                        className="w-full h-8 rounded border border-gray-200 dark:border-white/[0.07] cursor-pointer p-0.5"
+                        className="w-full h-8 rounded border border-gray-200 dark:border-zinc-800 cursor-pointer p-0.5"
                       />
                     </div>
                   </div>
@@ -1158,7 +1158,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <div className="border-t border-gray-200 dark:border-white/[0.07] pt-4 space-y-4">
+            <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-4">
               <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 uppercase tracking-wider">Account Security</h3>
               
               <div>
@@ -1334,7 +1334,7 @@ export default function SettingsPage() {
                 </div>
 
                 {form.customizations?.layout === "compact" ? (
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-white/[0.07] divide-y divide-gray-100 dark:divide-zinc-800 overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 divide-y divide-gray-100 dark:divide-zinc-800 overflow-hidden p-1 space-y-0 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                     <div className="p-2 flex items-center justify-between gap-2 bg-transparent">
                       <div className="min-w-0 flex-1">
                         <h6 className="font-extrabold text-[8px] text-gray-950 truncate">Paneer Tikka</h6>
