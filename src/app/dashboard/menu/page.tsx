@@ -500,7 +500,7 @@ export default function MenuPage() {
               type="text"
               value={catName}
               onChange={(e) => setCatName(e.target.value)}
-              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
+              className="input-base h-11 rounded-xl shadow-sm"
               placeholder="e.g. Starters, Main Course"
               required
             />
@@ -534,7 +534,7 @@ export default function MenuPage() {
               type="text"
               value={editCatName}
               onChange={(e) => setEditCatName(e.target.value)}
-              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
+              className="input-base h-11 rounded-xl shadow-sm"
               required
             />
           </div>
@@ -567,7 +567,7 @@ export default function MenuPage() {
               type="text"
               value={itemForm.name}
               onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
+              className="input-base h-11 rounded-xl shadow-sm"
               placeholder="e.g. Paneer Tikka"
               required
             />
@@ -582,7 +582,7 @@ export default function MenuPage() {
                 step="0.01"
                 value={itemForm.price}
                 onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
+                className="input-base h-11 rounded-xl shadow-sm"
                 required
               />
             </div>
@@ -591,7 +591,7 @@ export default function MenuPage() {
               <select
                 value={itemForm.categoryId}
                 onChange={(e) => setItemForm({ ...itemForm, categoryId: e.target.value })}
-                className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 h-11"
+                className="select-base h-11 rounded-xl shadow-sm"
                 required
               >
                 {categories.map((c) => (
@@ -608,7 +608,7 @@ export default function MenuPage() {
             <textarea
               value={itemForm.description}
               onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-              className="w-full rounded-xl border-slate-300 dark:border-zinc-700 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+              className="textarea-base rounded-xl shadow-sm"
               rows={2}
             />
           </div>
