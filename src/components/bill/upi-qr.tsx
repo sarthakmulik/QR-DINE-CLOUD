@@ -9,9 +9,10 @@ interface UpiQrProps {
   hotelName: string;
   amount: number;
   tableNumber: number;
+  logo?: string;
 }
 
-export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrProps) {
+export default function UpiQr({ upiId, hotelName, amount, tableNumber, logo }: UpiQrProps) {
   const [copied, setCopied] = useState(false);
 
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
@@ -38,7 +39,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
         </div>
 
         <div className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-700/80 shadow-inner">
-          <DynamicQRCode url={upiLink} width={176} height={176} />
+          <DynamicQRCode url={upiLink} width={176} height={176} logo={logo} />
         </div>
 
         <div className="space-y-1">
@@ -67,7 +68,7 @@ export default function UpiQr({ upiId, hotelName, amount, tableNumber }: UpiQrPr
       {/* Print-only clean UPI QR Code */}
       <div className="print-only-flex flex-col items-center text-center mt-4 border-t border-dashed border-slate-300 dark:border-zinc-700 pt-4">
         <p className="text-[10px] uppercase font-bold tracking-wider mb-2">Scan to Pay via UPI</p>
-        <DynamicQRCode url={upiLink} width={128} height={128} className="mx-auto" />
+        <DynamicQRCode url={upiLink} width={128} height={128} logo={logo} className="mx-auto" />
         <p className="text-[9px] text-gray-700 mt-2 font-bold font-mono">UPI ID: {upiId}</p>
       </div>
     </>

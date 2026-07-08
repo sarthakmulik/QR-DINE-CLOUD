@@ -166,6 +166,7 @@ export default async function BillPage({
             hotelName={hotel.name}
             amount={Number(session.total)}
             tableNumber={session.table_number ?? 0}
+            logo={hotel.logo || undefined}
           />
         </div>
       )}

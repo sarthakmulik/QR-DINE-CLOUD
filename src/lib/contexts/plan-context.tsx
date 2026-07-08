@@ -9,6 +9,7 @@ interface PlanContextType {
   currentPlan: PlanType;
   serviceType: string;
   hotelId: string;
+  hotelLogo: string | null;
   canAccess: (feature: string) => boolean;
   planLimit: (limit: string) => number | "unlimited";
   loading: boolean;
@@ -33,6 +34,7 @@ export function PlanProvider({
   const [serviceType, setServiceType] = useState<string>(
     initialServiceType || "dine_in"
   );
+  const [hotelLogo, setHotelLogo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
@@ -50,6 +52,9 @@ export function PlanProvider({
           }
           if (data && data.serviceType) {
             setServiceType(data.serviceType);
+          }
+          if (data && data.logo) {
+            setHotelLogo(data.logo);
           }
         }
       } catch (err) {
@@ -129,7 +134,7 @@ export function PlanProvider({
   };
 
   return (
-    <PlanContext.Provider value={{ currentPlan: plan, serviceType, hotelId, canAccess, planLimit, loading }}>
+    <PlanContext.Provider value={{ currentPlan: plan, serviceType, hotelId, hotelLogo, canAccess, planLimit, loading }}>
       {children}
     </PlanContext.Provider>
   );

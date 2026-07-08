@@ -29,7 +29,7 @@ export default function TablesPage() {
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const { currentPlan, planLimit, serviceType, hotelId } = usePlan();
+  const { currentPlan, planLimit, serviceType, hotelId, hotelLogo } = usePlan();
   const maxTables = planLimit("max_tables");
   const totalTables = tables.length;
   const limitReached = typeof maxTables === "number" && totalTables >= maxTables;
@@ -274,7 +274,7 @@ export default function TablesPage() {
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center max-w-lg mx-auto mt-10">
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 dark:border-zinc-800/50 mb-6">
             {genericDineUrl ? (
-              <DynamicQRCode ref={genericQrRef} url={genericDineUrl} width={256} height={256} />
+              <DynamicQRCode ref={genericQrRef} url={genericDineUrl} width={256} height={256} logo={hotelLogo || undefined} />
             ) : (
               <div className="w-64 h-64 flex items-center justify-center text-slate-400">
                 <RefreshCw className="animate-spin" size={32} />
@@ -441,6 +441,7 @@ export default function TablesPage() {
                       url={table.dineUrl}
                       width={128}
                       height={128}
+                      logo={hotelLogo || undefined}
                       className="transition-transform group-hover/qr:scale-105"
                     />
                     <div className="absolute inset-0 bg-white/80 opacity-0 group-hover/qr:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm rounded-lg gap-2">
