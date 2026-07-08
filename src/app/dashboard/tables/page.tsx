@@ -404,11 +404,9 @@ export default function TablesPage() {
                   <h3 className="font-black text-xl text-slate-900 tracking-tight leading-none mt-0.5">
                     {table.tableNumber}
                   </h3>
-                  {table.label !== `Table ${table.tableNumber}` && (
-                    <div className="text-xs text-slate-500 font-medium mt-1 truncate max-w-[120px]" title={table.label}>
-                      {table.label}
-                    </div>
-                  )}
+                  <div className="text-xs text-slate-500 font-medium mt-1 truncate max-w-[120px] h-4" title={table.label}>
+                    {table.label !== `Table ${table.tableNumber}` ? table.label : ""}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
