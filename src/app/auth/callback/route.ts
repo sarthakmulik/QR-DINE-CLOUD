@@ -30,10 +30,10 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/login?error=no_profile`);
         }
 
-        const dest =
-          profile.role === "superadmin"
-            ? "/admin"
-            : sanitizeRedirectPath(redirect);
+        let dest = sanitizeRedirectPath(redirect);
+        if (dest !== "/update-password") {
+          dest = profile.role === "superadmin" ? "/admin" : dest;
+        }
         return NextResponse.redirect(`${origin}${dest}`);
       }
     }

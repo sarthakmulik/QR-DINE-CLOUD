@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 function StaffLoginContent() {
@@ -99,9 +100,14 @@ function StaffLoginContent() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                PIN / Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                  PIN / Password
+                </label>
+                <Link href="/forgot-password" className="text-[11px] font-medium text-brand-500 hover:text-brand-400">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}

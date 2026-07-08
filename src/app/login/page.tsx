@@ -3,22 +3,29 @@
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const err = searchParams.get("error");
+    const msg = searchParams.get("message");
     if (err === "auth") {
       setError("Google sign-in failed. Please try again.");
     } else if (err === "no_profile") {
       setError(
         "Your account has no profile role assigned. Run the super admin SQL in Supabase."
       );
+    }
+    
+    if (msg) {
+      setSuccessMsg(msg);
     }
   }, [searchParams]);
 
@@ -80,6 +87,12 @@ function LoginContent() {
             </div>
           )}
 
+          {successMsg && (
+            <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg text-sm">
+              {successMsg}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
               Email
@@ -97,9 +110,14 @@ function LoginContent() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-sm font-medium text-brand-600 hover:text-brand-500">
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               value={password}
