@@ -23,50 +23,114 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
     const qrCode = useRef<QRCodeStyling | null>(null);
 
     useEffect(() => {
-      if (typeof window !== "undefined" && !qrCode.current) {
-        qrCode.current = new QRCodeStyling({
-          width,
-          height,
-          type: "svg",
-          data: url,
-          image: logo || "/icon.png",
-          dotsOptions: {
-            color: dotsColor,
-            type: "dots"
-          },
-          backgroundOptions: {
-            color: "transparent",
-          },
-          imageOptions: {
-            crossOrigin: "anonymous",
-            margin: 10
-          },
-          cornersSquareOptions: {
-            color: cornersColor,
-            type: "extra-rounded"
-          },
-          cornersDotOptions: {
-            color: cornersColor,
-            type: "dot"
+      if (typeof window === "undefined") return;
+
+      // Safe initialization function
+      const initQr = (finalImage: string) => {
+        if (!qrCode.current) {
+          qrCode.current = new QRCodeStyling({
+            width,
+            height,
+            type: "canvas",
+            data: url,
+            image: finalImage,
+            qrOptions: { errorCorrectionLevel: "H" },
+            dotsOptions: { color: dotsColor, type: "dots" },
+            backgroundOptions: { color: "transparent" },
+            imageOptions: { margin: 8, imageSize: 0.5, crossOrigin: "anonymous" },
+            cornersSquareOptions: { color: cornersColor, type: "extra-rounded" },
+            cornersDotOptions: { color: cornersColor, type: "dot" }
+          });
+          if (qrRef.current) {
+            qrRef.current.innerHTML = "";
+            qrCode.current.append(qrRef.current);
           }
-        });
-
-        if (qrRef.current) {
-          qrRef.current.innerHTML = "";
-          qrCode.current.append(qrRef.current);
+        } else {
+          qrCode.current.update({
+            data: url,
+            width,
+            height,
+            image: finalImage,
+            qrOptions: { errorCorrectionLevel: "H" },
+            dotsOptions: { color: dotsColor, type: "dots" },
+            imageOptions: { margin: 8, imageSize: 0.5, crossOrigin: "anonymous" },
+            cornersSquareOptions: { color: cornersColor, type: "extra-rounded" },
+            cornersDotOptions: { color: cornersColor, type: "dot" }
+          });
+          if (qrRef.current && qrRef.current.innerHTML === "") {
+            qrCode.current.append(qrRef.current);
+          }
         }
-      }
-    }, [url, width, height, logo, dotsColor, cornersColor]);
+      };
 
-    useEffect(() => {
-      if (qrCode.current) {
-        qrCode.current.update({
-          data: url,
-          width,
-          height
-        });
-      }
-    }, [url, width, height]);
+      let isMounted = true;
+      const logoUrl = logo || "/icon.png";
+
+      // 1. Immediately render the safe default QR code to prevent blanking
+      initQr(logoUrl);
+
+      // 2. Asynchronously build and apply the composite logo
+      const applyCompositeLogo = async () => {
+        try {
+          const finalLogo = await new Promise<string>((resolve) => {
+            const img = new Image();
+            if (logoUrl.startsWith("http")) img.crossOrigin = "anonymous";
+            
+            const timer = setTimeout(() => resolve(logoUrl), 3000);
+
+            img.onload = () => {
+              clearTimeout(timer);
+              try {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return resolve(logoUrl);
+
+                const size = 300;
+                const textHeight = 60;
+                canvas.width = size;
+                canvas.height = size + textHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(img, 0, 0, size, size);
+                ctx.restore();
+
+                ctx.font = "bold 32px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = "#000000";
+                ctx.fillText("Powered by QR Dine", size / 2, size + (textHeight / 2));
+
+                resolve(canvas.toDataURL("image/png"));
+              } catch (e) {
+                resolve(logoUrl);
+              }
+            };
+            img.onerror = () => {
+              clearTimeout(timer);
+              resolve(logoUrl);
+            };
+            img.src = logoUrl;
+          });
+
+          if (isMounted && qrCode.current) {
+            qrCode.current.update({ image: finalLogo });
+          }
+        } catch (e) {
+          // Fallback handled
+        }
+      };
+
+      applyCompositeLogo();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [url, width, height, logo, dotsColor, cornersColor]);
 
     useImperativeHandle(ref, () => ({
       download: (filename = "qr-code", extension = "png") => {
