@@ -104,54 +104,58 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
       };
     }, [logo]);
 
-    // 2. Initialize QR Code EXACTLY as before
+    // 2. Initialize QR Code safely when URL is ready
     useEffect(() => {
-      if (typeof window !== "undefined" && !qrCode.current) {
-        qrCode.current = new QRCodeStyling({
-          width,
-          height,
-          type: "svg", // Keep SVG, it is reliable and scalable
-          data: url,
-          image: finalImage,
-          qrOptions: { errorCorrectionLevel: "H" },
-          dotsOptions: {
-            color: dotsColor,
-            type: "dots"
-          },
-          backgroundOptions: {
-            color: "transparent",
-          },
-          imageOptions: {
-            crossOrigin: "anonymous",
-            margin: 4,
-            imageSize: 0.5 // Larger logo
-          },
-          cornersSquareOptions: {
-            color: cornersColor,
-            type: "extra-rounded"
-          },
-          cornersDotOptions: {
-            color: cornersColor,
-            type: "dot"
-          }
-        });
+      if (typeof window === "undefined" || !url || !qrRef.current) return;
 
-        if (qrRef.current) {
+      if (!qrCode.current) {
+        try {
+          qrCode.current = new QRCodeStyling({
+            width,
+            height,
+            type: "svg", // Keep SVG, it is reliable and scalable
+            data: url,
+            image: finalImage,
+            qrOptions: { errorCorrectionLevel: "H" },
+            dotsOptions: {
+              color: dotsColor,
+              type: "dots"
+            },
+            backgroundOptions: {
+              color: "transparent",
+            },
+            imageOptions: {
+              crossOrigin: "anonymous",
+              margin: 4,
+              imageSize: 0.5 // Larger logo
+            },
+            cornersSquareOptions: {
+              color: cornersColor,
+              type: "extra-rounded"
+            },
+            cornersDotOptions: {
+              color: cornersColor,
+              type: "dot"
+            }
+          });
+
           qrRef.current.innerHTML = "";
           qrCode.current.append(qrRef.current);
+        } catch (e) {
+          console.error("Failed to initialize QR code", e);
+          qrCode.current = null;
+        }
+      } else {
+        try {
+          qrCode.current.update({
+            data: url,
+            image: finalImage
+          });
+        } catch (e) {
+          console.error("Failed to update QR code", e);
         }
       }
-    }, [width, height, dotsColor, cornersColor]); // Do NOT recreate on URL/image changes
-
-    // 3. Safely update data and image when they change
-    useEffect(() => {
-      if (qrCode.current) {
-        qrCode.current.update({
-          data: url,
-          image: finalImage
-        });
-      }
-    }, [url, finalImage]);
+    }, [url, finalImage, width, height, dotsColor, cornersColor]); // Run whenever url or finalImage changes
 
     useImperativeHandle(ref, () => ({
       download: (filename = "qr-code", extension = "png") => {
