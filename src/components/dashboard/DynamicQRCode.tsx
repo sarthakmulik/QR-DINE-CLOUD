@@ -17,11 +17,18 @@ interface DynamicQRCodeProps {
   className?: string;
 }
 
+const logoCache = new Map<string, string>();
+
 const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
   ({ url, width = 300, height = 300, logo, dotsColor = "#000000", cornersColor = "#000000", className }, ref) => {
     const qrRef = useRef<HTMLDivElement>(null);
     const qrCode = useRef<QRCodeStyling | null>(null);
-    const [finalImage, setFinalImage] = useState<string>(logo || "/icon.png");
+    
+    // Initialize with cached composite logo if available, for instant rendering
+    const [finalImage, setFinalImage] = useState<string>(() => {
+      const baseLogo = logo || "/icon.png";
+      return logoCache.get(baseLogo) || baseLogo;
+    });
 
     // 1. Asynchronously build the composite logo
     useEffect(() => {
@@ -29,6 +36,11 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
       const logoUrl = logo || "/icon.png";
 
       const applyCompositeLogo = async () => {
+        if (logoCache.has(logoUrl)) {
+          if (isMounted) setFinalImage(logoCache.get(logoUrl)!);
+          return;
+        }
+
         try {
           const generatedLogo = await new Promise<string>((resolve) => {
             const img = new Image();
@@ -88,6 +100,8 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
             };
             img.src = logoUrl;
           });
+
+          logoCache.set(logoUrl, generatedLogo);
 
           if (isMounted) {
             setFinalImage(generatedLogo);
