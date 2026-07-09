@@ -5,11 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(
   req: NextRequest,
-  props: { params: Promise<{ hotelId: string; id: string }> }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const { hotelId, user } = await requireHotelAccess();
-    if (user.role !== "admin") {
+    if (user.role !== "hotel_owner") {
       return NextResponse.json({ error: "Only admins can perform this action" }, { status: 403 });
     }
 

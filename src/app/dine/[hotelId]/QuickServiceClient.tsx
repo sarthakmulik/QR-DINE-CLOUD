@@ -184,7 +184,6 @@ export default function QuickServiceClient({
       }
     }
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotelId, token]);
 
   // Keep the ref in sync with state so the polling callback always sees latest

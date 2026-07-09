@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef, use, useCallback } from "react";
 import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle } from "lucide-react";
 
 interface SessionItem {
@@ -155,13 +155,13 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   };
 
   // Check if a session's items are all marked "ready" or "served"
-  const isSessionComplete = (session: TableSession) => {
+  const isSessionComplete = useCallback((session: TableSession) => {
     if (session.items.length === 0) return false;
     return session.items.every((item) => {
       const status = itemStatus[item.id] || "preparing";
       return status === "ready" || status === "served";
     });
-  };
+  }, [itemStatus]);
 
   // 4. Ghost KDS Vanishing Fix: Dynamically re-evaluate completed sessions.
   // If a session gets new items (e.g. drinks ordered later), it becomes incomplete.

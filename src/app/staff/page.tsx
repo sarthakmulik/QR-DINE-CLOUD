@@ -162,7 +162,7 @@ export default function StaffPanelPage() {
     }
   }
 
-  async function checkAttendance() {
+  const checkAttendance = useCallback(async () => {
     try {
       const res = await authFetch("/api/staff/attendance");
       if (res.ok) {
@@ -175,11 +175,11 @@ export default function StaffPanelPage() {
     } finally {
       setAttendanceLoading(false);
     }
-  }
+  }, [authFetch]);
 
   useEffect(() => {
     checkAttendance();
-  }, []);
+  }, [checkAttendance]);
 
   async function toggleShift() {
     setAttendanceLoading(true);
