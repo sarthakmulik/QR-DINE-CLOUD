@@ -135,7 +135,7 @@ export default function StaffPanelPage() {
             formats: [BarcodeFormat.QrCode]
           });
           
-          if (barcodes.length > 0) {
+          if (barcodes.length > 0 && barcodes[0].rawValue) {
             handleScan(barcodes[0].rawValue);
           }
           return;
