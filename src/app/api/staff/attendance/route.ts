@@ -47,17 +47,13 @@ export async function POST(req: NextRequest) {
     const sb = createAdminClient();
 
     if (action === "clock_in") {
-      // Check if already clocked in
-      const { data: existing } = await sb
+      // FORCEFULLY close any open shifts to prevent double-dipping / race conditions
+      // This prevents 10 duplicate shifts if a user spams the start shift button
+      await sb
         .from("staff_attendance")
-        .select("id")
+        .update({ clock_out: new Date().toISOString() })
         .eq("staff_id", user.id)
-        .is("clock_out", null)
-        .maybeSingle();
-
-      if (existing) {
-        return NextResponse.json({ error: "Already clocked in." }, { status: 400 });
-      }
+        .is("clock_out", null);
 
       const { data, error } = await sb
         .from("staff_attendance")

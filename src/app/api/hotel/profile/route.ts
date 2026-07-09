@@ -206,6 +206,16 @@ export async function PATCH(req: NextRequest) {
         }
         throw error;
       }
+
+      // Auto-Clock-Out Waiters if the hotel is paused/suspended
+      if (updates.status === "paused" || updates.status === "suspended") {
+        await sb
+          .from("staff_attendance")
+          .update({ clock_out: new Date().toISOString() })
+          .eq("hotel_id", hotelId)
+          .is("clock_out", null);
+      }
+
       return NextResponse.json(mapHotel(hotel));
     }
 

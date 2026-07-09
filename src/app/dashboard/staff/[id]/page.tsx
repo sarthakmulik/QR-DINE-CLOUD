@@ -61,6 +61,23 @@ export default function StaffProfilePage({ params }: { params: Promise<{ id: str
     }
   }
 
+  async function handleForceClockOut() {
+    if (!confirm("Are you sure you want to force clock out this staff member?")) return;
+    try {
+      const res = await fetch(`/api/hotel/staff/${staffId}/clock-out`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        alert("Staff member clocked out.");
+        window.location.reload();
+      } else {
+        alert("Failed to clock out.");
+      }
+    } catch {
+      alert("Error clocking out.");
+    }
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Loading profile...</p></div>;
   }
@@ -200,7 +217,17 @@ export default function StaffProfilePage({ params }: { params: Promise<{ id: str
                       {record.clock_out ? (
                         <span className="bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-full text-xs font-semibold">Completed</span>
                       ) : (
-                        <span className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-xs font-semibold flex items-center w-fit gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"/> Active</span>
+                        <div className="flex items-center gap-3">
+                          <span className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-xs font-semibold flex items-center w-fit gap-1.5">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"/> Active
+                          </span>
+                          <button 
+                            onClick={handleForceClockOut}
+                            className="text-[10px] uppercase tracking-wider font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 px-2 py-1 rounded transition"
+                          >
+                            Force Clock Out
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
