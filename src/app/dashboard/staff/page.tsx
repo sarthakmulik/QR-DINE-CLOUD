@@ -173,7 +173,7 @@ export default function StaffPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setShowQrModal(true)} disabled={limitReached || !attendanceQrToken}>
+          <Button variant="secondary" onClick={() => setShowQrModal(true)} disabled={limitReached || !attendanceQrToken}>
             <QrCode className="w-4 h-4 mr-2" /> Clock-In QR
           </Button>
           <Button onClick={openAddModal} disabled={limitReached}>
@@ -390,7 +390,7 @@ export default function StaffPage() {
               QR code unavailable. Please ensure service is active.
             </div>
           )}
-          <Button variant="outline" onClick={() => setShowQrModal(false)}>Close</Button>
+          <Button variant="secondary" onClick={() => setShowQrModal(false)}>Close</Button>
         </div>
       </Modal>
     </div>
