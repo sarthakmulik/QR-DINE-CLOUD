@@ -71,6 +71,11 @@ export default function StaffPanelPage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
 
+  // Attendance State
+  const [isOnShift, setIsOnShift] = useState(false);
+  const [shiftData, setShiftData] = useState<any>(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       setPushSupported(true);
@@ -154,6 +159,47 @@ export default function StaffPanelPage() {
     } catch (err) {
       console.error("Push error:", err);
       alert("Failed to enable push notifications.");
+    }
+  }
+
+  async function checkAttendance() {
+    try {
+      const res = await authFetch("/api/staff/attendance");
+      if (res.ok) {
+        const data = await res.json();
+        setIsOnShift(data.isOnShift);
+        setShiftData(data.activeShift);
+      }
+    } catch (e) {
+      console.error("Attendance check failed", e);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    checkAttendance();
+  }, []);
+
+  async function toggleShift() {
+    setAttendanceLoading(true);
+    try {
+      const action = isOnShift ? "clock_out" : "clock_in";
+      const res = await authFetch("/api/staff/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        await checkAttendance();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update shift status");
+        setAttendanceLoading(false);
+      }
+    } catch (e) {
+      alert("Network error updating shift status");
+      setAttendanceLoading(false);
     }
   }
 
@@ -448,6 +494,38 @@ export default function StaffPanelPage() {
 
       {/* ── Main ── */}
       <main className="flex-1 p-4 space-y-4 max-w-2xl mx-auto w-full pb-8">
+
+        {/* Attendance Banner */}
+        {!attendanceLoading && (
+          <div className={`border rounded-xl p-4 flex items-center justify-between gap-3 ${
+            isOnShift 
+              ? "bg-emerald-500/10 border-emerald-500/20" 
+              : "bg-amber-500/10 border-amber-500/20"
+          }`}>
+            <div>
+              <p className="text-sm font-bold text-white">
+                {isOnShift ? "Active Shift" : "Off Duty"}
+              </p>
+              <p className="text-[12px] text-gray-400 mt-0.5">
+                {isOnShift 
+                  ? `Clocked in at ${new Date(shiftData.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` 
+                  : "Start your shift to begin serving tables."}
+              </p>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={toggleShift} 
+              disabled={attendanceLoading}
+              className={`font-semibold text-xs px-4 flex-shrink-0 ${
+                isOnShift 
+                  ? "bg-amber-600 hover:bg-amber-700 text-white" 
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              }`}
+            >
+              {isOnShift ? "End Shift" : "Start Shift"}
+            </Button>
+          </div>
+        )}
 
         {/* Push Notification Banner */}
         {pushSupported && !pushEnabled && (

@@ -58,13 +58,15 @@ export async function PATCH(
     if (body.password) {
       updates.password_hash = await bcrypt.hash(body.password, 12);
     }
+    if (body.salary_type) updates.salary_type = body.salary_type;
+    if (body.salary_amount !== undefined) updates.salary_amount = Number(body.salary_amount);
 
     const { data: staff, error: staffError } = await sb
       .from("staff")
       .update(updates)
       .eq("id", id)
       .eq("hotel_id", hotelId)
-      .select("id, name, role, email")
+      .select("id, name, role, email, salary_type, salary_amount")
       .single();
 
     if (staffError) {

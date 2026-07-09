@@ -16,7 +16,7 @@ export async function GET() {
 
     const { data: staff, error } = await sb
       .from("staff")
-      .select("id, name, role, email")
+      .select("id, name, role, email, salary_type, salary_amount")
       .eq("hotel_id", hotelId)
       .order("name", { ascending: true });
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     const { hotelId, hotelPlan } = await requireHotelAccess();
     const body = await req.json();
 
-    const { name, role, email, password } = body;
+    const { name, role, email, password, salary_type, salary_amount } = body;
     if (!name || !role || !email || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
@@ -146,8 +146,10 @@ export async function POST(req: NextRequest) {
         role,
         email: String(email).trim().toLowerCase(),
         password_hash: await bcrypt.hash(password, 12),
+        salary_type: salary_type || 'monthly',
+        salary_amount: Number(salary_amount) || 0,
       })
-      .select("id, name, role, email")
+      .select("id, name, role, email, salary_type, salary_amount")
       .single();
 
     if (staffError) {

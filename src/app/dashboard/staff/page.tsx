@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
-import { Plus, Pencil, Trash2, ShieldAlert, UserCheck } from "lucide-react";
+import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight } from "lucide-react";
 
 interface StaffData {
   id: string;
@@ -16,6 +17,8 @@ interface StaffData {
     requestsResolved: number;
     itemsServed: number;
   };
+  salary_type?: 'daily' | 'monthly';
+  salary_amount?: number;
 }
 
 export default function StaffPage() {
@@ -36,6 +39,7 @@ export default function StaffPage() {
     password: "", // password or PIN code
   });
 
+  const router = useRouter();
   const totalStaff = staffList.length;
   const limitReached = typeof maxStaff === "number" && totalStaff >= maxStaff;
 
@@ -219,7 +223,10 @@ export default function StaffPage() {
               ) : (
                 staffList.map((staff) => (
                   <tr key={staff.id} className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">
+                    <td 
+                      className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-brand-600 transition"
+                      onClick={() => router.push(`/dashboard/staff/${staff.id}`)}
+                    >
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs uppercase">
                           {staff.name.substring(0, 2)}
@@ -256,10 +263,16 @@ export default function StaffPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400 dark:text-gray-500">{staff.email}</td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 items-center">
+                        <button
+                          onClick={() => router.push(`/dashboard/staff/${staff.id}`)}
+                          className="px-3 py-1 bg-brand-50 dark:bg-brand-500/10 text-brand-600 text-xs font-semibold rounded-md hover:bg-brand-100 transition mr-2"
+                        >
+                          View Profile
+                        </button>
                         <button
                           onClick={() => openEditModal(staff)}
-                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:text-gray-500 transition"
+                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-400 transition"
                         >
                           <Pencil size={16} />
                         </button>
