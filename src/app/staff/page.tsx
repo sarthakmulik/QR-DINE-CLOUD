@@ -82,13 +82,28 @@ export default function StaffPanelPage() {
   const handleOpenScanner = async () => {
     if (Capacitor.isNativePlatform()) {
       try {
-        const permissions = await Camera.requestPermissions();
-        if (permissions.camera === 'denied' || permissions.camera === 'prompt-with-rationale') {
-          alert("Camera permission is required to scan the QR code. Please enable it in your app settings.");
+        const { BarcodeScanner, BarcodeFormat } = await import('@capacitor-mlkit/barcode-scanning');
+        const isSupported = await BarcodeScanner.isSupported();
+        if (isSupported.supported) {
+          const permissions = await BarcodeScanner.requestPermissions();
+          if (permissions.camera === 'denied' || permissions.camera === 'prompt-with-rationale') {
+            alert("Camera permission is required to scan the QR code. Please enable it in your app settings.");
+            return;
+          }
+          
+          // Use the native Google Barcode Scanner UI
+          const { barcodes } = await BarcodeScanner.scan({
+            formats: [BarcodeFormat.QrCode]
+          });
+          
+          if (barcodes.length > 0) {
+            handleScan(barcodes[0].rawValue);
+          }
           return;
         }
       } catch (e) {
-        console.error("Camera permission request failed", e);
+        console.error("Native barcode scan failed", e);
+        // Fall back to web scanner if native fails
       }
     }
     setShowScanner(true);
