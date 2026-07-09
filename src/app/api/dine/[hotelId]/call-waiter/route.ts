@@ -83,13 +83,18 @@ export async function POST(
     if (error) throw error;
 
     // MUST await this so serverless environments (Vercel) don't kill the Firebase JWT handshake!
-    await sendStaffPushSequential(hotelId, {
+    const assignedStaffId = await sendStaffPushSequential(hotelId, {
       title: `🔔 Table ${parsedTableNum} — Waiter Needed!`,
       body: `Table ${parsedTableNum} is calling for assistance.`,
       tag: `waiter-${hotelId}-${parsedTableNum}`,
       url: "/staff",
       channelId: "waiter_alerts"
     });
+
+    if (assignedStaffId) {
+      await sb.from("waiter_requests").update({ assigned_staff_id: assignedStaffId }).eq("id", request.id);
+      request.assigned_staff_id = assignedStaffId;
+    }
 
     // Background Escalation Matrix
     // Because Next.js `next start` is a persistent Node process, we can safely use setTimeout.
@@ -101,9 +106,12 @@ export async function POST(
         const checkSb = createAdminClient();
         const { data: check } = await checkSb.from("waiter_requests").select("status").eq("id", requestId).single();
         if (check && check.status === "pending") {
+          // Unassign the request so anyone can take it
+          await checkSb.from("waiter_requests").update({ assigned_staff_id: null }).eq("id", requestId);
+          
           sendStaffPush(hotelId, {
             title: `⚠️ ESCALATION: Table ${parsedTableNum}`,
-            body: `Table ${parsedTableNum} has been waiting for 3 minutes!`,
+            body: `Table ${parsedTableNum} has been waiting for 3 minutes! Any waiter respond!`,
             tag: `waiter-${hotelId}-${parsedTableNum}`,
             url: "/staff",
             channelId: "waiter_alerts"

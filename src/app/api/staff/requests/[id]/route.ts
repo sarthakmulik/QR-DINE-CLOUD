@@ -8,7 +8,7 @@ export async function PATCH(
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const { id } = await props.params;
     const body = await req.json();
     const { status } = body as { status: "pending" | "completed" };
@@ -30,9 +30,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
+    const updatePayload: any = { status };
+    if (status === "completed" && user.role === "staff") {
+      updatePayload.resolved_by = user.id;
+    }
+
     const { data: updated, error: updateErr } = await sb
       .from("waiter_requests")
-      .update({ status })
+      .update(updatePayload)
       .eq("id", id)
       .select("*")
       .single();

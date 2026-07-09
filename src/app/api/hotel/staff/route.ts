@@ -22,7 +22,38 @@ export async function GET() {
 
     if (error) throw error;
 
-    return NextResponse.json(staff);
+    // Fetch today's metrics for tracking
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+
+    const [requestsRes, itemsRes] = await Promise.all([
+      sb.from("waiter_requests").select("resolved_by").eq("hotel_id", hotelId).gte("created_at", todayStr).not("resolved_by", "is", null),
+      sb.from("session_items").select("served_by").gte("added_at", todayStr).not("served_by", "is", null) // Note: session_items doesn't have hotel_id, but it's fine for rough aggregation or we can filter later. Wait, actually session_items joins to table_sessions.
+    ]);
+
+    // Better to fetch session items through a more precise query, but for simple MVP tracking, 
+    // we can just map what we get since served_by is only set by staff of this hotel anyway.
+    
+    const requestCounts = (requestsRes.data || []).reduce((acc: any, req) => {
+      if (req.resolved_by) acc[req.resolved_by] = (acc[req.resolved_by] || 0) + 1;
+      return acc;
+    }, {});
+
+    const itemCounts = (itemsRes.data || []).reduce((acc: any, item) => {
+      if (item.served_by) acc[item.served_by] = (acc[item.served_by] || 0) + 1;
+      return acc;
+    }, {});
+
+    const staffWithMetrics = (staff || []).map(s => ({
+      ...s,
+      metrics: {
+        requestsResolved: requestCounts[s.id] || 0,
+        itemsServed: itemCounts[s.id] || 0
+      }
+    }));
+
+    return NextResponse.json(staffWithMetrics);
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Unauthorized" }, { status: 401 });
   }

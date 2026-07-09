@@ -12,6 +12,10 @@ interface StaffData {
   name: string;
   role: "admin" | "kds" | "waiter";
   email: string;
+  metrics?: {
+    requestsResolved: number;
+    itemsServed: number;
+  };
 }
 
 export default function StaffPage() {
@@ -186,6 +190,7 @@ export default function StaffPage() {
               <tr>
                 <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Role</th>
+                <th className="px-6 py-3">Today's Perf.</th>
                 <th className="px-6 py-3">Login Email</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
@@ -234,6 +239,20 @@ export default function StaffPage() {
                       >
                         {staff.role}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {staff.role === "waiter" && staff.metrics ? (
+                        <div className="flex gap-2">
+                          <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md font-medium border border-green-200">
+                            {staff.metrics.itemsServed} Served
+                          </span>
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium border border-blue-200">
+                            {staff.metrics.requestsResolved} Resolved
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm italic">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400 dark:text-gray-500">{staff.email}</td>
                     <td className="px-6 py-4 text-right">

@@ -7,7 +7,7 @@ export async function PATCH(
   props: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const { itemId } = await props.params;
 
     const sb = createAdminClient();
@@ -28,10 +28,15 @@ export async function PATCH(
       return NextResponse.json({ error: "Access Denied" }, { status: 403 });
     }
 
+    const updatePayload: any = { status: "served" };
+    if (user.role === "staff") {
+      updatePayload.served_by = user.id;
+    }
+
     // Update status to served
     const { error: updateError } = await sb
       .from("session_items")
-      .update({ status: "served" })
+      .update(updatePayload)
       .eq("id", itemId);
 
     if (updateError) throw updateError;

@@ -13,14 +13,21 @@ if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
 /** Fire push notifications to all subscribed staff for this hotel — non-blocking */
 export async function sendStaffPush(
   hotelId: string,
-  payloadData: { title: string; body: string; tag: string; url: string; channelId?: string }
+  payloadData: { title: string; body: string; tag: string; url: string; channelId?: string },
+  assignedStaffId?: string
 ) {
   try {
     const sb = createAdminClient();
-    const { data: subscriptions } = await sb
+    let query = sb
       .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
+      .select("endpoint, p256dh, auth, staff_id")
       .eq("hotel_id", hotelId);
+      
+    if (assignedStaffId) {
+      query = query.eq("staff_id", assignedStaffId);
+    }
+
+    const { data: subscriptions } = await query;
 
     if (!subscriptions || subscriptions.length === 0) return;
 
@@ -73,16 +80,16 @@ export async function sendStaffPush(
 export async function sendStaffPushSequential(
   hotelId: string,
   payloadData: { title: string; body: string; tag: string; url: string; channelId?: string }
-) {
+): Promise<string | null> {
   try {
     const sb = createAdminClient();
     let { data: subscriptions } = await sb
       .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
+      .select("endpoint, p256dh, auth, staff_id")
       .eq("hotel_id", hotelId)
       .order("endpoint", { ascending: true }); // Ensure stable ordering
 
-    if (!subscriptions || subscriptions.length === 0) return;
+    if (!subscriptions || subscriptions.length === 0) return null;
 
     // EXCLUSIVE ANDROID ROUTING: 
     // To completely prevent "Ghost" Web Browsers from swallowing round-robin notifications,
@@ -152,15 +159,17 @@ export async function sendStaffPushSequential(
       }
 
       if (success) {
-        console.log(`[Push] Successfully routed to index ${currentIndex}`);
-        break; // Stop routing! One waiter received the call.
+        console.log(`[Push] Successfully routed to index ${currentIndex} (Staff: ${sub.staff_id})`);
+        return sub.staff_id || null;
       }
 
       // If it failed (e.g. ghost/dead subscription), try the next waiter in line
       attempts++;
       currentIndex = (currentIndex + 1) % subscriptions.length;
     }
+    return null;
   } catch (err) {
     console.error("Sequential push notification dispatch failed:", err);
+    return null;
   }
 }

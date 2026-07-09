@@ -98,6 +98,7 @@ export interface TableSession {
   customer_count: number;
   coupon_code: string | null;
   discount_percent: number;
+  assigned_staff_id?: string | null;
 }
 
 export interface SessionItem {
@@ -109,6 +110,17 @@ export interface SessionItem {
   quantity: number;
   added_at: string;
   status: "preparing" | "ready" | "served";
+  served_by?: string | null;
+}
+
+export interface WaiterRequest {
+  id: string;
+  hotel_id: string;
+  table_number: number;
+  status: "pending" | "completed";
+  created_at: string;
+  assigned_staff_id?: string | null;
+  resolved_by?: string | null;
 }
 
 export interface MenuCategory {
@@ -209,6 +221,7 @@ export function mapSessionItem(i: any) {
     quantity: i.quantity,
     addedAt: i.added_at,
     status: i.status || "preparing",
+    servedBy: i.served_by ?? null,
   };
 }
 
@@ -237,6 +250,7 @@ export function mapTableSession(
     customerCount: s.customer_count,
     couponCode: s.coupon_code ?? null,
     discountPercent: Number(s.discount_percent || 0),
+    assignedStaffId: s.assigned_staff_id ?? null,
     items: items.map(mapSessionItem),
     hotel: hotel ? mapHotel(hotel) : undefined,
     table: table

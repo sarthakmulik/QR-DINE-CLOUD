@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // POST /api/staff/push-subscribe — Save a push subscription for this hotel
 export async function POST(req: NextRequest) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const body = await req.json();
     const { endpoint, keys, fcmToken } = body;
 
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     const { error } = await sb.from("push_subscriptions").upsert(
       {
         hotel_id: hotelId,
+        staff_id: user.role === "staff" ? user.id : null,
         endpoint: fcmToken || endpoint,
         p256dh: fcmToken ? 'fcm' : keys.p256dh,
         auth: fcmToken ? 'fcm' : keys.auth,
