@@ -155,6 +155,14 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
       }
       updates.status = status;
+
+      if (status === "active" && currentHotel.status === "paused") {
+        // Regenerate token on resume
+        updates.attendance_qr_token = crypto.randomUUID();
+      } else if (status === "paused") {
+        // Invalidate token on pause
+        updates.attendance_qr_token = null;
+      }
     }
 
     if (body.secureQr !== undefined) {

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
-import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode } from "lucide-react";
+import DynamicQRCode from "@/components/dashboard/DynamicQRCode";
+import { useHotel } from "@/lib/contexts/hotel-context";
 
 interface StaffData {
   id: string;
@@ -23,11 +25,13 @@ interface StaffData {
 
 export default function StaffPage() {
   const { currentPlan, canAccess, planLimit } = usePlan();
+  const { hotel } = useHotel();
   const hasAccess = canAccess("staff_management");
   const maxStaff = planLimit("max_staff");
 
   const [staffList, setStaffList] = useState<StaffData[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -170,9 +174,14 @@ export default function StaffPage() {
             </span>
           </p>
         </div>
-        <Button onClick={openAddModal} disabled={limitReached}>
-          <Plus className="w-4 h-4 mr-1" /> Add Staff Member
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => setShowQrModal(true)} disabled={limitReached || !hotel?.attendanceQrToken}>
+            <QrCode className="w-4 h-4 mr-2" /> Clock-In QR
+          </Button>
+          <Button onClick={openAddModal} disabled={limitReached}>
+            <Plus className="w-4 h-4 mr-1" /> Add Staff Member
+          </Button>
+        </div>
       </div>
 
       {limitReached && (
@@ -358,6 +367,33 @@ export default function StaffPage() {
             {saving ? "Saving..." : editingStaff ? "Update Staff" : "Create Staff"}
           </Button>
         </form>
+      </Modal>
+
+      <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)} title="Staff Clock-In QR">
+        <div className="flex flex-col items-center justify-center p-6 space-y-4">
+          <p className="text-center text-sm text-gray-500">
+            Staff can scan this QR code using the Waiter App to clock in.
+            <br />
+            This code changes automatically when service is paused and resumed.
+          </p>
+          {hotel?.attendanceQrToken ? (
+            <div className="p-4 bg-white rounded-xl shadow-sm border">
+              <DynamicQRCode
+                url={JSON.stringify({ hotelId: hotel.id, token: hotel.attendanceQrToken })}
+                width={250}
+                height={250}
+                logo={hotel.logo || undefined}
+                cornersColor="#000000"
+                dotsColor="#000000"
+              />
+            </div>
+          ) : (
+            <div className="p-6 text-center text-red-500 bg-red-50 rounded-lg">
+              QR code unavailable. Please ensure service is active.
+            </div>
+          )}
+          <Button variant="outline" onClick={() => setShowQrModal(false)}>Close</Button>
+        </div>
       </Modal>
     </div>
   );

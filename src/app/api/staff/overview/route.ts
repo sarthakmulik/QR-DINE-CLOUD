@@ -15,7 +15,7 @@ export async function GET() {
     const [hotelRes, tablesRes, sessionsRes, requestsRes] = await Promise.all([
       sb
         .from("hotels")
-        .select("name, plan")
+        .select("name, plan, status")
         .eq("id", hotelId)
         .single(),
       sb
@@ -41,6 +41,11 @@ export async function GET() {
     }
 
     const hotel = hotelRes.data;
+
+    if (hotel.status === "paused" || hotel.status === "suspended") {
+      return NextResponse.json({ error: "Service Paused", code: "SERVICE_PAUSED" }, { status: 403 });
+    }
+
     if (hotel.plan.toLowerCase() === "basic") {
       return NextResponse.json({ error: "Staff dashboard is not available on Basic plan." }, { status: 403 });
     }

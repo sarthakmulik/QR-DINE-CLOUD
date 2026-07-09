@@ -12,6 +12,21 @@ export async function GET() {
 
     const sb = createAdminClient();
 
+    // Check hotel status first
+    const { data: hotel, error: hotelError } = await sb
+      .from("hotels")
+      .select("status")
+      .eq("id", hotelId)
+      .single();
+
+    if (hotelError || !hotel) {
+      return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
+    }
+
+    if (hotel.status === "paused" || hotel.status === "suspended") {
+      return NextResponse.json({ error: "Service Paused", code: "SERVICE_PAUSED" }, { status: 403 });
+    }
+
     // Check for an active (open) shift
     const { data: attendance, error } = await sb
       .from("staff_attendance")
@@ -42,11 +57,30 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action } = body as { action: "clock_in" | "clock_out" };
+    const { action, qr_token } = body as { action: "clock_in" | "clock_out", qr_token?: string };
 
     const sb = createAdminClient();
 
+    // Check hotel status and token
+    const { data: hotel, error: hotelError } = await sb
+      .from("hotels")
+      .select("status, attendance_qr_token")
+      .eq("id", hotelId)
+      .single();
+
+    if (hotelError || !hotel) {
+      return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
+    }
+
+    if (hotel.status === "paused" || hotel.status === "suspended") {
+      return NextResponse.json({ error: "Service Paused", code: "SERVICE_PAUSED" }, { status: 403 });
+    }
+
     if (action === "clock_in") {
+      if (!qr_token || qr_token !== hotel.attendance_qr_token) {
+        return NextResponse.json({ error: "Invalid or expired QR code" }, { status: 400 });
+      }
+
       // FORCEFULLY close any open shifts to prevent double-dipping / race conditions
       // This prevents 10 duplicate shifts if a user spams the start shift button
       await sb

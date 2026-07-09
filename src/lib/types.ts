@@ -38,6 +38,7 @@ export interface Hotel {
   upi_id: string | null;
   secure_qr?: boolean | null;
   quick_service_token?: string | null;
+  attendance_qr_token?: string | null;
   customizations?: {
     theme?: string;
     qsTheme?: string;
@@ -202,6 +203,7 @@ export function mapHotel(h: Hotel) {
     welcomeAnimationEnabled: h.welcome_animation_enabled ?? true,
     welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
     quickServiceToken: h.quick_service_token ?? null,
+    attendanceQrToken: h.attendance_qr_token ?? null,
     customizations,
     paymentSettings: h.payment_settings ? {
       active_pg: h.payment_settings.active_pg || "none",

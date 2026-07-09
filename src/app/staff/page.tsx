@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import QrScanner from "@/components/staff/QrScanner";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,8 @@ export default function StaffPanelPage() {
   const [isOnShift, setIsOnShift] = useState(false);
   const [shiftData, setShiftData] = useState<any>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(true);
+  const [showScanner, setShowScanner] = useState(false);
+  const [servicePaused, setServicePaused] = useState(false);
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -169,6 +172,12 @@ export default function StaffPanelPage() {
         const data = await res.json();
         setIsOnShift(data.isOnShift);
         setShiftData(data.activeShift);
+        setServicePaused(false);
+      } else {
+        const data = await res.json();
+        if (data.code === "SERVICE_PAUSED") {
+          setServicePaused(true);
+        }
       }
     } catch (e) {
       console.error("Attendance check failed", e);
@@ -495,37 +504,50 @@ export default function StaffPanelPage() {
       {/* ── Main ── */}
       <main className="flex-1 p-4 space-y-4 max-w-2xl mx-auto w-full pb-8">
 
-        {/* Attendance Banner */}
-        {!attendanceLoading && (
-          <div className={`border rounded-xl p-4 flex items-center justify-between gap-3 ${
-            isOnShift 
-              ? "bg-emerald-500/10 border-emerald-500/20" 
-              : "bg-amber-500/10 border-amber-500/20"
-          }`}>
-            <div>
-              <p className="text-sm font-bold text-white">
-                {isOnShift ? "Active Shift" : "Off Duty"}
-              </p>
-              <p className="text-[12px] text-gray-400 mt-0.5">
-                {isOnShift 
-                  ? `Clocked in at ${new Date(shiftData.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` 
-                  : "Start your shift to begin serving tables."}
-              </p>
+        {/* Service Paused Lockout */}
+        {servicePaused ? (
+          <div className="flex flex-col items-center justify-center p-8 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-center">
+            <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mb-4">
+              <ShieldAlert className="w-8 h-8 text-amber-500" />
             </div>
-            <Button 
-              size="sm" 
-              onClick={toggleShift} 
-              disabled={attendanceLoading}
-              className={`font-semibold text-xs px-4 flex-shrink-0 ${
-                isOnShift 
-                  ? "bg-amber-600 hover:bg-amber-700 text-white" 
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
-              }`}
-            >
-              {isOnShift ? "End Shift" : "Start Shift"}
-            </Button>
+            <h2 className="text-xl font-bold text-white mb-2">Service Paused</h2>
+            <p className="text-sm text-gray-400">
+              The hotel service has been paused by the admin. Staff access and clock-ins are currently disabled.
+            </p>
           </div>
-        )}
+        ) : (
+          <>
+            {/* Attendance Banner */}
+            {!attendanceLoading && (
+              <div className={`border rounded-xl p-4 flex items-center justify-between gap-3 ${
+                isOnShift 
+                  ? "bg-emerald-500/10 border-emerald-500/20" 
+                  : "bg-amber-500/10 border-amber-500/20"
+              }`}>
+                <div>
+                  <p className="text-sm font-bold text-white">
+                    {isOnShift ? "Active Shift" : "Off Duty"}
+                  </p>
+                  <p className="text-[12px] text-gray-400 mt-0.5">
+                    {isOnShift 
+                      ? `Clocked in at ${new Date(shiftData.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` 
+                      : "Scan your hotel's QR code to begin serving tables."}
+                  </p>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={isOnShift ? toggleShift : () => setShowScanner(true)} 
+                  disabled={attendanceLoading}
+                  className={`font-semibold text-xs px-4 flex-shrink-0 ${
+                    isOnShift 
+                      ? "bg-amber-600 hover:bg-amber-700 text-white" 
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  }`}
+                >
+                  {isOnShift ? "End Shift" : <><QrCode className="w-4 h-4 mr-1.5" /> Scan to Clock In</>}
+                </Button>
+              </div>
+            )}
 
         {/* ── Shift Content ── */}
         {isOnShift ? (
@@ -862,6 +884,51 @@ export default function StaffPanelPage() {
           </div>
         )}
       </Modal>
+
+      {/* ── QR Scanner Modal ── */}
+      {showScanner && (
+        <QrScanner
+          onScan={async (decodedText) => {
+            setShowScanner(false);
+            setAttendanceLoading(true);
+            try {
+              let payload;
+              try {
+                payload = JSON.parse(decodedText);
+              } catch {
+                alert("Invalid QR Code format.");
+                setAttendanceLoading(false);
+                return;
+              }
+
+              if (!payload.token) {
+                alert("Invalid clock-in QR code.");
+                setAttendanceLoading(false);
+                return;
+              }
+
+              const res = await authFetch("/api/staff/attendance", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "clock_in", qr_token: payload.token }),
+              });
+              
+              if (res.ok) {
+                await checkAttendance();
+              } else {
+                const err = await res.json();
+                alert(err.error || "Failed to clock in");
+                setAttendanceLoading(false);
+              }
+            } catch (e) {
+              console.error(e);
+              alert("Network error.");
+              setAttendanceLoading(false);
+            }
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 }
