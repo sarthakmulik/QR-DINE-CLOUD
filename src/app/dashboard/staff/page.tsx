@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
-import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode } from "lucide-react";
 import DynamicQRCode from "@/components/dashboard/DynamicQRCode";
 
 interface StaffData {
@@ -173,11 +173,6 @@ export default function StaffPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <a href="/downloads/qrdine-staff.apk" download>
-            <Button variant="secondary">
-              <Download className="w-4 h-4 mr-2" /> Download APK
-            </Button>
-          </a>
           <Button variant="secondary" onClick={() => setShowQrModal(true)} disabled={limitReached || !attendanceQrToken}>
             <QrCode className="w-4 h-4 mr-2" /> Clock-In QR
           </Button>
