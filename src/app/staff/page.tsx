@@ -408,13 +408,23 @@ export default function StaffPanelPage() {
   const loadData = useCallback(async () => {
     try {
       const res = await authFetch("/api/staff/overview");
-      if (res.status === 401 || res.status === 403) {
-        // Session expired or locked
+      if (res.status === 401) {
+        router.push("/staff/login");
+        return;
+      }
+      if (res.status === 403) {
+        const err = await res.json();
+        if (err.code === "SERVICE_PAUSED") {
+          setServicePaused(true);
+          setLoading(false);
+          return;
+        }
         router.push("/staff/login");
         return;
       }
       if (res.ok) {
         const data = await res.json();
+        setServicePaused(false);
         setHotelName(data.hotelName);
         setPlan(data.plan);
         setTables(data.tables);
