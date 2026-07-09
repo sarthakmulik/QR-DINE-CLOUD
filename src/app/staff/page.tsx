@@ -79,6 +79,45 @@ export default function StaffPanelPage() {
   const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
 
+  const handleScan = async (decodedText: string) => {
+    setShowScanner(false);
+    setAttendanceLoading(true);
+    try {
+      let payload;
+      try {
+        payload = JSON.parse(decodedText);
+      } catch {
+        alert("Invalid QR Code format.");
+        setAttendanceLoading(false);
+        return;
+      }
+
+      if (!payload.token) {
+        alert("Invalid clock-in QR code.");
+        setAttendanceLoading(false);
+        return;
+      }
+
+      const res = await authFetch("/api/staff/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clock_in", qr_token: payload.token }),
+      });
+      
+      if (res.ok) {
+        await checkAttendance();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to clock in");
+        setAttendanceLoading(false);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Network error.");
+      setAttendanceLoading(false);
+    }
+  };
+
   const handleOpenScanner = async () => {
     if (Capacitor.isNativePlatform()) {
       try {
@@ -921,44 +960,7 @@ export default function StaffPanelPage() {
       {/* ── QR Scanner Modal ── */}
       {showScanner && (
         <QrScanner
-          onScan={async (decodedText) => {
-            setShowScanner(false);
-            setAttendanceLoading(true);
-            try {
-              let payload;
-              try {
-                payload = JSON.parse(decodedText);
-              } catch {
-                alert("Invalid QR Code format.");
-                setAttendanceLoading(false);
-                return;
-              }
-
-              if (!payload.token) {
-                alert("Invalid clock-in QR code.");
-                setAttendanceLoading(false);
-                return;
-              }
-
-              const res = await authFetch("/api/staff/attendance", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "clock_in", qr_token: payload.token }),
-              });
-              
-              if (res.ok) {
-                await checkAttendance();
-              } else {
-                const err = await res.json();
-                alert(err.error || "Failed to clock in");
-                setAttendanceLoading(false);
-              }
-            } catch (e) {
-              console.error(e);
-              alert("Network error.");
-              setAttendanceLoading(false);
-            }
-          }}
+          onScan={handleScan}
           onClose={() => setShowScanner(false)}
         />
       )}
