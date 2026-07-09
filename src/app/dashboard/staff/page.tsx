@@ -8,7 +8,6 @@ import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode } from "lucide-react";
 import DynamicQRCode from "@/components/dashboard/DynamicQRCode";
-import { useHotel } from "@/lib/contexts/hotel-context";
 
 interface StaffData {
   id: string;
@@ -24,8 +23,7 @@ interface StaffData {
 }
 
 export default function StaffPage() {
-  const { currentPlan, canAccess, planLimit } = usePlan();
-  const { hotel } = useHotel();
+  const { currentPlan, canAccess, planLimit, attendanceQrToken, hotelId, hotelLogo } = usePlan();
   const hasAccess = canAccess("staff_management");
   const maxStaff = planLimit("max_staff");
 
@@ -175,7 +173,7 @@ export default function StaffPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setShowQrModal(true)} disabled={limitReached || !hotel?.attendanceQrToken}>
+          <Button variant="outline" onClick={() => setShowQrModal(true)} disabled={limitReached || !attendanceQrToken}>
             <QrCode className="w-4 h-4 mr-2" /> Clock-In QR
           </Button>
           <Button onClick={openAddModal} disabled={limitReached}>
@@ -376,13 +374,13 @@ export default function StaffPage() {
             <br />
             This code changes automatically when service is paused and resumed.
           </p>
-          {hotel?.attendanceQrToken ? (
+          {attendanceQrToken ? (
             <div className="p-4 bg-white rounded-xl shadow-sm border">
               <DynamicQRCode
-                url={JSON.stringify({ hotelId: hotel.id, token: hotel.attendanceQrToken })}
+                url={JSON.stringify({ hotelId: hotelId, token: attendanceQrToken })}
                 width={250}
                 height={250}
-                logo={hotel.logo || undefined}
+                logo={hotelLogo || undefined}
                 cornersColor="#000000"
                 dotsColor="#000000"
               />

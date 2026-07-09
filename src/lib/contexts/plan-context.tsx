@@ -10,6 +10,7 @@ interface PlanContextType {
   serviceType: string;
   hotelId: string;
   hotelLogo: string | null;
+  attendanceQrToken: string | null;
   canAccess: (feature: string) => boolean;
   planLimit: (limit: string) => number | "unlimited";
   loading: boolean;
@@ -35,6 +36,7 @@ export function PlanProvider({
     initialServiceType || "dine_in"
   );
   const [hotelLogo, setHotelLogo] = useState<string | null>(null);
+  const [attendanceQrToken, setAttendanceQrToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
@@ -55,6 +57,9 @@ export function PlanProvider({
           }
           if (data && data.logo) {
             setHotelLogo(data.logo);
+          }
+          if (data && data.attendanceQrToken) {
+            setAttendanceQrToken(data.attendanceQrToken);
           }
         }
       } catch (err) {
@@ -83,6 +88,9 @@ export function PlanProvider({
           }
           if (payload.new && payload.new.service_type) {
             setServiceType(payload.new.service_type);
+          }
+          if (payload.new && payload.new.attendance_qr_token !== undefined) {
+            setAttendanceQrToken(payload.new.attendance_qr_token);
           }
         }
       )
@@ -134,7 +142,7 @@ export function PlanProvider({
   };
 
   return (
-    <PlanContext.Provider value={{ currentPlan: plan, serviceType, hotelId, hotelLogo, canAccess, planLimit, loading }}>
+    <PlanContext.Provider value={{ currentPlan: plan, serviceType, hotelId, hotelLogo, attendanceQrToken, canAccess, planLimit, loading }}>
       {children}
     </PlanContext.Provider>
   );

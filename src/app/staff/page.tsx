@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
-import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search } from "lucide-react";
+import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search, ShieldAlert, QrCode } from "lucide-react";
 
 interface TableItem {
   id: string;
@@ -45,12 +45,12 @@ interface WaiterRequest {
 export default function StaffPanelPage() {
   const router = useRouter();
 
-  const authFetch = async (url: string, options: RequestInit = {}) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("staff_token") : null;
-    const headers = { ...options.headers } as any;
-    if (token) headers["x-staff-id"] = token;
+  const authFetch = useCallback((url: string, options: RequestInit = {}) => {
+    const token = localStorage.getItem("waiter_token");
+    const headers = new Headers(options.headers || {});
+    if (token) headers.set("x-staff-id", token);
     return fetch(url, { ...options, headers });
-  };
+  }, []);
 
   const [tables, setTables] = useState<TableData[]>([]);
   const [waiterRequests, setWaiterRequests] = useState<WaiterRequest[]>([]);
@@ -706,6 +706,8 @@ export default function StaffPanelPage() {
             </p>
           </div>
         )}
+        </>
+      )}
       </main>
 
       {/* ── Table Details Modal ── */}
