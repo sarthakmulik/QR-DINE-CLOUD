@@ -367,7 +367,7 @@ export default function StaffPage() {
         </form>
       </Modal>
 
-      <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)} title="Staff Clock-In QR">
+      <Modal open={showQrModal} onClose={() => setShowQrModal(false)} title="Staff Clock-In QR">
         <div className="flex flex-col items-center justify-center p-6 space-y-4">
           <p className="text-center text-sm text-gray-500">
             Staff can scan this QR code using the Waiter App to clock in.
