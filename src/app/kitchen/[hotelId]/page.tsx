@@ -75,8 +75,11 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
 
     function fetchOrders() {
       const token = sessionStorage.getItem(`kitchen_token_${hotelId}`) || "";
-      fetch(`/api/kitchen/${hotelId}/orders`, {
-        headers: { "x-kitchen-token": token }
+      fetch(`/api/kitchen/${hotelId}/orders?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "x-kitchen-token": token,
+        },
       })
         .then((res) => {
           if (res.status === 401 || res.status === 403) {
@@ -92,10 +95,17 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             const next = { ...prev };
             data.forEach((session) => {
               session.items.forEach((item) => {
-                if (item.status === "served") {
-                  next[item.id] = "served";
-                } else if (!next[item.id]) {
-                  next[item.id] = item.status || "preparing";
+                const serverStatus = item.status || "preparing";
+                const localStatus = next[item.id];
+
+                if (!localStatus) {
+                  next[item.id] = serverStatus;
+                } else {
+                  if (serverStatus === "served") {
+                    next[item.id] = "served";
+                  } else if (serverStatus === "ready" && localStatus === "preparing") {
+                    next[item.id] = "ready";
+                  }
                 }
               });
             });
