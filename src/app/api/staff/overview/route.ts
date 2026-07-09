@@ -6,107 +6,101 @@ import type { RestaurantTable, TableSession, SessionItem } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 import { getTableStatus } from "@/lib/session-service";
 
+import { unstable_cache } from "next/cache";
+
+// We need a wrapper to pass dynamic tags properly
+const getOverviewForHotel = (hotelId: string) => {
+  return unstable_cache(
+    async () => {
+      const sb = createAdminClient();
+
+      const [hotelRes, tablesRes, sessionsRes, requestsRes] = await Promise.all([
+        sb.from("hotels").select("name, plan, status").eq("id", hotelId).single(),
+        sb.from("restaurant_tables").select("*").eq("hotel_id", hotelId).order("table_number", { ascending: true }),
+        sb.from("table_sessions").select("*").eq("hotel_id", hotelId).neq("status", "closed"),
+        sb.from("waiter_requests").select("*").eq("hotel_id", hotelId).eq("status", "pending").order("created_at", { ascending: true }),
+      ]);
+
+      if (hotelRes.error || !hotelRes.data) throw new Error("Hotel not found");
+
+      const hotel = hotelRes.data;
+      if (hotel.status === "paused" || hotel.status === "suspended") throw new Error("SERVICE_PAUSED");
+      if (hotel.plan.toLowerCase() === "basic") throw new Error("BASIC_PLAN");
+
+      const tables = (tablesRes.data || []) as RestaurantTable[];
+      const sessions = (sessionsRes.data || []) as TableSession[];
+      const waiterRequests = requestsRes.data || [];
+
+      const activeSessionIds = sessions.map((s) => s.id);
+      let allItems: SessionItem[] = [];
+      if (activeSessionIds.length > 0) {
+        const { data: itemsRes } = await sb
+          .from("session_items")
+          .select("*")
+          .in("session_id", activeSessionIds)
+          .order("added_at", { ascending: true });
+        allItems = (itemsRes || []) as SessionItem[];
+      }
+
+      const itemsBySessionId: Record<string, SessionItem[]> = {};
+      for (const item of allItems) {
+        if (!itemsBySessionId[item.session_id]) itemsBySessionId[item.session_id] = [];
+        itemsBySessionId[item.session_id].push(item);
+      }
+
+      const sessionsMap: Record<string, TableSession> = {};
+      for (const session of sessions) sessionsMap[session.id] = session;
+
+      const enrichedTables = tables.map((table) => {
+        let currentSession = null;
+        if (table.current_session_id) {
+          const session = sessionsMap[table.current_session_id];
+          if (session) {
+            const sessionItems = itemsBySessionId[session.id] || [];
+            currentSession = mapTableSession(session, sessionItems);
+          }
+        }
+        return {
+          id: table.id,
+          tableNumber: table.table_number,
+          label: table.label,
+          currentSessionId: table.current_session_id,
+          currentSession,
+          status: getTableStatus(currentSession),
+        };
+      });
+
+      return {
+        hotelName: hotel.name,
+        plan: hotel.plan,
+        tables: enrichedTables,
+        waiterRequests: waiterRequests,
+      };
+    },
+    [`staff-overview-${hotelId}`],
+    { tags: [`staff-overview-${hotelId}`], revalidate: 3600 }
+  )();
+};
+
 export async function GET() {
   try {
     const { hotelId } = await requireHotelAccess();
-    const sb = createAdminClient();
-
-    // 1. Fetch hotel, tables, active sessions, and waiter requests in parallel
-    const [hotelRes, tablesRes, sessionsRes, requestsRes] = await Promise.all([
-      sb
-        .from("hotels")
-        .select("name, plan, status")
-        .eq("id", hotelId)
-        .single(),
-      sb
-        .from("restaurant_tables")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .order("table_number", { ascending: true }),
-      sb
-        .from("table_sessions")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .neq("status", "closed"),
-      sb
-        .from("waiter_requests")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .eq("status", "pending")
-        .order("created_at", { ascending: true }),
-    ]);
-
-    if (hotelRes.error || !hotelRes.data) {
-      return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
-    }
-
-    const hotel = hotelRes.data;
-
-    if (hotel.status === "paused" || hotel.status === "suspended") {
-      return NextResponse.json({ error: "Service Paused", code: "SERVICE_PAUSED" }, { status: 403 });
-    }
-
-    if (hotel.plan.toLowerCase() === "basic") {
-      return NextResponse.json({ error: "Staff dashboard is not available on Basic plan." }, { status: 403 });
-    }
-
-    const tables = (tablesRes.data || []) as RestaurantTable[];
-    const sessions = (sessionsRes.data || []) as TableSession[];
-    const waiterRequests = requestsRes.data || [];
-
-    // 2. Fetch all session items in a single query
-    const activeSessionIds = sessions.map((s) => s.id);
-    let allItems: SessionItem[] = [];
-    if (activeSessionIds.length > 0) {
-      const { data: itemsRes } = await sb
-        .from("session_items")
-        .select("*")
-        .in("session_id", activeSessionIds)
-        .order("added_at", { ascending: true });
-      allItems = (itemsRes || []) as SessionItem[];
-    }
-
-    // 3. Map sessions and items in memory
-    const itemsBySessionId: Record<string, SessionItem[]> = {};
-    for (const item of allItems) {
-      if (!itemsBySessionId[item.session_id]) {
-        itemsBySessionId[item.session_id] = [];
+    
+    try {
+      const data = await getOverviewForHotel(hotelId);
+      return NextResponse.json(data);
+    } catch (err: any) {
+      if (err.message === "SERVICE_PAUSED") {
+        return NextResponse.json({ error: "Service Paused", code: "SERVICE_PAUSED" }, { status: 403 });
       }
-      itemsBySessionId[item.session_id].push(item);
-    }
-
-    const sessionsMap: Record<string, TableSession> = {};
-    for (const session of sessions) {
-      sessionsMap[session.id] = session;
-    }
-
-    const enrichedTables = tables.map((table) => {
-      let currentSession = null;
-
-      if (table.current_session_id) {
-        const session = sessionsMap[table.current_session_id];
-        if (session) {
-          const sessionItems = itemsBySessionId[session.id] || [];
-          currentSession = mapTableSession(session, sessionItems);
-        }
+      if (err.message === "BASIC_PLAN") {
+        return NextResponse.json({ error: "Staff dashboard is not available on Basic plan." }, { status: 403 });
       }
-
-      return {
-        id: table.id,
-        tableNumber: table.table_number,
-        label: table.label,
-        currentSessionId: table.current_session_id,
-        currentSession,
-        status: getTableStatus(currentSession),
-      };
-    });
-
-    return NextResponse.json({
-      hotelName: hotel.name,
-      plan: hotel.plan,
-      tables: enrichedTables,
-      waiterRequests: waiterRequests,
-    });
+      if (err.message === "Hotel not found") {
+        return NextResponse.json({ error: "Hotel not found" }, { status: 404 });
+      }
+      throw err;
+    }
   } catch (err: any) {
     console.error("Staff overview load error:", err);
     return NextResponse.json({ error: err.message || "Unauthorized" }, { status: 401 });

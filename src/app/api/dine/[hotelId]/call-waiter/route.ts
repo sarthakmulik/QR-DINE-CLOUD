@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTableSignature } from "@/lib/crypto";
 import { sendStaffPushSequential, sendStaffPush } from "@/lib/push";
+import { revalidateTag } from "next/cache";
 
 const lastWaiterCalls = new Map<string, number>();
 
@@ -140,6 +141,8 @@ export async function POST(
         // silent fail for background task
       }
     }, 5 * 60 * 1000);
+
+    revalidateTag(`staff-overview-${hotelId}`);
 
     return NextResponse.json(request);
   } catch (err: any) {

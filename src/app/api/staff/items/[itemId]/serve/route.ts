@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidateTag } from "next/cache";
 
 export async function PATCH(
   req: NextRequest,
@@ -43,6 +44,9 @@ export async function PATCH(
 
     // We do not transition the session status here.
     // Dine-in sessions remain 'open' until the waiter or customer explicitly initiates checkout.
+
+    revalidateTag(`staff-overview-${hotelId}`);
+    revalidateTag(`kitchen-orders-${hotelId}`);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

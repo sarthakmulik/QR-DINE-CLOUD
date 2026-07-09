@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateQuickServiceSession, confirmQuickServiceOrder } from "@/lib/session-service";
+import { revalidateTag } from "next/cache";
 
 // ─── Simple in-process rate limiter for order creation ───────────────────────
 // Keyed by "ip:hotelId" → { count, windowStart }
@@ -141,6 +142,9 @@ export async function POST(
 
     // 3. Confirm the order (generates order_number and sets status to payment_pending)
     const finalSession = await confirmQuickServiceOrder(session.id, paymentMethod);
+
+    revalidateTag(`kitchen-orders-${hotelId}`);
+    revalidateTag(`staff-overview-${hotelId}`);
 
     return NextResponse.json({ session: finalSession });
   } catch (err: any) {

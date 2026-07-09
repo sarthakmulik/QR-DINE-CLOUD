@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
-import webpush from "web-push";
+import { revalidateTag } from "next/cache";
 
 // Removed local webpush configuration since we will use centralized push logic
 
@@ -127,6 +127,9 @@ export async function PATCH(
         }
       }
     }
+
+    revalidateTag(`kitchen-orders-${hotelId}`);
+    revalidateTag(`staff-overview-${hotelId}`);
 
     return NextResponse.json(updated);
   } catch (err: any) {

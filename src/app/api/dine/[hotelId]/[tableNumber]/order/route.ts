@@ -6,6 +6,7 @@ import { mapTableSession } from "@/lib/types";
 import { verifyTableSignature } from "@/lib/crypto";
 import { sendStaffPush, sendStaffPushSequential } from "@/lib/push";
 import crypto from "crypto";
+import { revalidateTag } from "next/cache";
 
 const lastOrderHash = new Map<string, { hash: string; timestamp: number }>();
 
@@ -188,6 +189,9 @@ export async function POST(
           url: `/staff/${hotelId}?tab=orders`
         });
       }
+
+      revalidateTag(`staff-overview-${hotelId}`);
+      revalidateTag(`kitchen-orders-${hotelId}`);
 
       return NextResponse.json(lastResult);
     }

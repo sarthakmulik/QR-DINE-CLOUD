@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TableSession } from "@/lib/types";
+import { revalidateTag } from "next/cache";
 
 /**
  * POST /api/hotel/sessions/[id]/cancel
@@ -43,6 +44,9 @@ export async function POST(
       .eq("id", id)
       .select("*")
       .single<TableSession>();
+
+    revalidateTag(`staff-overview-${hotelId}`);
+    revalidateTag(`kitchen-orders-${hotelId}`);
 
     return NextResponse.json({
       success: true,

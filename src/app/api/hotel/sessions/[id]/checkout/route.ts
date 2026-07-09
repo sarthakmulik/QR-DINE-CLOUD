@@ -3,6 +3,7 @@ import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { initiateCheckout } from "@/lib/session-service";
 import type { TableSession } from "@/lib/types";
+import { revalidateTag } from "next/cache";
 
 export async function POST(
   _req: NextRequest,
@@ -24,6 +25,10 @@ export async function POST(
     }
 
     const updated = await initiateCheckout(id, session);
+
+    revalidateTag(`staff-overview-${hotelId}`);
+    revalidateTag(`kitchen-orders-${hotelId}`);
+
     return NextResponse.json(updated);
   } catch (e) {
     return NextResponse.json(

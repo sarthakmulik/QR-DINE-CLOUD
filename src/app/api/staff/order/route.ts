@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidateTag } from "next/cache";
 
 export async function POST(req: NextRequest) {
   try {
@@ -70,6 +71,9 @@ export async function POST(req: NextRequest) {
         })
         .eq("id", sessionId);
     }
+
+    revalidateTag(`staff-overview-${hotelId}`);
+    revalidateTag(`kitchen-orders-${hotelId}`);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
+import { revalidateTag } from "next/cache";
 
 export async function POST(
   req: NextRequest,
@@ -62,6 +63,9 @@ export async function POST(
     if (updateErr) {
       throw new Error(updateErr.message);
     }
+    
+    revalidateTag(`kitchen-orders-${hotelId}`);
+    revalidateTag(`staff-overview-${hotelId}`);
     
     return NextResponse.json({ success: true });
   } catch (err: any) {
