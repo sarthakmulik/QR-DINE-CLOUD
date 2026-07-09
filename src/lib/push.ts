@@ -27,9 +27,21 @@ export async function sendStaffPush(
       query = query.eq("staff_id", assignedStaffId);
     }
 
-    const { data: subscriptions } = await query;
+    let { data: subscriptions } = await query;
 
     if (!subscriptions || subscriptions.length === 0) return;
+
+    // Filter by active attendance
+    const { data: activeShifts } = await sb
+      .from("staff_attendance")
+      .select("staff_id")
+      .eq("hotel_id", hotelId)
+      .is("clock_out", null);
+
+    const activeStaffIds = new Set((activeShifts || []).map(s => s.staff_id));
+    subscriptions = subscriptions.filter(sub => activeStaffIds.has(sub.staff_id));
+
+    if (subscriptions.length === 0) return;
 
     const webPayload = JSON.stringify(payloadData);
 
@@ -90,6 +102,18 @@ export async function sendStaffPushSequential(
       .order("endpoint", { ascending: true }); // Ensure stable ordering
 
     if (!subscriptions || subscriptions.length === 0) return null;
+
+    // Filter by active attendance
+    const { data: activeShifts } = await sb
+      .from("staff_attendance")
+      .select("staff_id")
+      .eq("hotel_id", hotelId)
+      .is("clock_out", null);
+
+    const activeStaffIds = new Set((activeShifts || []).map(s => s.staff_id));
+    subscriptions = subscriptions.filter(sub => activeStaffIds.has(sub.staff_id));
+
+    if (subscriptions.length === 0) return null;
 
     // EXCLUSIVE ANDROID ROUTING: 
     // To completely prevent "Ghost" Web Browsers from swallowing round-robin notifications,

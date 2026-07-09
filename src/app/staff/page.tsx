@@ -527,25 +527,28 @@ export default function StaffPanelPage() {
           </div>
         )}
 
-        {/* Push Notification Banner */}
-        {pushSupported && !pushEnabled && (
-          <div className="bg-brand-600/10 border border-brand-500/20 rounded-xl p-3.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-brand-600/15 rounded-lg flex items-center justify-center text-brand-400 flex-shrink-0">
-                <BellRing size={18} />
+        {/* ── Shift Content ── */}
+        {isOnShift ? (
+          <>
+            {/* Push Notification Banner */}
+            {pushSupported && !pushEnabled && (
+              <div className="bg-brand-600/10 border border-brand-500/20 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-brand-600/15 rounded-lg flex items-center justify-center text-brand-400 flex-shrink-0">
+                    <BellRing size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white leading-tight">Enable Notifications</p>
+                    <p className="text-[12px] text-gray-400 mt-0.5">Get real-time alerts for table calls and orders.</p>
+                  </div>
+                </div>
+                <Button size="sm" onClick={handleEnablePush} className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 flex-shrink-0">
+                  Enable
+                </Button>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white leading-tight">Enable Notifications</p>
-                <p className="text-[12px] text-gray-400 mt-0.5">Get real-time alerts for table calls and orders.</p>
-              </div>
-            </div>
-            <Button size="sm" onClick={handleEnablePush} className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 flex-shrink-0">
-              Enable
-            </Button>
-          </div>
-        )}
+            )}
 
-        {/* Waiter Calls Section */}
+            {/* Waiter Calls Section */}
         {pendingRequests.length > 0 && (
           <div className="bg-red-500/[0.08] border border-red-500/20 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
@@ -671,6 +674,16 @@ export default function StaffPanelPage() {
             )}
           </div>
         </div>
+          </>
+        ) : (
+          <div className="bg-[#111113] border border-white/[0.06] rounded-xl p-10 flex flex-col items-center justify-center text-center space-y-3 opacity-80">
+            <User size={48} className="text-gray-600 mb-2" />
+            <p className="text-lg font-bold text-white">You are off duty</p>
+            <p className="text-sm text-gray-400 max-w-[250px]">
+              Please start your shift to view active orders, table statuses, and receive notifications.
+            </p>
+          </div>
+        )}
       </main>
 
       {/* ── Table Details Modal ── */}
