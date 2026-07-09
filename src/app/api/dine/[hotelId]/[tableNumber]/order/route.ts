@@ -4,7 +4,7 @@ import { getOrCreateOpenSession, addItemToSession } from "@/lib/session-service"
 import type { Hotel, MenuItem, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 import { verifyTableSignature } from "@/lib/crypto";
-import { sendStaffPush } from "@/lib/push";
+import { sendStaffPush, sendStaffPushSequential } from "@/lib/push";
 import crypto from "crypto";
 
 const lastOrderHash = new Map<string, { hash: string; timestamp: number }>();
@@ -177,11 +177,11 @@ export async function POST(
     }
 
     if (lastResult) {
-      // Background: If any drinks were ordered, send a direct push to all waiters immediately
+      // Background: If any drinks were ordered, send a direct push to one waiter in a round-robin
       if (hasDrinks) {
         const drinkListString = orderedDrinks.join(", ");
         // MUST await this so serverless environments don't kill the Firebase JWT handshake!
-        await sendStaffPush(hotelId, {
+        await sendStaffPushSequential(hotelId, {
           title: "New Drink Order 🥤",
           body: `Table ${tableNumber} ordered: ${drinkListString}`,
           tag: `drink-${session.id}`,

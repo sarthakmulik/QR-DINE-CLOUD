@@ -3,14 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
 import webpush from "web-push";
 
-// Configure web-push with VAPID keys if available
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    "mailto:support@qrdine.app",
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
-}
+// Removed local webpush configuration since we will use centralized push logic
 
 export async function PATCH(
   req: NextRequest,
@@ -115,69 +108,22 @@ export async function PATCH(
         }
       }
 
-      // Send Push Notification to Waiters
-      const { data: sessionDataObj } = await sb
-        .from("table_sessions")
-        .select("table_number")
-        .eq("id", item.session_id)
-        .single();
+      // Send Push Notification to Waiters only when it is 'ready'
+      if (status === "ready") {
+        const { data: sessionDataObj } = await sb
+          .from("table_sessions")
+          .select("table_number")
+          .eq("id", item.session_id)
+          .single();
 
-      if (sessionDataObj?.table_number) {
-        // Get staff push subscriptions for this hotel
-        const { data: subs } = await sb
-          .from("push_subscriptions")
-          .select("*")
-          .eq("hotel_id", hotelId);
-
-        if (subs && subs.length > 0) {
-          const payloadTitle = `Order ${status === "ready" ? "Ready" : "Served"}`;
-          const payloadBody = `Table ${sessionDataObj.table_number} — ${updated.name} is ${status}!`;
-
-          // Await so Vercel doesn't kill the serverless function prematurely
-          await Promise.allSettled(
-            subs.map(async (sub) => {
-              if (sub.p256dh === "fcm") {
-                try {
-                  const { messaging } = await import("@/lib/firebase");
-                  return await messaging.send({
-                    token: sub.endpoint,
-                    notification: {
-                      title: payloadTitle,
-                      body: payloadBody,
-                    },
-                    android: {
-                      priority: "high",
-                      notification: {
-                        icon: "ic_launcher_round",
-                        sound: "default",
-                        channelId: "waiter_alerts"
-                      }
-                    }
-                  });
-                } catch (err: any) {
-                  if (err?.code === 'messaging/registration-token-not-registered') {
-                    sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
-                  }
-                }
-              } else if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-                return await webpush.sendNotification(
-                  {
-                    endpoint: sub.endpoint,
-                    keys: { p256dh: sub.p256dh, auth: sub.auth },
-                  },
-                  JSON.stringify({
-                    title: payloadTitle,
-                    body: payloadBody,
-                    icon: "/logo.png"
-                  })
-                ).catch((err: any) => {
-                  if (err.statusCode === 404 || err.statusCode === 410) {
-                    sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
-                  }
-                });
-              }
-            })
-          ).catch((err) => console.error("Push notification error:", err));
+        if (sessionDataObj?.table_number) {
+          const { sendStaffPushSequential } = await import("@/lib/push");
+          await sendStaffPushSequential(hotelId, {
+            title: "Order Ready 🍽️",
+            body: `Table ${sessionDataObj.table_number} — ${updated.name} is ready for pickup!`,
+            tag: `ready-${item.id}`,
+            url: `/staff/${hotelId}?tab=orders`
+          });
         }
       }
     }

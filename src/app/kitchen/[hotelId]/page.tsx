@@ -92,7 +92,9 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             const next = { ...prev };
             data.forEach((session) => {
               session.items.forEach((item) => {
-                if (!next[item.id]) {
+                if (item.status === "served") {
+                  next[item.id] = "served";
+                } else if (!next[item.id]) {
                   next[item.id] = item.status || "preparing";
                 }
               });
