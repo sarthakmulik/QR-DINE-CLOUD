@@ -190,7 +190,7 @@ export default function StaffPage() {
               <tr>
                 <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Role</th>
-                <th className="px-6 py-3">Today's Perf.</th>
+                <th className="px-6 py-3">Today&apos;s Perf.</th>
                 <th className="px-6 py-3">Login Email</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
