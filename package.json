@@ -12,6 +12,7 @@
     "db:setup": "tsx --env-file=.env scripts/apply-schema.ts && tsx --env-file=.env scripts/seed-supabase.ts"
   },
   "dependencies": {
+    "@capacitor/camera": "^8.2.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/push-notifications": "^8.1.1",
     "@supabase/ssr": "^0.6.1",

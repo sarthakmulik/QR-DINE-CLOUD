@@ -10,6 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search, ShieldAlert, QrCode } from "lucide-react";
+import { Camera } from "@capacitor/camera";
 
 interface TableItem {
   id: string;
@@ -77,6 +78,21 @@ export default function StaffPanelPage() {
   const [shiftData, setShiftData] = useState<any>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
+
+  const handleOpenScanner = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const permissions = await Camera.requestPermissions();
+        if (permissions.camera === 'denied' || permissions.camera === 'prompt-with-rationale') {
+          alert("Camera permission is required to scan the QR code. Please enable it in your app settings.");
+          return;
+        }
+      } catch (e) {
+        console.error("Camera permission request failed", e);
+      }
+    }
+    setShowScanner(true);
+  };
   const [servicePaused, setServicePaused] = useState(false);
 
   useEffect(() => {
@@ -536,7 +552,7 @@ export default function StaffPanelPage() {
                 </div>
                 <Button 
                   size="sm" 
-                  onClick={isOnShift ? toggleShift : () => setShowScanner(true)} 
+                  onClick={isOnShift ? toggleShift : handleOpenScanner} 
                   disabled={attendanceLoading}
                   className={`font-semibold text-xs px-4 flex-shrink-0 ${
                     isOnShift 
