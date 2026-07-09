@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
@@ -132,3 +133,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
   }
 }
+

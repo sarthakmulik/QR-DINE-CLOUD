@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -31,3 +32,4 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch status" }, { status: 500 });
   }
 }
+
