@@ -38,8 +38,9 @@ export async function sendStaffPush(
       .eq("hotel_id", hotelId)
       .is("clock_out", null);
 
+    // Filter by active attendance: Admins/Unlinked devices (!staff_id) pass. Waiters must be clocked in.
     const activeStaffIds = new Set((activeShifts || []).map(s => s.staff_id));
-    subscriptions = subscriptions.filter(sub => activeStaffIds.has(sub.staff_id));
+    subscriptions = subscriptions.filter(sub => !sub.staff_id || activeStaffIds.has(sub.staff_id));
 
     if (subscriptions.length === 0) return;
 
@@ -110,8 +111,9 @@ export async function sendStaffPushSequential(
       .eq("hotel_id", hotelId)
       .is("clock_out", null);
 
+    // Filter by active attendance: Admins/Unlinked devices (!staff_id) pass. Waiters must be clocked in.
     const activeStaffIds = new Set((activeShifts || []).map(s => s.staff_id));
-    subscriptions = subscriptions.filter(sub => activeStaffIds.has(sub.staff_id));
+    subscriptions = subscriptions.filter(sub => !sub.staff_id || activeStaffIds.has(sub.staff_id));
 
     if (subscriptions.length === 0) return null;
 

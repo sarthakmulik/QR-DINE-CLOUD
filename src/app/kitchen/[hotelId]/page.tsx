@@ -165,17 +165,24 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
 
   // 4. Ghost KDS Vanishing Fix: Dynamically re-evaluate completed sessions.
   // If a session gets new items (e.g. drinks ordered later), it becomes incomplete.
-  // This hook ensures it is immediately wiped from completedSessions so it reappears.
+  // If a session is marked served on another device, it syncs here and becomes complete.
   useEffect(() => {
     setCompletedSessions((prev) => {
       let changed = false;
       const next = { ...prev };
       
       sessions.forEach((session) => {
-        if (!isSessionComplete(session)) {
+        const isComplete = isSessionComplete(session);
+        if (!isComplete) {
           // It's incomplete! If it was previously marked complete, wipe it.
           if (next[session.id]) {
             delete next[session.id];
+            changed = true;
+          }
+        } else {
+          // It's complete! If it isn't in our completed map yet, add it so it clears out.
+          if (!next[session.id]) {
+            next[session.id] = Date.now();
             changed = true;
           }
         }
