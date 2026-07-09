@@ -6,7 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'www',
   server: {
     url: 'https://qr-dine-cloud.vercel.app',
-    cleartext: true
+    cleartext: true,
+    allowNavigation: ['qr-dine-cloud.vercel.app']
   },
   android: {
     webContentsDebuggingEnabled: false,
