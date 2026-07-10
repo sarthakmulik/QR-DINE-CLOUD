@@ -792,7 +792,7 @@ export default function DineClient({
     if (data.session?.id) {
       sessionStorage.setItem(`last_session_id_${hotelId}_${tableNumber}`, data.session.id);
       sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
-      localStorage.setItem(`table_last_active_${hotelId}_${tableNumber}`, Date.now().toString());
+      sessionStorage.setItem(`table_last_active_${hotelId}_${tableNumber}`, Date.now().toString());
     } else {
       const isTerminated = sessionStorage.getItem(`session_terminated_${hotelId}_${tableNumber}`);
       if (isTerminated === "true") {
@@ -843,7 +843,7 @@ export default function DineClient({
 
     // Security: Prevent fake orders from minimized tabs restoring hours later
     if (!data.session?.id) {
-      const lastActiveStr = localStorage.getItem(`table_last_active_${hotelId}_${tableNumber}`);
+      const lastActiveStr = sessionStorage.getItem(`table_last_active_${hotelId}_${tableNumber}`);
       if (lastActiveStr) {
         const diff = Date.now() - parseInt(lastActiveStr);
         if (diff < 12 * 60 * 60 * 1000) {
@@ -852,7 +852,7 @@ export default function DineClient({
           return;
         } else {
           // Expired, allow fresh start
-          localStorage.removeItem(`table_last_active_${hotelId}_${tableNumber}`);
+          sessionStorage.removeItem(`table_last_active_${hotelId}_${tableNumber}`);
         }
       }
     }
