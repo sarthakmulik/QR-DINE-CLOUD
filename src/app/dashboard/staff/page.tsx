@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
-import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode } from "lucide-react";
+import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode, User } from "lucide-react";
 import DynamicQRCode from "@/components/dashboard/DynamicQRCode";
 
 interface StaffData {
@@ -194,8 +194,9 @@ export default function StaffPage() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-[#18181b] rounded-xl border dark:border-zinc-800 overflow-hidden">
-        <div className="overflow-x-auto">
+    <div className="bg-white dark:bg-[#18181b] rounded-xl border dark:border-zinc-800 overflow-hidden">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 dark:bg-white/[0.04] border-b dark:border-zinc-800 text-gray-600 dark:text-gray-400 dark:text-gray-500 font-medium">
               <tr>
@@ -229,7 +230,7 @@ export default function StaffPage() {
                 ))
               ) : (
                 staffList.map((staff) => (
-                  <tr key={staff.id} className="hover:bg-gray-50/50">
+                  <tr key={staff.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02]">
                     <td 
                       className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-brand-600 transition"
                       onClick={() => router.push(`/dashboard/staff/${staff.id}`)}
@@ -303,6 +304,76 @@ export default function StaffPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-gray-100 dark:divide-zinc-800/50">
+          {isSkeletons ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="p-4 space-y-3 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/[0.06]" />
+                  <div className="h-4 bg-gray-200 dark:bg-white/[0.06] rounded w-32" />
+                </div>
+                <div className="h-3 bg-gray-200 dark:bg-white/[0.06] rounded w-20" />
+                <div className="flex justify-between">
+                  <div className="h-8 bg-gray-200 dark:bg-white/[0.06] rounded w-20" />
+                  <div className="h-8 bg-gray-200 dark:bg-white/[0.06] rounded w-20" />
+                </div>
+              </div>
+            ))
+          ) : staffList.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No staff members found.</div>
+          ) : (
+            staffList.map((staff) => (
+              <div key={`mob-${staff.id}`} className="p-4 space-y-4">
+                <div 
+                  className="flex justify-between items-start cursor-pointer"
+                  onClick={() => router.push(`/dashboard/staff/${staff.id}`)}
+                >
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm uppercase flex-shrink-0 mt-0.5">
+                      {staff.name.substring(0, 2)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900 dark:text-gray-100 text-base">{staff.name}</div>
+                      <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5"><User size={12}/> {staff.email}</div>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                    staff.role === "admin" ? "bg-purple-100 text-purple-700" :
+                    staff.role === "kds" ? "bg-blue-100 text-blue-700" :
+                    "bg-amber-100 text-amber-700"
+                  }`}>
+                    {staff.role}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-zinc-900/50 p-2 rounded-lg text-center">
+                  <div className="p-1">
+                    <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Served</div>
+                    <div className="font-bold text-green-600 dark:text-green-500">{staff.metrics?.itemsServed || 0} items</div>
+                  </div>
+                  <div className="p-1 border-l border-gray-200 dark:border-zinc-800">
+                    <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Requests</div>
+                    <div className="font-bold text-blue-600 dark:text-blue-500">{staff.metrics?.requestsResolved || 0} resolved</div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <Button variant="secondary" size="sm" className="h-8 text-xs flex-1" onClick={() => openEditModal(staff)}>
+                    <Pencil className="w-3 h-3 mr-1.5" /> Edit
+                  </Button>
+                  <Button variant="danger" size="sm" className="h-8 text-xs flex-1" onClick={() => handleDelete(staff.id)}>
+                    <Trash2 className="w-3 h-3 mr-1.5" /> Delete
+                  </Button>
+                  <Button variant="secondary" size="sm" className="h-8 w-8 px-0" onClick={() => router.push(`/dashboard/staff/${staff.id}`)}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

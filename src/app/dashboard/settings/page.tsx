@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Plus, Trash2, HelpCircle } from "lucide-react";
 import { compressImage } from "@/lib/image";
-import { QSPreview } from "@/components/dashboard/QSPreview";
+import dynamic from "next/dynamic";
+const QSPreview = dynamic(() => import("@/components/dashboard/QSPreview").then(mod => mod.QSPreview), { 
+  ssr: false, 
+  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-zinc-800/50 rounded-[2.5rem] w-full max-w-[340px] aspect-[9/19.5] mx-auto border-8 border-gray-200 dark:border-zinc-800" /> 
+});
 import { usePlan } from "@/lib/contexts/plan-context";
 import { themePresets, qsThemePresets, generateBrandColors } from "@/lib/theme";
 import { WelcomeAnimationSettings } from "@/components/admin/WelcomeAnimationSettings";
