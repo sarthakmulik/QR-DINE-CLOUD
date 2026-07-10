@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { Clock, RefreshCw, ChefHat, ScrollText, AlertCircle } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Session {
   id: string;
@@ -18,100 +21,74 @@ interface Session {
 }
 
 export default function LiveOrdersPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [fetchError, setFetchError] = useState(false);
+  const { data: sessions = [], mutate, error, isValidating } = useSWR<Session[]>("/api/hotel/sessions", fetcher, {
+    refreshInterval: 15000,
+    revalidateOnFocus: true,
+  });
+
+  const loading = !error && sessions.length === 0 && isValidating;
+  const isRefreshing = isValidating;
+  const fetchError = !!error;
 
   async function load(isManual = false) {
-    if (isManual) setIsRefreshing(true);
-    setFetchError(false);
-    try {
-      const res = await fetch("/api/hotel/sessions", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(data);
-        sessionStorage.setItem("admin_live_orders", JSON.stringify(data));
-      } else {
-        setFetchError(true);
-      }
-    } catch {
-      setFetchError(true);
-    } finally {
-      if (isManual) setIsRefreshing(false);
-      setLoading(false);
+    if (isManual) {
+      await mutate();
     }
   }
 
   async function handleConfirmPayment(sessionId: string) {
+    // Optimistic Update
+    mutate(prev => prev?.map(s => s.id === sessionId ? { ...s, status: "open" } : s), false);
     try {
-      const res = await fetch(`/api/hotel/sessions/${sessionId}/confirm-payment`, {
-        method: "POST"
-      });
-      if (res.ok) {
-        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: "open" } : s));
-      }
+      await fetch(`/api/hotel/sessions/${sessionId}/confirm-payment`, { method: "POST" });
+      mutate();
     } catch (err) {
+      mutate(); // rollback
       console.error(err);
     }
   }
 
   async function handleMarkReady(sessionId: string) {
+    // Optimistic Update
+    mutate(prev => prev?.map(s => s.id === sessionId ? { ...s, status: "ready_for_pickup" } : s), false);
     try {
-      const res = await fetch(`/api/hotel/sessions/${sessionId}/ready`, { method: "POST" });
-      if (res.ok) {
-        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: "ready_for_pickup" } : s));
-      }
+      await fetch(`/api/hotel/sessions/${sessionId}/ready`, { method: "POST" });
+      mutate();
     } catch (err) {
+      mutate(); // rollback
       console.error(err);
     }
   }
 
   async function handleMarkCollected(sessionId: string) {
+    // Optimistic Update
+    mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
-      const res = await fetch(`/api/hotel/sessions/${sessionId}/force-close`, {
+      await fetch(`/api/hotel/sessions/${sessionId}/force-close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: "Collected by customer" })
       });
-      if (res.ok) {
-        setSessions(prev => prev.filter(s => s.id !== sessionId));
-      }
+      mutate();
     } catch (err) {
+      mutate(); // rollback
       console.error(err);
     }
   }
 
   async function handleCancelOrder(sessionId: string) {
     if (!confirm("Are you sure you want to cancel this unpaid order?")) return;
+    // Optimistic Update
+    mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
       const res = await fetch(`/api/hotel/sessions/${sessionId}/cancel`, { method: "POST" });
-      if (res.ok) {
-        setSessions(prev => prev.filter(s => s.id !== sessionId));
-      } else {
-        alert("Failed to cancel order.");
-      }
+      if (!res.ok) alert("Failed to cancel order.");
+      mutate();
     } catch (err) {
+      mutate(); // rollback
       console.error(err);
     }
   }
-
-  useEffect(() => {
-    const cached = sessionStorage.getItem("admin_live_orders");
-    if (cached) {
-      try {
-        setSessions(JSON.parse(cached));
-        setLoading(false);
-      } catch {
-        // ignore parse errors
-      }
-    }
-
-    load();
-    // Optimised polling: 15s reduces DB load by ~66% vs 5s
-    const interval = setInterval(load, 15000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="space-y-6 animate-page-entrance">

@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatINR } from "@/lib/utils";
 import { Plus, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { compressImage } from "@/lib/image";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface MenuItem {
   id: string;
@@ -30,7 +33,11 @@ interface Category {
 }
 
 export default function MenuPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { data: categories = [], mutate, error, isValidating } = useSWR<Category[]>("/api/hotel/menu/categories", fetcher, {
+    refreshInterval: 60000,
+    revalidateOnFocus: true,
+  });
+
   const [showCatModal, setShowCatModal] = useState(false);
   const [showEditCatModal, setShowEditCatModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
@@ -61,25 +68,8 @@ export default function MenuPage() {
   const limitReached = typeof maxItems === "number" && totalItems >= maxItems;
 
   async function loadMenu() {
-    const res = await fetch("/api/hotel/menu/categories", { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      setCategories(data);
-      sessionStorage.setItem("admin_menu_categories", JSON.stringify(data));
-    }
+    await mutate();
   }
-
-  useEffect(() => {
-    const cached = sessionStorage.getItem("admin_menu_categories");
-    if (cached) {
-      try {
-        setCategories(JSON.parse(cached));
-      } catch (e) {
-        console.error("Failed to parse cached menu categories", e);
-      }
-    }
-    loadMenu();
-  }, []);
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
@@ -240,18 +230,43 @@ export default function MenuPage() {
   }
 
   async function toggleAvailable(item: MenuItem) {
-    await fetch(`/api/hotel/menu/items/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isAvailable: !item.isAvailable }),
-    });
-    loadMenu();
+    // Optimistic Update
+    mutate(
+      categories.map(cat => ({
+        ...cat,
+        items: cat.items.map(i => i.id === item.id ? { ...i, isAvailable: !i.isAvailable } : i)
+      })),
+      false
+    );
+    try {
+      await fetch(`/api/hotel/menu/items/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isAvailable: !item.isAvailable }),
+      });
+      mutate();
+    } catch {
+      mutate(); // rollback
+    }
   }
-
   async function deleteItem(id: string) {
     if (!confirm("Delete this menu item?")) return;
-    await fetch(`/api/hotel/menu/items/${id}`, { method: "DELETE" });
-    loadMenu();
+    
+    // Optimistic Update
+    mutate(
+      categories.map(cat => ({
+        ...cat,
+        items: cat.items.filter(i => i.id !== id)
+      })),
+      false
+    );
+
+    try {
+      await fetch(`/api/hotel/menu/items/${id}`, { method: "DELETE" });
+      mutate();
+    } catch {
+      mutate(); // rollback
+    }
   }
 
   function openAddItem(categoryId: string) {

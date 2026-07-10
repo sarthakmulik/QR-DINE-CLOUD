@@ -5,6 +5,7 @@ import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { PausedBanner } from "@/components/dashboard/paused-banner";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
+import { NetworkStatus } from "@/components/dashboard/network-status";
 import type { Hotel } from "@/lib/types";
 import { PlanProvider } from "@/lib/contexts/plan-context";
 
@@ -52,6 +53,7 @@ export default async function DashboardLayout({
           </main>
           </div>
         </div>
+        <NetworkStatus />
       </div>
     </PlanProvider>
   );
