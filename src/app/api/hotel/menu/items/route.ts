@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 import { mapMenuItem } from "@/lib/types";
 import type { MenuItem } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const body = await req.json();
 
     // Section 3: Server-side input validation
@@ -74,6 +75,15 @@ export async function POST(req: NextRequest) {
       .single<MenuItem>();
 
     if (error) throw error;
+
+    await logAudit({
+      hotelId,
+      userId: user.id,
+      action: "CREATE_MENU_ITEM",
+      entityType: "menu_item",
+      entityId: item.id,
+      details: { name: item.name, categoryId: item.category_id },
+    });
 
     return NextResponse.json(mapMenuItem(item!));
   } catch (e) {

@@ -15,7 +15,20 @@ import {
   Megaphone,
   TrendingUp,
   ShoppingCart,
+  History,
 } from "lucide-react";
+
+interface AuditLog {
+  id: string;
+  hotel_id: string | null;
+  user_id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  details: any;
+  created_at: string;
+  hotels?: { name: string };
+}
 
 interface Broadcast {
   id: string;
@@ -23,6 +36,15 @@ interface Broadcast {
   type: string;
   is_active: boolean;
   created_at: string;
+}
+
+interface Payment {
+  id: string;
+  hotel_id: string;
+  amount: number;
+  payment_date: string;
+  method: string;
+  notes: string | null;
 }
 
 interface Hotel {
@@ -62,6 +84,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [showAuditLogs, setShowAuditLogs] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
@@ -76,6 +100,10 @@ export default function AdminPage() {
   });
   const [createResult, setCreateResult] = useState<string | null>(null);
   const [newBroadcast, setNewBroadcast] = useState({ message: "", type: "info" });
+
+  const [billingHotel, setBillingHotel] = useState<Hotel | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [newPayment, setNewPayment] = useState({ amount: "", method: "upi", notes: "" });
 
   async function loadData() {
     const [hotelsRes, statsRes, broadcastsRes] = await Promise.all([
@@ -145,6 +173,38 @@ export default function AdminPage() {
     await fetch(`/api/admin/hotels/${deleteId}`, { method: "DELETE" });
     setDeleteId(null);
     loadData();
+  }
+
+  async function openBilling(hotel: Hotel) {
+    setBillingHotel(hotel);
+    setNewPayment({ amount: hotel.billingAmount.toString(), method: "upi", notes: "" });
+    const res = await fetch(`/api/admin/hotels/${hotel.id}/payments`);
+    if (res.ok) {
+      setPayments(await res.json());
+    }
+  }
+
+  async function handleRecordPayment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!billingHotel) return;
+    const res = await fetch(`/api/admin/hotels/${billingHotel.id}/payments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...newPayment, amount: Number(newPayment.amount) }),
+    });
+    if (res.ok) {
+      alert("Payment recorded and next due date extended by 30 days!");
+      setBillingHotel(null);
+      loadData();
+    } else {
+      alert("Failed to record payment");
+    }
+  }
+
+  async function loadAuditLogs() {
+    const res = await fetch("/api/admin/audit-logs");
+    if (res.ok) setAuditLogs(await res.json());
+    setShowAuditLogs(true);
   }
 
   async function handleImpersonate(hotelId: string) {
@@ -241,10 +301,16 @@ export default function AdminPage() {
 
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">All Hotels</h2>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Hotel
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={loadAuditLogs}>
+            <History className="w-4 h-4 mr-2" />
+            Audit Logs
+          </Button>
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Hotel
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
@@ -338,6 +404,13 @@ export default function AdminPage() {
                 <td className="px-4 py-3 dark:text-zinc-300">{formatINR(hotel.billingAmount)}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => openBilling(hotel)}
+                    >
+                      Billing
+                    </Button>
                     <Button
                       size="sm"
                       variant="secondary"
@@ -518,6 +591,105 @@ export default function AdminPage() {
           </label>
           <Button type="submit" className="w-full">Create Hotel</Button>
         </form>
+      </Modal>
+
+      <Modal open={showAuditLogs} onClose={() => setShowAuditLogs(false)} title="Platform Audit Logs">
+        <div className="space-y-4">
+          <div className="max-h-[60vh] overflow-y-auto border dark:border-zinc-800 rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-zinc-900 sticky top-0">
+                <tr>
+                  <th className="text-left px-4 py-2 font-medium">Time</th>
+                  <th className="text-left px-4 py-2 font-medium">Hotel</th>
+                  <th className="text-left px-4 py-2 font-medium">Action</th>
+                  <th className="text-left px-4 py-2 font-medium">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                {auditLogs.map(log => (
+                  <tr key={log.id}>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(log.created_at)}</td>
+                    <td className="px-4 py-3">{log.hotels?.name || "Global"}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <Badge variant={log.action.includes("DELETE") ? "suspended" : "active"}>
+                        {log.action}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">
+                      {JSON.stringify(log.details)}
+                    </td>
+                  </tr>
+                ))}
+                {auditLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-500">No logs found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!billingHotel} onClose={() => setBillingHotel(null)} title={`Billing Ledger - ${billingHotel?.name}`}>
+        <div className="space-y-6">
+          <div className="bg-blue-50 text-blue-800 p-4 rounded-lg text-sm border border-blue-200">
+            <strong>Next Due:</strong> {formatDate(billingHotel?.nextDueDate)}<br/>
+            <strong>Monthly Amount:</strong> {formatINR(billingHotel?.billingAmount || 0)}
+          </div>
+
+          <div>
+            <h3 className="font-semibold mb-3">Record New Payment</h3>
+            <form onSubmit={handleRecordPayment} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Amount (INR)" type="number" value={newPayment.amount} onChange={(v) => setNewPayment({ ...newPayment, amount: v })} required />
+                <div>
+                  <label className="block text-sm font-medium mb-1">Method</label>
+                  <select
+                    value={newPayment.method}
+                    onChange={(e) => setNewPayment({ ...newPayment, method: e.target.value })}
+                    className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80"
+                  >
+                    <option value="upi">UPI / Online</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash</option>
+                  </select>
+                </div>
+              </div>
+              <Input label="Notes (Optional)" value={newPayment.notes} onChange={(v) => setNewPayment({ ...newPayment, notes: v })} />
+              <Button type="submit" className="w-full">Record Payment & Extend Subscription</Button>
+            </form>
+          </div>
+
+          <div>
+            <h3 className="font-semibold mb-3">Payment History</h3>
+            <div className="max-h-64 overflow-y-auto border dark:border-zinc-800 rounded-lg">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-zinc-900 sticky top-0">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-medium">Date</th>
+                    <th className="text-left px-4 py-2 font-medium">Amount</th>
+                    <th className="text-left px-4 py-2 font-medium">Method</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                  {payments.map(p => (
+                    <tr key={p.id}>
+                      <td className="px-4 py-2 text-gray-500">{formatDate(p.payment_date)}</td>
+                      <td className="px-4 py-2 font-medium">{formatINR(p.amount)}</td>
+                      <td className="px-4 py-2 uppercase text-xs">{p.method}</td>
+                    </tr>
+                  ))}
+                  {payments.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-4 text-center text-gray-500">No payment history found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </Modal>
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Hotel">

@@ -2,13 +2,14 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const { id } = await props.params;
     const body = await req.json();
 
@@ -76,6 +77,15 @@ export async function PATCH(
       throw staffError;
     }
 
+    await logAudit({
+      hotelId,
+      userId: user.id,
+      action: "UPDATE_STAFF",
+      entityType: "staff",
+      entityId: id,
+      details: updates,
+    });
+
     return NextResponse.json(staff);
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
@@ -87,7 +97,7 @@ export async function DELETE(
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const { id } = await props.params;
 
     const sb = createAdminClient();
@@ -112,6 +122,15 @@ export async function DELETE(
     if (authError) {
       console.warn("Auth user deletion warning:", authError.message);
     }
+
+    await logAudit({
+      hotelId,
+      userId: user.id,
+      action: "DELETE_STAFF",
+      entityType: "staff",
+      entityId: id,
+      details: { staffId: id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

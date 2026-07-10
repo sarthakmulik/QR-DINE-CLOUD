@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 import { mapMenuItem } from "@/lib/types";
 import type { MenuItem } from "@/lib/types";
 
@@ -9,7 +10,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const { id } = await params;
     const body = await req.json();
     const sb = createAdminClient();
@@ -56,6 +57,15 @@ export async function PATCH(
 
     if (error) throw error;
 
+    await logAudit({
+      hotelId,
+      userId: user.id,
+      action: "UPDATE_MENU_ITEM",
+      entityType: "menu_item",
+      entityId: id,
+      details: updates,
+    });
+
     return NextResponse.json(mapMenuItem(item!));
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -67,7 +77,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { hotelId } = await requireHotelAccess();
+    const { hotelId, user } = await requireHotelAccess();
     const { id } = await params;
     const sb = createAdminClient();
 
@@ -83,6 +93,16 @@ export async function DELETE(
     }
 
     await sb.from("menu_items").delete().eq("id", id).eq("hotel_id", hotelId);
+
+    await logAudit({
+      hotelId,
+      userId: user.id,
+      action: "DELETE_MENU_ITEM",
+      entityType: "menu_item",
+      entityId: id,
+      details: { itemId: id },
+    });
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

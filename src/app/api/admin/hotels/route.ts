@@ -3,6 +3,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateLoginEmail, generatePassword } from "@/lib/utils";
 import { sendCredentialsEmail } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 import { mapHotel } from "@/lib/types";
 import type { Hotel, HotelPlan } from "@/lib/types";
 
@@ -26,7 +27,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireSuperAdmin();
+    const user = await requireSuperAdmin();
     const body = await req.json();
     const sb = createAdminClient();
 
@@ -110,6 +111,15 @@ export async function POST(req: NextRequest) {
         password,
       });
     }
+
+    await logAudit({
+      hotelId: hotel.id,
+      userId: user.id,
+      action: "CREATE_HOTEL",
+      entityType: "hotel",
+      entityId: hotel.id,
+      details: { name: hotel.name, plan: hotel.plan },
+    });
 
     return NextResponse.json({
       hotel: mapHotel(hotel),

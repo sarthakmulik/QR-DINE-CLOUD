@@ -125,3 +125,24 @@ CREATE TABLE IF NOT EXISTS system_broadcasts (
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS hotel_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hotel_id UUID REFERENCES hotels(id) ON DELETE CASCADE,
+  amount DECIMAL(10,2) NOT NULL,
+  payment_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  method VARCHAR(50) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS platform_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hotel_id UUID REFERENCES hotels(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  action VARCHAR(255) NOT NULL,
+  entity_type VARCHAR(100) NOT NULL,
+  entity_id VARCHAR(255),
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

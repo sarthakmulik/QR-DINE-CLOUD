@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   try {
@@ -61,7 +62,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { hotelId, hotelPlan } = await requireHotelAccess();
+    const { hotelId, hotelPlan, user } = await requireHotelAccess();
     const body = await req.json();
 
     const { name, role, email, password, salary_type, salary_amount } = body;
@@ -160,6 +161,15 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ error: "Failed to create staff entry." }, { status: 500 });
     }
+
+    await logAudit({
+      hotelId,
+      userId: user.id,
+      action: "CREATE_STAFF",
+      entityType: "staff",
+      entityId: staff.id,
+      details: { email, role },
+    });
 
     return NextResponse.json(staff);
   } catch (err: any) {

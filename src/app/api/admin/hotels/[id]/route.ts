@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 import { mapHotel } from "@/lib/types";
 import type { Hotel, HotelStatus } from "@/lib/types";
 
@@ -9,7 +10,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin();
+    const user = await requireSuperAdmin();
     const { id } = await params;
     const body = await req.json();
 
@@ -26,6 +27,15 @@ export async function PATCH(
 
     if (error) throw error;
 
+    await logAudit({
+      hotelId: id,
+      userId: user.id,
+      action: "UPDATE_HOTEL_STATUS",
+      entityType: "hotel",
+      entityId: id,
+      details: { status: body.status },
+    });
+
     return NextResponse.json(mapHotel(hotel));
   } catch (err: any) {
     const isAuth = err.message === "Unauthorized";
@@ -41,7 +51,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin();
+    const user = await requireSuperAdmin();
     const { id } = await params;
     const sb = createAdminClient();
 
@@ -58,6 +68,15 @@ export async function DELETE(
 
     const { error } = await sb.from("hotels").delete().eq("id", id);
     if (error) throw error;
+
+    await logAudit({
+      hotelId: null, // Hotel is deleted, log globally
+      userId: user.id,
+      action: "DELETE_HOTEL",
+      entityType: "hotel",
+      entityId: id,
+      details: { hotelId: id },
+    });
 
     return NextResponse.json({ success: true });
   } catch {
