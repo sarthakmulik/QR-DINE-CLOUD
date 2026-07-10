@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import useSWR from "swr";
@@ -7,7 +7,7 @@ import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar } from "lucide-re
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
 
   const loading = !error && !data && isValidating;
 
-  // Chart instance refs — used to destroy before re-rendering
+  // Chart instance refs â€” used to destroy before re-rendering
   const revenueChartRef = useRef<any>(null);
   const topItemsChartRef = useRef<any>(null);
   const hourlyChartRef = useRef<any>(null);
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
   const topItemsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hourlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 2. Render charts using npm chart.js — dynamic import avoids SSR and CDN timing issues
+  // 2. Render charts using npm chart.js â€” dynamic import avoids SSR and CDN timing issues
   useEffect(() => {
     if (!data || loading || !hasAccess) return;
 
@@ -87,7 +87,7 @@ export default function AnalyticsPage() {
     };
 
     const renderCharts = async () => {
-      // Dynamically import chart.js — bundled by Next.js, always available, no CDN needed
+      // Dynamically import chart.js â€” bundled by Next.js, always available, no CDN needed
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
 
@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
 
       destroyAll();
 
-      // ── Line Chart: Daily Revenue ──
+      // â”€â”€ Line Chart: Daily Revenue â”€â”€
       if (revenueCanvasRef.current) {
         const ctx = revenueCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
               }),
               datasets: [
                 {
-                  label: "Revenue (₹)",
+                  label: "Revenue (â‚¹)",
                   data: data.dailyRevenue.map((d) => d.revenue),
                   borderColor: "#0ea5e9",
                   backgroundColor: "rgba(14, 165, 233, 0.1)",
@@ -132,7 +132,7 @@ export default function AnalyticsPage() {
         }
       }
 
-      // ── Horizontal Bar Chart: Top 5 Items ──
+      // â”€â”€ Horizontal Bar Chart: Top 5 Items â”€â”€
       if (topItemsCanvasRef.current) {
         const ctx = topItemsCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
         }
       }
 
-      // ── Vertical Bar Chart: Hourly Performance ──
+      // â”€â”€ Vertical Bar Chart: Hourly Performance â”€â”€
       if (hourlyCanvasRef.current) {
         const ctx = hourlyCanvasRef.current.getContext("2d");
         if (ctx) {

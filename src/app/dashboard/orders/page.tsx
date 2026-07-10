@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { Clock, RefreshCw, ChefHat, ScrollText, AlertCircle } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface Session {
   id: string;
@@ -103,7 +103,7 @@ export default function LiveOrdersPage() {
           className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#16161A] border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-[#1C1C21] hover:border-slate-300 dark:border-zinc-700 dark:hover:border-white/20 active:scale-95 transition-all disabled:opacity-50 text-sm"
         >
           <RefreshCw size={15} className={isRefreshing ? "animate-spin text-brand-500" : "text-slate-400"} />
-          {isRefreshing ? "Syncing…" : "Sync"}
+          {isRefreshing ? "Syncingâ€¦" : "Sync"}
         </button>
       </div>
 
@@ -229,7 +229,7 @@ export default function LiveOrdersPage() {
                         <div key={(item as any).id || i} className="flex justify-between items-center text-sm group/item">
                           <div className="flex gap-3 items-center min-w-0">
                             <span className="font-black text-slate-500 dark:text-slate-400 bg-white dark:bg-[#16161A] border border-slate-200 dark:border-zinc-800/60 dark:border-zinc-800 px-1.5 py-0.5 rounded-md text-[11px] min-w-[28px] text-center flex-shrink-0 shadow-sm">
-                              {item.quantity}×
+                              {item.quantity}Ã—
                             </span>
                             <span className="font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{item.name}</span>
                           </div>

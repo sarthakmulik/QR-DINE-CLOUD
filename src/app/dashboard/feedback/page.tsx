@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import useSWR from "swr";
@@ -7,7 +7,7 @@ import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall"
 import { Star, MessageSquare } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface Review {
   id: string;
@@ -130,7 +130,7 @@ export default function FeedbackPage() {
                 return (
                   <div key={stars} className="flex items-center gap-3 text-xs">
                     <span className="w-8 font-bold text-gray-600 dark:text-zinc-400 dark:text-zinc-500 flex items-center gap-0.5 justify-end">
-                      {stars} <span className="text-amber-500 text-xs">★</span>
+                      {stars} <span className="text-amber-500 text-xs">â˜…</span>
                     </span>
                     <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
                       <div className="bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />

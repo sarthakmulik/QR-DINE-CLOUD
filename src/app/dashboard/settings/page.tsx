@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -476,14 +476,14 @@ export default function SettingsPage() {
                   Cryptographically signs dine-in URLs to prevent customers from manually changing table numbers to place fake orders.
                 </p>
                 <span className="text-[10px] text-amber-800 font-semibold block bg-amber-100/50 px-2 py-1 rounded-lg">
-                  ⚠️ Note: Activating this immediately invalidates legacy QR scans. You will need to regenerate and reprint your table QRs.
+                  âš ï¸ Note: Activating this immediately invalidates legacy QR scans. You will need to regenerate and reprint your table QRs.
                 </span>
               </div>
             </div>
             
             <div>
               <label className="block text-sm font-medium mb-1">
-                Tax Rate (%) — CGST + SGST combined
+                Tax Rate (%) â€” CGST + SGST combined
               </label>
               <input
                 type="number"
@@ -505,7 +505,7 @@ export default function SettingsPage() {
             <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
-                  💳 Payment Integration
+                  ðŸ’³ Payment Integration
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 mt-0.5">
                   Configure how your customers pay for their orders online.
@@ -577,7 +577,7 @@ export default function SettingsPage() {
                         }
                       })}
                       className="w-full border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900"
-                      placeholder="••••••••••••••••"
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     />
                   </div>
                 </div>
@@ -649,7 +649,7 @@ export default function SettingsPage() {
                         }
                       })}
                       className="w-full border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900"
-                      placeholder="••••••••••••••••"
+                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     />
                   </div>
                 </div>
@@ -660,7 +660,7 @@ export default function SettingsPage() {
             <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
-                  🖨️ Thermal Receipt Printer Size
+                  ðŸ–¨ï¸ Thermal Receipt Printer Size
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 mt-0.5">
                   Choose the paper width of your thermal receipt printer. This controls the bill layout when printing from the dashboard.
@@ -668,8 +668,8 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: "58mm", label: "58 mm", desc: "Compact — common in smaller printers" },
-                  { value: "80mm", label: "80 mm", desc: "Standard — most restaurant POS printers" },
+                  { value: "58mm", label: "58 mm", desc: "Compact â€” common in smaller printers" },
+                  { value: "80mm", label: "80 mm", desc: "Standard â€” most restaurant POS printers" },
                 ].map((opt) => {
                   const selected = (form.customizations?.printerSize || "80mm") === opt.value;
                   return (
@@ -722,12 +722,12 @@ export default function SettingsPage() {
                       try {
                         const res = await (window as any).electronAPI.testPrint(printer);
                         if (res.success) {
-                          alert("✅ Test print sent successfully to " + (printer || "default OS printer"));
+                          alert("âœ… Test print sent successfully to " + (printer || "default OS printer"));
                         } else {
-                          alert("❌ Print failed: " + res.error);
+                          alert("âŒ Print failed: " + res.error);
                         }
                       } catch (e) {
-                        alert("❌ Failed to send test print. Is the printer connected?");
+                        alert("âŒ Failed to send test print. Is the printer connected?");
                       }
                     }}
                   />
@@ -849,12 +849,12 @@ export default function SettingsPage() {
                       <div className="absolute right-4 top-1/2 -translate-y-1/2">
                         {isSelected ? (
                           <div className="w-5 h-5 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold">
-                            ✓
+                            âœ“
                           </div>
                         ) : layout.allowed ? (
                           <div className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900" />
                         ) : (
-                          <div className="text-xs">🔒</div>
+                          <div className="text-xs">ðŸ”’</div>
                         )}
                       </div>
                     </button>
@@ -881,7 +881,7 @@ export default function SettingsPage() {
 
               {!isElite ? (
                 <div className="bg-slate-50 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 text-center space-y-3">
-                  <div className="text-3xl">✨</div>
+                  <div className="text-3xl">âœ¨</div>
                   <h4 className="font-extrabold text-sm text-gray-950">Unlock Custom Branding</h4>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 max-w-xs mx-auto leading-relaxed">
                     Choose custom brand colors, custom typography fonts, and add scrolling header announcements on your customer-facing menus.
@@ -1134,7 +1134,7 @@ export default function SettingsPage() {
                         <div className="flex justify-between items-start mb-1">
                           <p className={`font-bold ${isSelected ? "text-sky-900" : "text-gray-900 dark:text-zinc-100"}`}>{preset.name}</p>
                           {isSelected && (
-                            <div className="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
+                            <div className="w-4 h-4 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold">âœ“</div>
                           )}
                         </div>
                         <p className={`text-[10px] ${isSelected ? "text-sky-700/80" : "text-gray-500 dark:text-zinc-400 dark:text-zinc-500"}`}>{preset.desc}</p>
@@ -1221,7 +1221,7 @@ export default function SettingsPage() {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full border rounded-lg px-3 py-2"
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 />
                 <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 mt-1">
                   Leave blank to keep your current password. Minimum 6 characters.
@@ -1235,7 +1235,7 @@ export default function SettingsPage() {
               <div>
                 {saved && (
                   <p className="text-emerald-600 dark:text-emerald-400 text-sm font-bold flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">✓</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">âœ“</span>
                     Settings saved successfully!
                   </p>
                 )}
@@ -1339,7 +1339,7 @@ export default function SettingsPage() {
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-xs shadow-inner">
-                      🍽️
+                      ðŸ½ï¸
                     </div>
                   )}
                   <div>
@@ -1389,7 +1389,7 @@ export default function SettingsPage() {
                         <p className="text-[7px] text-gray-400 dark:text-zinc-500 font-medium truncate mt-0.5">Spiced cottage cheese</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="font-extrabold text-brand-600 text-[8px]">₹280</span>
+                        <span className="font-extrabold text-brand-600 text-[8px]">â‚¹280</span>
                         <div className="bg-brand-600 text-white px-2 py-0.5 rounded text-[7px] font-black">ADD</div>
                       </div>
                     </div>
@@ -1399,7 +1399,7 @@ export default function SettingsPage() {
                         <p className="text-[7px] text-gray-400 dark:text-zinc-500 font-medium truncate mt-0.5">Golden fried wraps</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="font-extrabold text-brand-600 text-[8px]">₹180</span>
+                        <span className="font-extrabold text-brand-600 text-[8px]">â‚¹180</span>
                         <div className="bg-brand-50 border border-brand-100 text-brand-600 px-1 py-0.5 rounded flex items-center gap-1 text-[7px] font-bold">
                           <span>-</span><span>1</span><span>+</span>
                         </div>
@@ -1409,24 +1409,24 @@ export default function SettingsPage() {
                 ) : form.customizations?.layout === "masonry" || form.customizations?.layout === "fullscreen_story" ? (
                   <div className="grid grid-cols-2 gap-2 space-y-0">
                     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 overflow-hidden flex flex-col shadow-sm">
-                      <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🧀</div>
+                      <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">ðŸ§€</div>
                       <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
                         <h6 className="font-bold text-[8px] text-gray-900 dark:text-zinc-100 line-clamp-1">Paneer Tikka</h6>
                         {form.customizations?.layout === "fullscreen_story" && (
                           <span className="text-[6px] text-emerald-600 bg-emerald-50 px-1 rounded self-start font-bold">Chef&apos;s Pick</span>
                         )}
                         <div className="flex items-center justify-between pt-1 border-t border-slate-50">
-                          <span className="font-extrabold text-brand-600 text-[7px]">₹280</span>
+                          <span className="font-extrabold text-brand-600 text-[7px]">â‚¹280</span>
                           <span className="bg-brand-600 text-white px-1.5 py-0.5 rounded text-[6px] font-black">ADD</span>
                         </div>
                       </div>
                     </div>
                     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 overflow-hidden flex flex-col shadow-sm">
-                      <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">🌯</div>
+                      <div className="h-12 bg-slate-200 w-full flex items-center justify-center text-[10px]">ðŸŒ¯</div>
                       <div className="p-1.5 flex-1 flex flex-col justify-between space-y-1">
                         <h6 className="font-bold text-[8px] text-gray-900 dark:text-zinc-100 line-clamp-1">Spring Rolls</h6>
                         <div className="flex items-center justify-between pt-1 border-t border-slate-50">
-                          <span className="font-extrabold text-brand-600 text-[7px]">₹180</span>
+                          <span className="font-extrabold text-brand-600 text-[7px]">â‚¹180</span>
                           <span className="bg-brand-50 border border-brand-100 text-brand-600 px-1 rounded flex items-center gap-0.5 text-[6px] font-bold">
                             <span>-</span><span>1</span><span>+</span>
                           </span>
@@ -1439,7 +1439,7 @@ export default function SettingsPage() {
                     <div className="bg-slate-900 rounded-xl border border-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-white">Tandoori Paneer Tikka</h6>
-                        <p className="text-[8px] font-black text-brand-400">₹280</p>
+                        <p className="text-[8px] font-black text-brand-400">â‚¹280</p>
                       </div>
                       <div className="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-[8px] font-black shadow-sm">
                         ADD
@@ -1448,7 +1448,7 @@ export default function SettingsPage() {
                     <div className="bg-slate-900 rounded-xl border border-brand-500/20 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-white">Crispy Spring Rolls</h6>
-                        <p className="text-[8px] font-black text-brand-400">₹180</p>
+                        <p className="text-[8px] font-black text-brand-400">â‚¹180</p>
                       </div>
                       <div className="bg-brand-50/10 border border-brand-500/25 text-brand-400 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
                         <span>-</span><span className="text-white">1</span><span>+</span>
@@ -1460,7 +1460,7 @@ export default function SettingsPage() {
                     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-gray-950">Tandoori Paneer Tikka</h6>
-                        <p className="text-[8px] font-black text-brand-600">₹280</p>
+                        <p className="text-[8px] font-black text-brand-600">â‚¹280</p>
                       </div>
                       <div className="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-[8px] font-black shadow-sm shadow-brand-100">
                         ADD
@@ -1469,7 +1469,7 @@ export default function SettingsPage() {
                     <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-100 dark:border-zinc-800/50 p-2.5 flex items-center justify-between shadow-sm">
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-[9px] text-gray-955">Crispy Spring Rolls</h6>
-                        <p className="text-[8px] font-black text-brand-600">₹180</p>
+                        <p className="text-[8px] font-black text-brand-600">â‚¹180</p>
                       </div>
                       <div className="bg-brand-50 border border-brand-100 text-brand-600 px-2 py-0.5 rounded-lg flex items-center gap-1 text-[8px] font-bold">
                         <span>-</span><span className="font-bold">1</span><span>+</span>
@@ -1562,8 +1562,8 @@ function DesktopPrinterSelector({ value, onChange, onTestPrint }: { value: strin
           {printers.map((p: any) => (
             <option key={p.name} value={p.name}>
               {p.displayName || p.name}
-              {p.isDefault ? " ★ Default" : ""}
-              {" — " + getConnectionType(p)}
+              {p.isDefault ? " â˜… Default" : ""}
+              {" â€” " + getConnectionType(p)}
             </option>
           ))}
         </select>
@@ -1574,7 +1574,7 @@ function DesktopPrinterSelector({ value, onChange, onTestPrint }: { value: strin
           onClick={loadPrinters}
           disabled={loading}
         >
-          {loading ? "Scanning..." : "↻ Refresh"}
+          {loading ? "Scanning..." : "â†» Refresh"}
         </Button>
 
         <Button
@@ -1588,7 +1588,7 @@ function DesktopPrinterSelector({ value, onChange, onTestPrint }: { value: strin
 
       {printers.length === 0 && !loading && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
-          No printers found. Make sure your printer is connected and visible in Windows Settings → Printers &amp; Scanners.
+          No printers found. Make sure your printer is connected and visible in Windows Settings â†’ Printers &amp; Scanners.
         </p>
       )}
 

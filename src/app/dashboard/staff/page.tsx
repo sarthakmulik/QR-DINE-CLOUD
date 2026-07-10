@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import useSWR from "swr";
@@ -10,7 +10,7 @@ import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall"
 import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode, User } from "lucide-react";
 import DynamicQRCode from "@/components/dashboard/DynamicQRCode";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface StaffData {
   id: string;
@@ -150,7 +150,7 @@ export default function StaffPage() {
             Create logins for Waiters and Kitchen KDS staff
             <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
             <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-gray-600 dark:text-gray-400 dark:text-gray-500"}`}>
-              {totalStaff} / {maxStaff === "unlimited" ? "∞" : maxStaff} accounts active
+              {totalStaff} / {maxStaff === "unlimited" ? "âˆž" : maxStaff} accounts active
             </span>
           </p>
         </div>

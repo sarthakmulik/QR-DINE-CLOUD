@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
 import useSWR from "swr";
@@ -9,7 +9,7 @@ import { usePlan } from "@/lib/contexts/plan-context";
 import QRCode from "qrcode";
 import DynamicQRCode, { DynamicQRCodeRef } from "@/components/dashboard/DynamicQRCode";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface TableData {
   id: string;
@@ -213,7 +213,7 @@ export default function TablesPage() {
     setTimeout(() => setCopied(null), 2000);
   }
 
-  // getDineUrl is intentionally removed — use table.dineUrl from the API response
+  // getDineUrl is intentionally removed â€” use table.dineUrl from the API response
   // which is pre-generated with the correct hotel ID by the server.
 
   if (serviceType === "quick_service") {
@@ -298,7 +298,7 @@ export default function TablesPage() {
             Manage your restaurant tables and generate order QR codes
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 mx-2" />
             <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-slate-600"}`}>
-              {totalTables} / {maxTables === "unlimited" ? "∞" : maxTables} tables used
+              {totalTables} / {maxTables === "unlimited" ? "âˆž" : maxTables} tables used
             </span>
           </p>
         </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -9,7 +9,7 @@ import { Plus, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { compressImage } from "@/lib/image";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface MenuItem {
   id: string;
@@ -350,7 +350,7 @@ export default function MenuPage() {
             Organize categories and items
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mx-2" />
             <span className={`font-semibold ${limitReached ? "text-amber-600 dark:text-amber-500" : "text-slate-600 dark:text-slate-400"}`}>
-              {totalItems} / {maxItems === "unlimited" ? "∞" : maxItems} items used
+              {totalItems} / {maxItems === "unlimited" ? "âˆž" : maxItems} items used
             </span>
           </p>
         </div>
@@ -446,7 +446,7 @@ export default function MenuPage() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600 text-xl">
-                                🍽️
+                                ðŸ½ï¸
                               </div>
                             )}
                           </div>
@@ -590,7 +590,7 @@ export default function MenuPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">Price (₹) <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">Price (â‚¹) <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 min="0"
@@ -705,7 +705,7 @@ export default function MenuPage() {
                   className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
                 />
                 <label htmlFor="isGlutenFree" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
-                  🌾 Gluten Free
+                  ðŸŒ¾ Gluten Free
                 </label>
               </div>
 
@@ -718,7 +718,7 @@ export default function MenuPage() {
                   className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
                 />
                 <label htmlFor="containsNuts" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
-                  🥜 Contains Nuts
+                  ðŸ¥œ Contains Nuts
                 </label>
               </div>
             </div>
@@ -732,7 +732,7 @@ export default function MenuPage() {
                 className="w-4 h-4 text-brand-600 border-slate-300 dark:border-zinc-700 rounded focus:ring-brand-500 cursor-pointer"
               />
               <label htmlFor="isRecommended" className="text-sm font-bold text-slate-700 cursor-pointer flex items-center gap-1 select-none">
-                ⭐ Chef&apos;s Recommendation / Signature
+                â­ Chef&apos;s Recommendation / Signature
               </label>
             </div>
 
@@ -741,10 +741,10 @@ export default function MenuPage() {
               <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">Spice Intensity</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { level: null, label: "None 🚫" },
-                  { level: 0, label: "Mild 🌶️" },
-                  { level: 1, label: "Med 🌶️🌶️" },
-                  { level: 2, label: "Hot 🌶️🌶️🌶️" }
+                  { level: null, label: "None ðŸš«" },
+                  { level: 0, label: "Mild ðŸŒ¶ï¸" },
+                  { level: 1, label: "Med ðŸŒ¶ï¸ðŸŒ¶ï¸" },
+                  { level: 2, label: "Hot ðŸŒ¶ï¸ðŸŒ¶ï¸ðŸŒ¶ï¸" }
                 ].map((opt) => (
                   <button
                     key={opt.level ?? "none"}

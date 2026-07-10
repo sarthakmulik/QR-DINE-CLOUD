@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import useSWR from "swr";
@@ -9,7 +9,7 @@ import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall"
 import { Plus, Pencil, Trash2, Tag, Percent } from "lucide-react";
 import { formatINR } from "@/lib/utils";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface Coupon {
   id: string;
@@ -233,7 +233,7 @@ export default function CouponsPage() {
                       : "bg-slate-100 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700"
                   }`}
                 >
-                  {togglingId === coupon.id ? "…" : coupon.is_active ? "Active" : "Inactive"}
+                  {togglingId === coupon.id ? "â€¦" : coupon.is_active ? "Active" : "Inactive"}
                 </button>
 
                 <div className="flex gap-2">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -7,7 +7,7 @@ import { usePlan } from "@/lib/contexts/plan-context";
 import { Download, Lock, History, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
 interface Session {
   id: string;
@@ -106,12 +106,12 @@ export default function HistoryPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-zinc-400 dark:text-zinc-500 max-w-[200px]">
                       <span className="line-clamp-1 text-xs">
-                        {s.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
+                        {s.items.map((i) => `${i.quantity}Ã— ${i.name}`).join(", ")}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-zinc-400 dark:text-zinc-500">{s.paymentMethod || "—"}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-zinc-400 dark:text-zinc-500">{s.paymentMethod || "â€”"}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
-                      {s.closedAt ? formatDateTime(s.closedAt) : "—"}
+                      {s.closedAt ? formatDateTime(s.closedAt) : "â€”"}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-zinc-100">
                       {formatINR(s.total)}
