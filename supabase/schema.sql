@@ -117,3 +117,11 @@ ALTER TABLE menu_items ENABLE ROW LEVEL SECURITY;
 
 -- Staff QR Clock in token
 ALTER TABLE hotels ADD COLUMN IF NOT EXISTS attendance_qr_token VARCHAR(255);
+
+CREATE TABLE IF NOT EXISTS system_broadcasts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info', 'warning', 'success', 'error')),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

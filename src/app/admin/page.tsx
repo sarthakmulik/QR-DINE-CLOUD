@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -11,7 +12,18 @@ import {
   Plus,
   AlertTriangle,
   CheckCircle,
+  Megaphone,
+  TrendingUp,
+  ShoppingCart,
 } from "lucide-react";
+
+interface Broadcast {
+  id: string;
+  message: string;
+  type: string;
+  is_active: boolean;
+  created_at: string;
+}
 
 interface Hotel {
   id: string;
@@ -33,11 +45,22 @@ interface Stats {
   activeHotels: number;
   totalMRR: number;
   overdueHotels: number;
+  totalOrdersProcessed: number;
+  platformGrossVolume: number;
+  atRiskHotelsList: {
+    id: string;
+    name: string;
+    ownerName: string;
+    ownerEmail: string;
+    ownerPhone: string;
+  }[];
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,14 +75,19 @@ export default function AdminPage() {
     useGoogleOAuth: false,
   });
   const [createResult, setCreateResult] = useState<string | null>(null);
+  const [newBroadcast, setNewBroadcast] = useState({ message: "", type: "info" });
 
   async function loadData() {
-    const [hotelsRes, statsRes] = await Promise.all([
+    const [hotelsRes, statsRes, broadcastsRes] = await Promise.all([
       fetch("/api/admin/hotels"),
       fetch("/api/admin/stats"),
+      fetch("/api/admin/broadcasts"),
     ]);
     setHotels(await hotelsRes.json());
     setStats(await statsRes.json());
+    if (broadcastsRes.ok) {
+      setBroadcasts(await broadcastsRes.json());
+    }
     setLoading(false);
   }
 
@@ -119,6 +147,47 @@ export default function AdminPage() {
     loadData();
   }
 
+  async function handleImpersonate(hotelId: string) {
+    const res = await fetch("/api/admin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hotelId }),
+    });
+    if (res.ok) {
+      router.push("/dashboard");
+    } else {
+      alert("Failed to impersonate hotel");
+    }
+  }
+
+  async function handleCreateBroadcast(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await fetch("/api/admin/broadcasts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newBroadcast),
+    });
+    if (res.ok) {
+      setNewBroadcast({ message: "", type: "info" });
+      loadData();
+    }
+  }
+
+  async function toggleBroadcastStatus(id: string, currentStatus: boolean) {
+    await fetch(`/api/admin/broadcasts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: !currentStatus }),
+    });
+    loadData();
+  }
+
+  async function deleteBroadcast(id: string) {
+    if (!confirm("Delete broadcast?")) return;
+    await fetch(`/api/admin/broadcasts/${id}`, { method: "DELETE" });
+    loadData();
+  }
+
   if (loading) {
     return <div className="text-center py-12 text-gray-500">Loading...</div>;
   }
@@ -137,7 +206,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <StatCard
           icon={<Building2 className="w-5 h-5 text-brand-600" />}
           label="Total Hotels"
@@ -150,12 +219,22 @@ export default function AdminPage() {
         />
         <StatCard
           icon={<IndianRupee className="w-5 h-5 text-blue-600" />}
-          label="Monthly Recurring Revenue"
+          label="Total MRR"
           value={formatINR(stats?.totalMRR ?? 0)}
         />
         <StatCard
+          icon={<ShoppingCart className="w-5 h-5 text-purple-600" />}
+          label="Total Orders"
+          value={(stats?.totalOrdersProcessed ?? 0).toLocaleString()}
+        />
+        <StatCard
+          icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
+          label="Gross Volume"
+          value={formatINR(stats?.platformGrossVolume ?? 0)}
+        />
+        <StatCard
           icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
-          label="Overdue Hotels"
+          label="Overdue Subscriptions"
           value={stats?.overdueHotels ?? 0}
         />
       </div>
@@ -262,6 +341,14 @@ export default function AdminPage() {
                     <Button
                       size="sm"
                       variant="secondary"
+                      onClick={() => handleImpersonate(hotel.id)}
+                      title="Login to this hotel's dashboard"
+                    >
+                      Login As
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
                       onClick={() => toggleStatus(hotel)}
                     >
                       {hotel.status === "active" ? "Pause" : "Activate"}
@@ -286,6 +373,109 @@ export default function AdminPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-12 space-y-6">
+        <div className="flex items-center gap-2">
+          <Megaphone className="w-5 h-5 text-brand-600" />
+          <h2 className="text-xl font-semibold">System Broadcasts</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 bg-white dark:bg-[#16161A] p-5 rounded-xl border border-gray-200 dark:border-zinc-800">
+            <h3 className="font-medium mb-4">Create New Broadcast</h3>
+            <form onSubmit={handleCreateBroadcast} className="space-y-4">
+              <div>
+                <label className="block text-sm mb-1">Message</label>
+                <textarea
+                  required
+                  value={newBroadcast.message}
+                  onChange={(e) => setNewBroadcast({ ...newBroadcast, message: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-800"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Type</label>
+                <select
+                  value={newBroadcast.type}
+                  onChange={(e) => setNewBroadcast({ ...newBroadcast, type: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-800"
+                >
+                  <option value="info">Info (Blue)</option>
+                  <option value="warning">Warning (Yellow)</option>
+                  <option value="success">Success (Green)</option>
+                  <option value="error">Error (Red)</option>
+                </select>
+              </div>
+              <Button type="submit" className="w-full">Publish</Button>
+            </form>
+          </div>
+
+          <div className="md:col-span-2 space-y-4">
+            {broadcasts.length === 0 ? (
+              <div className="text-gray-500 text-sm">No broadcasts yet.</div>
+            ) : (
+              broadcasts.map(b => (
+                <div key={b.id} className="bg-white dark:bg-[#16161A] p-4 rounded-xl border border-gray-200 dark:border-zinc-800 flex justify-between items-start gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={b.is_active ? "active" : "suspended"}>{b.is_active ? "Active" : "Inactive"}</Badge>
+                      <span className="text-xs text-gray-500 uppercase tracking-wider">{b.type}</span>
+                      <span className="text-xs text-gray-500">{formatDate(b.created_at)}</span>
+                    </div>
+                    <p className="text-sm dark:text-zinc-300">{b.message}</p>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Button size="sm" variant="secondary" onClick={() => toggleBroadcastStatus(b.id, b.is_active)}>
+                      {b.is_active ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => deleteBroadcast(b.id)}>Delete</Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-12 space-y-6">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-600" />
+          <h2 className="text-xl font-semibold">At-Risk Hotels (0 Orders in 7 days)</h2>
+        </div>
+        
+        <div className="bg-white dark:bg-[#16161A] rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">Hotel Name</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">Owner</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">Contact</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+              {stats?.atRiskHotelsList?.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500">All active hotels are generating orders!</td></tr>
+              ) : (
+                stats?.atRiskHotelsList?.map(h => (
+                  <tr key={h.id} className="hover:bg-red-50 dark:hover:bg-red-900/10">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-zinc-100">{h.name}</td>
+                    <td className="px-4 py-3 text-gray-900 dark:text-zinc-300">{h.ownerName}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-gray-900 dark:text-zinc-300">{h.ownerPhone}</div>
+                      <div className="text-xs text-gray-500">{h.ownerEmail}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button size="sm" variant="secondary" onClick={() => handleImpersonate(h.id)}>Investigate</Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Hotel Account">

@@ -155,6 +155,8 @@ export interface AuthUser {
   role: UserRole;
   hotelId: string | null;
   hotelPlan?: string | null;
+  isImpersonating?: boolean;
+  originalAdminId?: string;
 }
 
 /** Map DB snake_case hotel to API camelCase */

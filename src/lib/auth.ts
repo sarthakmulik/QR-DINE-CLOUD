@@ -77,6 +77,31 @@ export const getAuthUser = cache(async function (): Promise<AuthUser | null> {
 
   if (!profile) return null;
 
+  const cookieStore = await cookies();
+  const impersonateHotelId = cookieStore.get("impersonate_hotel_id")?.value;
+
+  if (profile.role === "superadmin" && impersonateHotelId) {
+    const sb = createAdminClient();
+    const { data: hotel } = await sb
+      .from("hotels")
+      .select("plan")
+      .eq("id", impersonateHotelId)
+      .maybeSingle();
+
+    if (hotel) {
+      return {
+        id: user.id,
+        email: user.email,
+        name: profile.name,
+        role: "hotel_owner",
+        hotelId: impersonateHotelId,
+        hotelPlan: hotel.plan || "pro",
+        isImpersonating: true,
+        originalAdminId: user.id,
+      };
+    }
+  }
+
   return {
     id: user.id,
     email: user.email,
