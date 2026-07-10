@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import useSWR from "swr";
@@ -150,7 +150,7 @@ export default function StaffPage() {
             Create logins for Waiters and Kitchen KDS staff
             <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
             <span className={`font-semibold ${limitReached ? "text-amber-600" : "text-gray-600 dark:text-gray-400 dark:text-gray-500"}`}>
-              {totalStaff} / {maxStaff === "unlimited" ? "âˆž" : maxStaff} accounts active
+              {totalStaff} / {maxStaff === "unlimited" ? "∞" : maxStaff} accounts active
             </span>
           </p>
         </div>

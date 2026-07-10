@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import useSWR from "swr";
@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
 
   const loading = !error && !data && isValidating;
 
-  // Chart instance refs â€” used to destroy before re-rendering
+  // Chart instance refs — used to destroy before re-rendering
   const revenueChartRef = useRef<any>(null);
   const topItemsChartRef = useRef<any>(null);
   const hourlyChartRef = useRef<any>(null);
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
   const topItemsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hourlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 2. Render charts using npm chart.js â€” dynamic import avoids SSR and CDN timing issues
+  // 2. Render charts using npm chart.js — dynamic import avoids SSR and CDN timing issues
   useEffect(() => {
     if (!data || loading || !hasAccess) return;
 
@@ -87,7 +87,7 @@ export default function AnalyticsPage() {
     };
 
     const renderCharts = async () => {
-      // Dynamically import chart.js â€” bundled by Next.js, always available, no CDN needed
+      // Dynamically import chart.js — bundled by Next.js, always available, no CDN needed
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
 
@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
 
       destroyAll();
 
-      // â”€â”€ Line Chart: Daily Revenue â”€â”€
+      // ── Line Chart: Daily Revenue ──
       if (revenueCanvasRef.current) {
         const ctx = revenueCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
               }),
               datasets: [
                 {
-                  label: "Revenue (â‚¹)",
+                  label: "Revenue (₹)",
                   data: data.dailyRevenue.map((d) => d.revenue),
                   borderColor: "#0ea5e9",
                   backgroundColor: "rgba(14, 165, 233, 0.1)",
@@ -132,7 +132,7 @@ export default function AnalyticsPage() {
         }
       }
 
-      // â”€â”€ Horizontal Bar Chart: Top 5 Items â”€â”€
+      // ── Horizontal Bar Chart: Top 5 Items ──
       if (topItemsCanvasRef.current) {
         const ctx = topItemsCanvasRef.current.getContext("2d");
         if (ctx) {
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
         }
       }
 
-      // â”€â”€ Vertical Bar Chart: Hourly Performance â”€â”€
+      // ── Vertical Bar Chart: Hourly Performance ──
       if (hourlyCanvasRef.current) {
         const ctx = hourlyCanvasRef.current.getContext("2d");
         if (ctx) {

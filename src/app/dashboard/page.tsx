@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { generateBillHTML, silentPrint, type PrinterSize } from "@/lib/bill-generator";
@@ -365,11 +365,11 @@ export default function TablesDashboardPage() {
       });
   }
 
-  /** Fetch bill data and silently print to thermal printer â€” no new tab */
+  /** Fetch bill data and silently print to thermal printer — no new tab */
   async function silentBillPrint(sessionId: string, paymentMethod?: string) {
     try {
       const res = await fetch(`/api/hotel/sessions/${sessionId}/bill-data`);
-      if (!res.ok) return; // non-blocking â€” don't alert on background print failure
+      if (!res.ok) return; // non-blocking — don't alert on background print failure
       const data = await res.json();
       const size: PrinterSize =
         (hotelProfile?.customizations?.printerSize as PrinterSize) ||
@@ -388,7 +388,7 @@ export default function TablesDashboardPage() {
     if (!selected?.currentSession || isPrinting) return;
     setIsPrinting(true);
     try {
-      // Silent thermal print â€” no new tab
+      // Silent thermal print — no new tab
       await silentBillPrint(selected.currentSession.id);
 
       // Register the print on the server (marks session as bill_printed) AFTER print succeeds
@@ -455,20 +455,20 @@ export default function TablesDashboardPage() {
     const cleanPhone = number.replace(/\D/g, "");
     if (cleanPhone.length === 10) {
       let itemsText = selected.currentSession.items
-        .map((item: any) => `${item.quantity}x ${item.name} â€” â‚¹${item.price * item.quantity}`)
+        .map((item: any) => `${item.quantity}x ${item.name} — ₹${item.price * item.quantity}`)
         .join("\n");
 
       const taxRate = hotelProfile?.taxRate !== undefined && hotelProfile?.taxRate !== null ? hotelProfile.taxRate : 5;
       const cgstRate = (taxRate / 2).toFixed(1).replace(/\.0$/, "");
       const sgstRate = (taxRate / 2).toFixed(1).replace(/\.0$/, "");
 
-      const message = `*${hotelProfile?.name || "Hotel"}* â€” Table ${selected.tableNumber}
+      const message = `*${hotelProfile?.name || "Hotel"}* — Table ${selected.tableNumber}
 ${itemsText}
-â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
-Subtotal: â‚¹${selected.currentSession.subtotal}
-CGST (${cgstRate}%): â‚¹${(selected.currentSession.taxAmount / 2).toFixed(2)}
-SGST (${sgstRate}%): â‚¹${(selected.currentSession.taxAmount / 2).toFixed(2)}
-*Total: â‚¹${selected.currentSession.total}*
+——————————
+Subtotal: ₹${selected.currentSession.subtotal}
+CGST (${cgstRate}%): ₹${(selected.currentSession.taxAmount / 2).toFixed(2)}
+SGST (${sgstRate}%): ₹${(selected.currentSession.taxAmount / 2).toFixed(2)}
+*Total: ₹${selected.currentSession.total}*
 Thank you for dining with us!`;
 
       const formattedPhone = `91${cleanPhone}`;
@@ -609,7 +609,7 @@ Thank you for dining with us!`;
                 {isSkeletons ? (
                   <div className="h-6 w-20 bg-gray-100 dark:bg-zinc-800/70 rounded animate-pulse mt-1" />
                 ) : stats.avgRating > 0 ? (
-                  <span className="flex items-baseline gap-1">{stats.avgRating} <span className="text-amber-400 text-base font-normal">â˜…</span></span>
+                  <span className="flex items-baseline gap-1">{stats.avgRating} <span className="text-amber-400 text-base font-normal">★</span></span>
                 ) : (
                   <span className="text-base text-gray-400 font-medium">No reviews</span>
                 )}
@@ -729,7 +729,7 @@ Thank you for dining with us!`;
           <div className="col-span-full text-center py-16 text-gray-400">
             <p className="text-sm">No tables configured yet.</p>
             <Link href="/dashboard/tables" className="text-brand-600 dark:text-brand-400 text-sm font-medium underline underline-offset-2 mt-1 inline-block">
-              Create tables and QR codes â†’
+              Create tables and QR codes →
             </Link>
           </div>
         )}
@@ -738,7 +738,7 @@ Thank you for dining with us!`;
       <Modal
         open={!!selected}
         onClose={() => setSelected(null)}
-        title={selected ? `${selected.label} â€” Running Order` : ""}
+        title={selected ? `${selected.label} — Running Order` : ""}
         className="max-w-2xl"
       >
         {selected?.currentSession && (
@@ -857,7 +857,7 @@ Thank you for dining with us!`;
                       <option value="">Select menu item</option>
                       {menuItems.map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.name} â€” {formatINR(m.price)}
+                          {m.name} — {formatINR(m.price)}
                         </option>
                       ))}
                     </select>
@@ -932,16 +932,16 @@ Thank you for dining with us!`;
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={handlePrint} disabled={isPrinting}>
-                    {isPrinting ? "Opening..." : "ðŸ–¨ï¸ Print Bill"}
+                    {isPrinting ? "Opening..." : "🖨️ Print Bill"}
                   </Button>
                   <Button variant="secondary" onClick={() => handlePay("Cash")}>
-                    Paid â€” Cash
+                    Paid — Cash
                   </Button>
                   <Button variant="secondary" onClick={() => handlePay("UPI")}>
-                    Paid â€” UPI
+                    Paid — UPI
                   </Button>
                   <Button variant="secondary" onClick={() => handlePay("Card")}>
-                    Paid â€” Card
+                    Paid — Card
                   </Button>
                 </div>
               </div>
@@ -953,7 +953,7 @@ Thank you for dining with us!`;
       <Modal
         open={!!sessionToOpen}
         onClose={() => setSessionToOpen(null)}
-        title={sessionToOpen ? `Start Session â€” ${sessionToOpen.label}` : ""}
+        title={sessionToOpen ? `Start Session — ${sessionToOpen.label}` : ""}
         className="max-w-md"
       >
         {sessionToOpen && (
