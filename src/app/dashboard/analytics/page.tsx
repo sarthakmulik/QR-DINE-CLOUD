@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { formatINR } from "@/lib/utils";
 import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar } from "lucide-react";
@@ -33,27 +33,32 @@ export default function AnalyticsPage() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
 
-  // Construct API URL based on date range
-  let fromStr = "";
-  let toStr = "";
-  const now = new Date();
-  if (range === "today") {
-    fromStr = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
-  } else if (range === "week") {
-    fromStr = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  } else if (range === "month") {
-    fromStr = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  } else if (range === "custom") {
-    if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000+05:30").toISOString();
-    if (customTo) toStr = new Date(customTo + "T23:59:59.999+05:30").toISOString();
-  }
+  // Construct API URL based on date range, wrapped in useMemo to prevent infinite loops
+  const apiUrl = useMemo(() => {
+    let fromStr = "";
+    let toStr = "";
+    const now = new Date();
+    
+    if (range === "today") {
+      fromStr = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+    } else if (range === "week") {
+      fromStr = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (range === "month") {
+      fromStr = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (range === "custom") {
+      if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000+05:30").toISOString();
+      if (customTo) toStr = new Date(customTo + "T23:59:59.999+05:30").toISOString();
+    }
 
-  let apiUrl = "/api/hotel/analytics";
-  const params = new URLSearchParams();
-  if (fromStr) params.append("from", fromStr);
-  if (toStr) params.append("to", toStr);
-  const qs = params.toString();
-  if (qs) apiUrl += `?${qs}`;
+    let url = "/api/hotel/analytics";
+    const params = new URLSearchParams();
+    if (fromStr) params.append("from", fromStr);
+    if (toStr) params.append("to", toStr);
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+    
+    return url;
+  }, [range, customFrom, customTo]);
 
   const { data, error, isValidating } = useSWR<AnalyticsData>(hasAccess ? apiUrl : null, fetcher, {
     revalidateOnFocus: true,
