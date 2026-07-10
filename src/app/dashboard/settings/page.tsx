@@ -48,6 +48,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [logoError, setLogoError] = useState("");
   const [previewTab, setPreviewTab] = useState<"dine_in" | "quick_service">("dine_in");
+  const [activeTab, setActiveTab] = useState<"general" | "operations" | "appearance" | "payments">("general");
 
   async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -328,7 +329,33 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Form Column */}
         <div className="lg:col-span-7 space-y-6">
+          
+          {/* Tab Navigation */}
+          <div className="flex overflow-x-auto bg-gray-100 dark:bg-zinc-800/50 p-1 rounded-xl no-scrollbar">
+            {[
+              { id: "general", label: "General" },
+              { id: "operations", label: "Operations" },
+              { id: "appearance", label: "Appearance" },
+              { id: "payments", label: "Payments" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 whitespace-nowrap px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? "bg-white dark:bg-zinc-900 text-brand-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           <form onSubmit={handleSave} className="bg-white dark:bg-zinc-900 rounded-xl border p-6 space-y-4">
+            
+            {activeTab === "general" && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Store Status Toggle */}
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-zinc-800">
               <div className="space-y-0.5">
@@ -406,7 +433,11 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
+            </div>
+            )}
             
+            {activeTab === "operations" && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div>
               <label className="block text-sm font-medium mb-1">
                 Kitchen KDS PIN (4 digits)
@@ -445,7 +476,27 @@ export default function SettingsPage() {
                 </span>
               </div>
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Tax Rate (%) — CGST + SGST combined
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={form.taxRate}
+                onChange={(e) => setForm({ ...form, taxRate: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+              <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 mt-1">
+                Default 5% (CGST 2.5% + SGST 2.5%)
+              </p>
+            </div>
+            </div>
+            )}
 
+            {activeTab === "payments" && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Payment Integrations */}
             <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
               <div>
@@ -679,23 +730,11 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Tax Rate (%) — CGST + SGST combined
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                value={form.taxRate}
-                onChange={(e) => setForm({ ...form, taxRate: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2"
-              />
-              <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 mt-1">
-                Default 5% (CGST 2.5% + SGST 2.5%)
-              </p>
             </div>
+            )}
 
+            {activeTab === "appearance" && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Menu Layout Preset Selector (Dine-In Only) */}
             {form.serviceType !== "quick_service" && (
               <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-4">
@@ -1144,7 +1183,11 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+            </div>
+            )}
 
+            {activeTab === "general" && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-4">
               <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 uppercase tracking-wider">Account Security</h3>
               
@@ -1181,14 +1224,28 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
+            </div>
+            )}
 
-            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
-            {saved && (
-              <p className="text-green-600 text-sm">Settings saved successfully!</p>
-            )}
-            {saveError && (
-              <p className="text-red-600 text-sm">{saveError}</p>
-            )}
+            <div className="pt-4 border-t border-gray-200 dark:border-zinc-800 mt-6 sticky bottom-4 z-10 bg-white dark:bg-zinc-900 shadow-[0_-15px_30px_-15px_rgba(0,0,0,0.1)] p-4 rounded-xl flex items-center justify-between">
+              <div>
+                {saved && (
+                  <p className="text-emerald-600 dark:text-emerald-400 text-sm font-bold flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">✓</span>
+                    Settings saved successfully!
+                  </p>
+                )}
+                {saveError && (
+                  <p className="text-rose-600 dark:text-rose-400 text-sm font-bold flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-rose-600">!</span>
+                    {saveError}
+                  </p>
+                )}
+              </div>
+              <Button type="submit" disabled={saving} size="lg" className="shadow-lg shadow-brand-500/20">
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </form>
         </div>
 
