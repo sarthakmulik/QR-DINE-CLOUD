@@ -195,7 +195,10 @@ export default function StaffPanelPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fcmToken: token.value })
           });
-          if (res.ok) setPushEnabled(true);
+          if (res.ok) {
+            setPushEnabled(true);
+            localStorage.setItem("staff_push_endpoint", token.value);
+          }
         });
 
         PushNotifications.addListener('registrationError', (err) => {
@@ -225,6 +228,7 @@ export default function StaffPanelPage() {
         
         if (res.ok) {
           setPushEnabled(true);
+          localStorage.setItem("staff_push_endpoint", sub.endpoint);
         } else {
           alert("Failed to save push subscription to server.");
         }
@@ -516,6 +520,29 @@ export default function StaffPanelPage() {
   }
 
   async function handleSignOut() {
+    // 0. Clean up Push Notification subscription BEFORE clearing auth tokens
+    try {
+      let pushEndpoint = localStorage.getItem("staff_push_endpoint");
+      
+      // Fallback: try to grab from service worker if missing
+      if (!pushEndpoint && "serviceWorker" in navigator && "PushManager" in window) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) pushEndpoint = sub.endpoint;
+      }
+      
+      if (pushEndpoint) {
+        await authFetch("/api/staff/push-subscribe", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: pushEndpoint })
+        });
+        localStorage.removeItem("staff_push_endpoint");
+      }
+    } catch (e) {
+      console.error("Failed to delete push subscription on logout:", e);
+    }
+
     // 1. Clear all staff localStorage keys
     localStorage.removeItem("staff_token");
     localStorage.removeItem("staff_name");
