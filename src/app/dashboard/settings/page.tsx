@@ -652,43 +652,30 @@ export default function SettingsPage() {
                       <span className="bg-emerald-100 text-emerald-800 text-[9px] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">Active</span>
                     </h4>
                     <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                      Select the printer to use for silent background printing.
+                      Select the printer to use for silent background printing. All USB, WiFi, and Bluetooth printers detected by Windows will appear below.
                     </p>
                   </div>
                   
-                  <div className="flex gap-2 items-center">
-                    <select
-                      value={form.customizations?.desktopPrinter || ""}
-                      onChange={(e) => setForm({
-                        ...form,
-                        customizations: { ...form.customizations, desktopPrinter: e.target.value }
-                      })}
-                      className="flex-1 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm"
-                    >
-                      <option value="">Select a printer (Default OS printer)</option>
-                      <DesktopPrintersList />
-                    </select>
-                    
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
-                      onClick={async () => {
-                        const printer = form.customizations?.desktopPrinter;
-                        try {
-                          const res = await (window as any).electronAPI.testPrint(printer);
-                          if (res.success) {
-                            alert("Test print sent successfully to " + (printer || "default printer"));
-                          } else {
-                            alert("Print failed: " + res.error);
-                          }
-                        } catch (e) {
-                          alert("Failed to send test print");
+                  <DesktopPrinterSelector
+                    value={form.customizations?.desktopPrinter || ""}
+                    onChange={(v: string) => setForm({
+                      ...form,
+                      customizations: { ...form.customizations, desktopPrinter: v }
+                    })}
+                    onTestPrint={async () => {
+                      const printer = form.customizations?.desktopPrinter;
+                      try {
+                        const res = await (window as any).electronAPI.testPrint(printer);
+                        if (res.success) {
+                          alert("✅ Test print sent successfully to " + (printer || "default OS printer"));
+                        } else {
+                          alert("❌ Print failed: " + res.error);
                         }
-                      }}
-                    >
-                      Test Print
-                    </Button>
-                  </div>
+                      } catch (e) {
+                        alert("❌ Failed to send test print. Is the printer connected?");
+                      }
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -1471,22 +1458,84 @@ function Field({
   );
 }
 
-function DesktopPrintersList() {
+function DesktopPrinterSelector({ value, onChange, onTestPrint }: { value: string; onChange: (v: string) => void; onTestPrint: () => void }) {
   const [printers, setPrinters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  async function loadPrinters() {
+    if (typeof window === "undefined" || !(window as any).electronAPI) return;
+    setLoading(true);
+    try {
+      const list = await (window as any).electronAPI.getPrinters();
+      setPrinters(list || []);
+    } catch (e) {
+      console.error("Failed to load printers:", e);
+      setPrinters([]);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).electronAPI) {
-      (window as any).electronAPI.getPrinters().then(setPrinters).catch(console.error);
-    }
+    loadPrinters();
   }, []);
 
+  function getConnectionType(printer: any): string {
+    const port = (printer.portName || "").toLowerCase();
+    if (port.startsWith("usb") || port.startsWith("com")) return "USB";
+    if (port.includes("ws") || port.includes("wsd") || port.includes("tcp") || port.includes("ip_")) return "WiFi/Network";
+    if (port.includes("bth") || port.includes("bluetooth")) return "Bluetooth";
+    if (port.includes("lpt")) return "Parallel";
+    if (port.startsWith("file") || port.startsWith("nul") || port === "portprompt:") return "Virtual";
+    return "Other";
+  }
+
   return (
-    <>
-      {printers.map((p: any) => (
-        <option key={p.name} value={p.name}>
-          {p.displayName || p.name}
-        </option>
-      ))}
-    </>
+    <div className="space-y-2">
+      <div className="flex gap-2 items-center">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm"
+        >
+          <option value="">Use Default OS Printer</option>
+          {printers.map((p: any) => (
+            <option key={p.name} value={p.name}>
+              {p.displayName || p.name}
+              {p.isDefault ? " ★ Default" : ""}
+              {" — " + getConnectionType(p)}
+            </option>
+          ))}
+        </select>
+
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={loadPrinters}
+          disabled={loading}
+        >
+          {loading ? "Scanning..." : "↻ Refresh"}
+        </Button>
+
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onTestPrint}
+        >
+          Test Print
+        </Button>
+      </div>
+
+      {printers.length === 0 && !loading && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          No printers found. Make sure your printer is connected and visible in Windows Settings → Printers &amp; Scanners.
+        </p>
+      )}
+
+      {printers.length > 0 && (
+        <p className="text-xs text-gray-400">
+          {printers.length} printer{printers.length > 1 ? "s" : ""} detected
+        </p>
+      )}
+    </div>
   );
 }
