@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { Download, Lock, History, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Session {
   id: string;
@@ -17,47 +20,18 @@ interface Session {
 }
 
 export default function HistoryPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-
   const { canAccess, planLimit } = usePlan();
   const hasExportAccess = canAccess("csv_export");
   const exportLimit = planLimit("csv_export_limit");
 
-  useEffect(() => {
-    const cached = sessionStorage.getItem("admin_history");
-    if (cached) {
-      try {
-        const cachedData = JSON.parse(cached);
-        setSessions(cachedData.sessions);
-        setTotalRevenue(cachedData.totalRevenue);
-        setLoading(false);
-      } catch {
-        // ignore parse errors
-      }
-    }
+  const { data, error, isValidating } = useSWR<{ sessions: Session[], totalRevenue: number }>("/api/hotel/history", fetcher, {
+    revalidateOnFocus: true,
+  });
 
-    async function load() {
-      try {
-        const res = await fetch("/api/hotel/history");
-        if (res.ok) {
-          const data = await res.json();
-          setSessions(data.sessions);
-          setTotalRevenue(data.totalRevenue);
-          sessionStorage.setItem("admin_history", JSON.stringify(data));
-        } else {
-          setFetchError(true);
-        }
-      } catch {
-        setFetchError(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
+  const sessions = data?.sessions || [];
+  const totalRevenue = data?.totalRevenue || 0;
+  const loading = !error && !data && isValidating;
+  const fetchError = !!error;
 
   return (
     <div className="space-y-6 animate-page-entrance">

@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Edit2, Plus, RefreshCw, Trash2, ShieldAlert, Download, Copy, Check, Info, Pencil } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import QRCode from "qrcode";
 import DynamicQRCode, { DynamicQRCodeRef } from "@/components/dashboard/DynamicQRCode";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface TableData {
   id: string;
@@ -17,8 +20,14 @@ interface TableData {
 }
 
 export default function TablesPage() {
-  const [tables, setTables] = useState<TableData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { currentPlan, planLimit, serviceType, hotelId, hotelLogo } = usePlan();
+  
+  const { data: tables = [], mutate, error, isValidating } = useSWR<TableData[]>(
+    serviceType !== "quick_service" ? "/api/hotel/tables" : null,
+    fetcher,
+    { revalidateOnFocus: true }
+  );
+  const loading = !error && tables.length === 0 && isValidating;
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
@@ -29,7 +38,6 @@ export default function TablesPage() {
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const { currentPlan, planLimit, serviceType, hotelId, hotelLogo } = usePlan();
   const maxTables = planLimit("max_tables");
   const totalTables = tables.length;
   const limitReached = typeof maxTables === "number" && totalTables >= maxTables;
@@ -62,36 +70,10 @@ export default function TablesPage() {
   }, [serviceType, hotelId]);
 
   async function loadTables() {
-    try {
-      const res = await fetch("/api/hotel/tables", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        setTables(data);
-        sessionStorage.setItem("admin_tables_list", JSON.stringify(data));
-      }
-    } catch (e) {
-      console.error("Failed to load tables:", e);
-    } finally {
-      setLoading(false);
+    if (serviceType !== "quick_service") {
+      await mutate();
     }
   }
-
-  useEffect(() => {
-    const cached = sessionStorage.getItem("admin_tables_list");
-    if (cached) {
-      try {
-        setTables(JSON.parse(cached));
-        setLoading(false);
-      } catch (e) {
-        console.error("Failed to parse cached tables list:", e);
-      }
-    }
-    if (serviceType === "quick_service") {
-      setLoading(false);
-      return;
-    }
-    loadTables();
-  }, [serviceType]);
 
   async function createTable(e: React.FormEvent) {
     e.preventDefault();
@@ -112,7 +94,7 @@ export default function TablesPage() {
       setShowModal(false);
       setTableNumber("");
       setLabel("");
-      loadTables();
+      mutate();
     } else {
       const errData = await res.json();
       alert(errData.error || "Failed to create table. Number may already exist.");
@@ -127,23 +109,11 @@ export default function TablesPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Update state locally
-        setTables((prev) =>
-          prev.map((t) => (t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl, dineUrl: data.dineUrl } : t))
+        // Optimistic Update locally
+        mutate(
+          tables.map((t) => (t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl, dineUrl: data.dineUrl } : t)),
+          false
         );
-        // Also sync the sessionStorage cache!
-        const cached = sessionStorage.getItem("admin_tables_list");
-        if (cached) {
-          try {
-            const list = JSON.parse(cached) as TableData[];
-            const updatedList = list.map((t) =>
-              t.id === table.id ? { ...t, qrCodeUrl: data.qrCodeUrl, dineUrl: data.dineUrl } : t
-            );
-            sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
-          } catch (e) {
-            console.error(e);
-          }
-        }
       } else {
         const data = await res.json().catch(() => ({}));
         alert(`Failed to regenerate QR code: ${data.error || res.statusText}`);
@@ -189,23 +159,14 @@ export default function TablesPage() {
 
       if (res.ok) {
         const updated = await res.json();
-        // Update local state
-        setTables((prev) =>
-          prev.map((t) => (t.id === editingTable.id ? updated : t))
+        // Optimistic Update
+        mutate(
+          tables.map((t) => (t.id === editingTable.id ? updated : t)),
+          false
         );
-        // Sync cache
-        const cached = sessionStorage.getItem("admin_tables_list");
-        if (cached) {
-          try {
-            const list = JSON.parse(cached) as TableData[];
-            const updatedList = list.map((t) => (t.id === editingTable.id ? updated : t));
-            sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
-          } catch (e) {
-            console.error(e);
-          }
-        }
         setShowEditModal(false);
         setEditingTable(null);
+        mutate(); // trigger full revalidation
       } else {
         const err = await res.json();
         alert(err.error || "Failed to update table.");
@@ -224,30 +185,24 @@ export default function TablesPage() {
       return;
     }
 
+    // Optimistic Update
+    mutate(tables.filter((t) => t.id !== id), false);
+
     try {
       const res = await fetch(`/api/hotel/tables/${id}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
-        // Update state and cache
-        setTables((prev) => prev.filter((t) => t.id !== id));
-        const cached = sessionStorage.getItem("admin_tables_list");
-        if (cached) {
-          try {
-            const list = JSON.parse(cached) as TableData[];
-            const updatedList = list.filter((t) => t.id !== id);
-            sessionStorage.setItem("admin_tables_list", JSON.stringify(updatedList));
-          } catch (e) {
-            console.error(e);
-          }
-        }
+        mutate();
       } else {
         const err = await res.json();
         alert(err.error || "Failed to delete table.");
+        mutate(); // rollback
       }
     } catch {
       alert("Something went wrong while deleting table.");
+      mutate(); // rollback
     }
   }
 

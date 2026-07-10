@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 import { Star, MessageSquare } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Review {
   id: string;
@@ -20,39 +23,10 @@ export default function FeedbackPage() {
   const { currentPlan, canAccess } = usePlan();
   const hasAccess = canAccess("customer_feedback");
 
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadFeedback = useCallback(async () => {
-    if (!hasAccess) return;
-    try {
-      const res = await fetch("/api/hotel/feedback");
-      if (res.ok) {
-        const data = await res.json();
-        setReviews(data);
-        sessionStorage.setItem("admin_feedback_list", JSON.stringify(data));
-      }
-    } catch (err) {
-      console.error("Failed to load feedback reviews:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [hasAccess]);
-
-  useEffect(() => {
-    if (hasAccess) {
-      const cached = sessionStorage.getItem("admin_feedback_list");
-      if (cached) {
-        try {
-          setReviews(JSON.parse(cached));
-          setLoading(false);
-        } catch (e) {
-          console.error("Failed to parse cached feedback", e);
-        }
-      }
-      loadFeedback();
-    }
-  }, [hasAccess, loadFeedback]);
+  const { data: reviews = [], error, isValidating } = useSWR<Review[]>(hasAccess ? "/api/hotel/feedback" : null, fetcher, {
+    revalidateOnFocus: true,
+  });
+  const loading = !error && reviews.length === 0 && isValidating;
 
   if (!hasAccess) {
     return (

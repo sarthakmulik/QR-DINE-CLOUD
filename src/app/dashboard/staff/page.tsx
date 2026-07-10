@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -8,6 +9,8 @@ import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 import { Plus, Pencil, Trash2, ShieldAlert, UserCheck, ChevronRight, QrCode, User } from "lucide-react";
 import DynamicQRCode from "@/components/dashboard/DynamicQRCode";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface StaffData {
   id: string;
@@ -27,11 +30,14 @@ export default function StaffPage() {
   const hasAccess = canAccess("staff_management");
   const maxStaff = planLimit("max_staff");
 
-  const [staffList, setStaffList] = useState<StaffData[]>([]);
+  const { data: staffList = [], mutate, error, isValidating } = useSWR<StaffData[]>(hasAccess ? "/api/hotel/staff" : null, fetcher, {
+    revalidateOnFocus: true,
+  });
+  const loading = !error && staffList.length === 0 && isValidating;
+
   const [showModal, setShowModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -45,36 +51,9 @@ export default function StaffPage() {
   const totalStaff = staffList.length;
   const limitReached = typeof maxStaff === "number" && totalStaff >= maxStaff;
 
-  const loadStaff = useCallback(async () => {
-    if (!hasAccess) return;
-    try {
-      const res = await fetch("/api/hotel/staff");
-      if (res.ok) {
-        const data = await res.json();
-        setStaffList(data);
-        sessionStorage.setItem("admin_staff_list", JSON.stringify(data));
-      }
-    } catch (err) {
-      console.error("Failed to load staff list:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [hasAccess]);
-
-  useEffect(() => {
-    if (hasAccess) {
-      const cached = sessionStorage.getItem("admin_staff_list");
-      if (cached) {
-        try {
-          setStaffList(JSON.parse(cached));
-          setLoading(false);
-        } catch (e) {
-          console.error("Failed to parse cached staff list", e);
-        }
-      }
-      loadStaff();
-    }
-  }, [hasAccess, loadStaff]);
+  async function loadStaff() {
+    await mutate();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,7 +77,7 @@ export default function StaffPage() {
         setShowModal(false);
         setEditingStaff(null);
         setForm({ name: "", role: "waiter", email: "", password: "" });
-        loadStaff();
+        mutate();
       } else {
         const errData = await res.json();
         alert(errData.error || "Failed to save staff account.");
@@ -112,14 +91,17 @@ export default function StaffPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this staff account?")) return;
+    // Optimistic Update
+    mutate(staffList.filter(s => s.id !== id), false);
     try {
       const res = await fetch(`/api/hotel/staff/${id}`, { method: "DELETE" });
       if (res.ok) {
-        loadStaff();
+        mutate();
       } else {
         alert("Failed to delete staff account.");
       }
     } catch {
+      mutate(); // rollback
       alert("Something went wrong.");
     }
   }

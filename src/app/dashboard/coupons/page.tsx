@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 import { Plus, Pencil, Trash2, Tag, Percent } from "lucide-react";
 import { formatINR } from "@/lib/utils";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface Coupon {
   id: string;
@@ -20,10 +23,13 @@ export default function CouponsPage() {
   const { currentPlan, canAccess } = usePlan();
   const hasAccess = canAccess("discount_coupons");
 
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const { data: coupons = [], mutate, error, isValidating } = useSWR<Coupon[]>(hasAccess ? "/api/hotel/coupons" : null, fetcher, {
+    revalidateOnFocus: true,
+  });
+  const loading = !error && coupons.length === 0 && isValidating;
+
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -34,36 +40,9 @@ export default function CouponsPage() {
     isActive: true,
   });
 
-  const loadCoupons = useCallback(async () => {
-    if (!hasAccess) return;
-    try {
-      const res = await fetch("/api/hotel/coupons");
-      if (res.ok) {
-        const data = await res.json();
-        setCoupons(data);
-        sessionStorage.setItem("admin_coupons_list", JSON.stringify(data));
-      }
-    } catch (err) {
-      console.error("Failed to load coupons:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [hasAccess]);
-
-  useEffect(() => {
-    if (hasAccess) {
-      const cached = sessionStorage.getItem("admin_coupons_list");
-      if (cached) {
-        try {
-          setCoupons(JSON.parse(cached));
-          setLoading(false);
-        } catch (e) {
-          console.error("Failed to parse cached coupons", e);
-        }
-      }
-      loadCoupons();
-    }
-  }, [hasAccess, loadCoupons]);
+  async function loadCoupons() {
+    await mutate();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -100,7 +79,7 @@ export default function CouponsPage() {
         setShowModal(false);
         setEditingCoupon(null);
         setForm({ code: "", discountPercent: "", minBill: "0", isActive: true });
-        loadCoupons();
+        mutate();
       } else {
         const errData = await res.json();
         alert(errData.error || "Failed to save coupon.");
@@ -115,15 +94,19 @@ export default function CouponsPage() {
   async function handleToggleStatus(coupon: Coupon) {
     if (togglingId === coupon.id) return; // prevent double-click
     setTogglingId(coupon.id);
+    
+    // Optimistic update
+    mutate(coupons.map(c => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c), false);
+    
     try {
       await fetch(`/api/hotel/coupons/${coupon.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !coupon.is_active }),
       });
-      loadCoupons();
+      mutate();
     } catch {
-      // silent — UI will show stale state
+      mutate(); // rollback
     } finally {
       setTogglingId(null);
     }
@@ -131,14 +114,19 @@ export default function CouponsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this coupon?")) return;
+    
+    // Optimistic Update
+    mutate(coupons.filter(c => c.id !== id), false);
+
     try {
       const res = await fetch(`/api/hotel/coupons/${id}`, { method: "DELETE" });
       if (res.ok) {
-        loadCoupons();
+        mutate();
       } else {
         alert("Failed to delete coupon.");
       }
     } catch {
+      mutate(); // rollback
       alert("Something went wrong.");
     }
   }

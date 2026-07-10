@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import useSWR from "swr";
 import { formatINR } from "@/lib/utils";
 import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -29,8 +32,34 @@ export default function AnalyticsPage() {
   const [range, setRange] = useState<"today" | "week" | "month" | "custom">("week");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // Construct API URL based on date range
+  let fromStr = "";
+  let toStr = "";
+  const now = new Date();
+  if (range === "today") {
+    fromStr = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+  } else if (range === "week") {
+    fromStr = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  } else if (range === "month") {
+    fromStr = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  } else if (range === "custom") {
+    if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000+05:30").toISOString();
+    if (customTo) toStr = new Date(customTo + "T23:59:59.999+05:30").toISOString();
+  }
+
+  let apiUrl = "/api/hotel/analytics";
+  const params = new URLSearchParams();
+  if (fromStr) params.append("from", fromStr);
+  if (toStr) params.append("to", toStr);
+  const qs = params.toString();
+  if (qs) apiUrl += `?${qs}`;
+
+  const { data, error, isValidating } = useSWR<AnalyticsData>(hasAccess ? apiUrl : null, fetcher, {
+    revalidateOnFocus: true,
+  });
+
+  const loading = !error && !data && isValidating;
 
   // Chart instance refs — used to destroy before re-rendering
   const revenueChartRef = useRef<any>(null);
@@ -41,65 +70,6 @@ export default function AnalyticsPage() {
   const revenueCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const topItemsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hourlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // 1. Fetch analytics data whenever the date range changes
-  const fetchAnalytics = useCallback(async () => {
-    if (!hasAccess) return;
-    let fromStr = "";
-    let toStr = "";
-
-    const now = new Date();
-    if (range === "today") {
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      fromStr = todayStart.toISOString();
-    } else if (range === "week") {
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      fromStr = weekAgo.toISOString();
-    } else if (range === "month") {
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      fromStr = monthAgo.toISOString();
-    } else if (range === "custom") {
-      if (customFrom) fromStr = new Date(customFrom + "T00:00:00.000+05:30").toISOString();
-      if (customTo) toStr = new Date(customTo + "T23:59:59.999+05:30").toISOString();
-    }
-
-    const cacheKey = `admin_analytics_${range}_${customFrom}_${customTo}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        setData(JSON.parse(cached));
-        setLoading(false);
-      } catch {
-        /* ignore stale cache */
-      }
-    } else {
-      setLoading(true);
-    }
-
-    try {
-      let url = "/api/hotel/analytics";
-      const params = new URLSearchParams();
-      if (fromStr) params.append("from", fromStr);
-      if (toStr) params.append("to", toStr);
-      const qs = params.toString();
-      if (qs) url += `?${qs}`;
-
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-        sessionStorage.setItem(cacheKey, JSON.stringify(json));
-      }
-    } catch (err) {
-      console.error("Failed to load analytics data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [hasAccess, range, customFrom, customTo]);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
 
   // 2. Render charts using npm chart.js — dynamic import avoids SSR and CDN timing issues
   useEffect(() => {
