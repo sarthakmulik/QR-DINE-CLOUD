@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recalculateSessionTotals } from "@/lib/session-service";
 import { revalidateTag } from "next/cache";
 
 export async function POST(req: NextRequest) {
@@ -27,50 +28,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Active session not found" }, { status: 404 });
     }
 
-    // Insert items
-    const insertData = items.map((item) => ({
-      session_id: sessionId,
-      menu_item_id: item.menuItemId,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      status: "preparing",
-    }));
+    // Fetch authoritative prices from database
+    const menuItemIds = items.map((i: any) => i.menuItemId);
+    const { data: dbItems } = await sb
+      .from("menu_items")
+      .select("id, name, price")
+      .in("id", menuItemIds)
+      .eq("hotel_id", hotelId);
+
+    const itemMap = new Map((dbItems || []).map((i) => [i.id, i]));
+
+    const insertData = [];
+    for (const item of items) {
+      const dbItem = itemMap.get(item.menuItemId);
+      if (!dbItem) continue;
+
+      insertData.push({
+        session_id: sessionId,
+        menu_item_id: item.menuItemId,
+        name: dbItem.name,
+        price: dbItem.price,
+        quantity: Math.max(1, parseInt(item.quantity) || 1),
+        status: "preparing",
+      });
+    }
+
+    if (insertData.length === 0) {
+      return NextResponse.json({ error: "No valid items found" }, { status: 400 });
+    }
 
     const { error: insertErr } = await sb.from("session_items").insert(insertData);
     if (insertErr) {
       throw insertErr;
     }
 
-    // Recalculate session totals
-    const { data: allItems } = await sb
-      .from("session_items")
-      .select("price, quantity")
-      .eq("session_id", sessionId);
-
-    if (allItems) {
-      const subtotal = allItems.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
-      
-      const { data: hotel } = await sb.from("hotels").select("tax_rate").eq("id", hotelId).single();
-      const taxRate = hotel?.tax_rate || 0;
-      
-      const discountPercent = session.discount_percent || 0;
-      const discountAmount = Number(((subtotal * discountPercent) / 100).toFixed(2));
-      const postDiscount = subtotal - discountAmount;
-      const taxAmount = Number(((postDiscount * taxRate) / 100).toFixed(2));
-      const total = Number((postDiscount + taxAmount).toFixed(2));
-
-      await sb
-        .from("table_sessions")
-        .update({
-          subtotal,
-          discount_amount: discountAmount,
-          tax_amount: taxAmount,
-          total,
-          status: "open", // Reset status to open if it was payment_pending
-        })
-        .eq("id", sessionId);
+    // Reset status to open if it was payment_pending
+    if (session.status === "payment_pending") {
+      await sb.from("table_sessions").update({ status: "open" }).eq("id", sessionId);
     }
+
+    // Recalculate session totals using central service
+    await recalculateSessionTotals(sessionId);
 
     revalidateTag(`staff-overview-${hotelId}`);
     revalidateTag(`kitchen-orders-${hotelId}`);

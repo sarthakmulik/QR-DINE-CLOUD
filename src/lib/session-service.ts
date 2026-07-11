@@ -46,7 +46,24 @@ export async function recalculateSessionTotals(
   }
 
   const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const discountPercent = Number(sessionData.discount_percent || 0);
+  let discountPercent = Number(sessionData.discount_percent || 0);
+  let couponCode = sessionData.coupon_code;
+
+  if (couponCode) {
+    const { data: coupon } = await sb
+      .from("coupons")
+      .select("min_bill, is_active")
+      .eq("hotel_id", sessionData.hotel_id)
+      .eq("code", couponCode)
+      .maybeSingle();
+
+    if (!coupon || !coupon.is_active || subtotal < Number(coupon.min_bill)) {
+      // Coupon invalid or min_bill no longer met (e.g. item removed)
+      discountPercent = 0;
+      couponCode = null;
+    }
+  }
+
   const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
@@ -55,7 +72,14 @@ export async function recalculateSessionTotals(
 
   const { data: updated, error: updateErr } = await sb
     .from("table_sessions")
-    .update({ subtotal, discount_amount: discountAmount, tax_amount: taxAmount, total })
+    .update({ 
+      subtotal, 
+      discount_percent: discountPercent,
+      coupon_code: couponCode,
+      discount_amount: discountAmount, 
+      tax_amount: taxAmount, 
+      total 
+    })
     .eq("id", sessionId)
     .select("*")
     .single<TableSession>();
