@@ -97,6 +97,12 @@ export async function POST(req: NextRequest) {
     await resetLoginAttempts(ipKey);
     await resetLoginAttempts(emailKey);
 
+    // Generate HMAC-signed token
+    const salt = process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback_salt";
+    const tokenPayload = `${staff.id}|${Date.now()}`;
+    const signature = crypto.createHmac("sha256", salt).update(tokenPayload).digest("hex");
+    const signedToken = `${tokenPayload}|${signature}`;
+
     // 4. Set staff session cookie
     const sessionData = {
       id: staff.id,
@@ -105,6 +111,7 @@ export async function POST(req: NextRequest) {
       role: staff.role,
       hotelId: staff.hotel_id,
       hotelPlan: hotel.plan,
+      signedToken,
     };
 
     const cookieStore = await cookies();
@@ -124,7 +131,7 @@ export async function POST(req: NextRequest) {
       name: staff.name,
       role: staff.role,
       hotelId: staff.hotel_id,
-      token: staff.id,
+      token: signedToken,
     });
   } catch (err: any) {
     console.error("Staff login error:", err);

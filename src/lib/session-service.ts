@@ -26,66 +26,78 @@ export async function recalculateSessionTotals(
   hotelData?: Hotel | null
 ) {
   const sb = admin();
-  const { data: sessionData, error } = await sb
-    .from("table_sessions")
-    .select("*, session_items(*)")
-    .eq("id", sessionId)
-    .single();
-
-  if (error || !sessionData) throw new Error("Session not found");
-  const items = (sessionData.session_items || []) as SessionItem[];
-
   let hotel: Hotel | null = hotelData ?? null;
-  if (!hotel) {
-    const { data: fetchedHotel } = await sb
-      .from("hotels")
+
+  let retries = 0;
+  while (retries < 5) {
+    const { data: sessionData, error } = await sb
+      .from("table_sessions")
+      .select("*, session_items(*)")
+      .eq("id", sessionId)
+      .single();
+
+    if (error || !sessionData) throw new Error("Session not found");
+    const items = (sessionData.session_items || []) as SessionItem[];
+
+    if (!hotel) {
+      const { data: fetchedHotel } = await sb
+        .from("hotels")
+        .select("*")
+        .eq("id", sessionData.hotel_id)
+        .single<Hotel>();
+      hotel = fetchedHotel;
+    }
+
+    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    let discountPercent = Number(sessionData.discount_percent || 0);
+    let couponCode = sessionData.coupon_code;
+
+    if (couponCode) {
+      const { data: coupon } = await sb
+        .from("coupons")
+        .select("min_bill, is_active")
+        .eq("hotel_id", sessionData.hotel_id)
+        .eq("code", couponCode)
+        .maybeSingle();
+
+      if (!coupon || !coupon.is_active || subtotal < Number(coupon.min_bill)) {
+        // Coupon invalid or min_bill no longer met (e.g. item removed)
+        discountPercent = 0;
+        couponCode = null;
+      }
+    }
+
+    const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
+    const taxableAmount = Math.max(0, subtotal - discountAmount);
+    const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
+    const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
+    const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
+
+    const { data: updated, error: updateErr } = await sb
+      .from("table_sessions")
+      .update({ 
+        subtotal, 
+        discount_percent: discountPercent,
+        coupon_code: couponCode,
+        discount_amount: discountAmount, 
+        tax_amount: taxAmount, 
+        total 
+      })
+      .eq("id", sessionId)
+      .eq("subtotal", sessionData.subtotal) // OCC Lock: Ensure no concurrent lost updates
       .select("*")
-      .eq("id", sessionData.hotel_id)
-      .single<Hotel>();
-    hotel = fetchedHotel;
-  }
-
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  let discountPercent = Number(sessionData.discount_percent || 0);
-  let couponCode = sessionData.coupon_code;
-
-  if (couponCode) {
-    const { data: coupon } = await sb
-      .from("coupons")
-      .select("min_bill, is_active")
-      .eq("hotel_id", sessionData.hotel_id)
-      .eq("code", couponCode)
       .maybeSingle();
 
-    if (!coupon || !coupon.is_active || subtotal < Number(coupon.min_bill)) {
-      // Coupon invalid or min_bill no longer met (e.g. item removed)
-      discountPercent = 0;
-      couponCode = null;
+    if (updated) {
+      return mapTableSession(updated as TableSession, items);
     }
+    
+    // Concurrency collision detected, retry...
+    retries++;
+    await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
   }
 
-  const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-  const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
-
-  const { data: updated, error: updateErr } = await sb
-    .from("table_sessions")
-    .update({ 
-      subtotal, 
-      discount_percent: discountPercent,
-      coupon_code: couponCode,
-      discount_amount: discountAmount, 
-      tax_amount: taxAmount, 
-      total 
-    })
-    .eq("id", sessionId)
-    .select("*")
-    .single<TableSession>();
-
-  if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to update session");
-  return mapTableSession(updated, items);
+  throw new Error("Failed to recalculate session totals due to high concurrency. Please try again.");
 }
 
 async function loadTableWithSession(hotelId: string, tableNumber: number) {
@@ -193,7 +205,8 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
 export async function addItemToSession(
   sessionId: string,
   item: { menuItemId?: string; name: string; price: number; quantity: number },
-  preVerifiedSession?: TableSession | null
+  preVerifiedSession?: TableSession | null,
+  skipRecalculate: boolean = false
 ) {
   const sb = admin();
   let session: TableSession;
@@ -259,6 +272,8 @@ export async function addItemToSession(
     });
     if (error) throw new Error(error.message);
   }
+  
+  if (skipRecalculate) return null;
   return recalculateSessionTotals(sessionId, hotel);
 }
 

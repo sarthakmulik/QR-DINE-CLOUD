@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrCreateOpenSession, addItemToSession } from "@/lib/session-service";
+import { getOrCreateOpenSession, addItemToSession, recalculateSessionTotals } from "@/lib/session-service";
 import type { Hotel, MenuItem, SessionItem, TableSession } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 import { verifyTableSignature } from "@/lib/crypto";
@@ -161,10 +161,11 @@ export async function POST(
       }
 
       try {
-        lastResult = await addItemToSession(
+        await addItemToSession(
           session.id,
           { menuItemId: menuItem.id, name: menuItem.name, price: Number(menuItem.price), quantity: qty },
-          session as any
+          session as any,
+          true // skipRecalculate
         );
       } catch (addErr) {
         if (addErr instanceof Error && addErr.message === "SESSION_NOT_OPEN") {
@@ -176,6 +177,9 @@ export async function POST(
         throw addErr;
       }
     }
+
+    // Recalculate once after all items are batched
+    lastResult = await recalculateSessionTotals(session.id, hotelData as Hotel);
 
     if (lastResult) {
       // Background: If any drinks were ordered, send a direct push to one waiter in a round-robin
