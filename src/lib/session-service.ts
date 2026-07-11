@@ -328,18 +328,12 @@ export async function initiateCheckout(sessionId: string, preVerifiedSession?: T
 
   if (session.status !== "open") throw new Error("Session is not open for checkout");
 
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const discountPercent = Number(session.discount_percent || 0);
-  const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-  const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
-
   const { data: updated, error: updateErr } = await sb
     .from("table_sessions")
-    .update({ status: "checkout_initiated", subtotal, discount_amount: discountAmount, tax_amount: taxAmount, total })
-    .eq("id", sessionId).select("*").single<TableSession>();
+    .update({ status: "checkout_initiated" })
+    .eq("id", sessionId)
+    .eq("status", "open")
+    .select("*").single<TableSession>();
   if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to update session");
   return mapTableSession(updated, items, hotel || undefined, table || undefined);
 }
@@ -360,18 +354,11 @@ export async function printBill(sessionId: string) {
   const hotel = (sessionData as any).hotels as Hotel | null;
   const table = (sessionData as any).restaurant_tables as RestaurantTable | null;
 
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const discountPercent = Number(sessionData.discount_percent || 0);
-  const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-  const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
-
   const { data: updated, error: updateErr } = await admin()
     .from("table_sessions")
-    .update({ status: "bill_printed", subtotal, discount_amount: discountAmount, tax_amount: taxAmount, total })
-    .eq("id", sessionId).select("*").single<TableSession>();
+    .update({ status: "bill_printed" })
+    .eq("id", sessionId)
+    .select("*").single<TableSession>();
   if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to update session");
   return mapTableSession(updated, items, hotel || undefined, table || undefined);
 }
@@ -409,18 +396,11 @@ export async function markAsPaid(
     table = (sessionData as any).restaurant_tables as RestaurantTable | null;
   }
 
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const discountPercent = Number(session.discount_percent || 0);
-  const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-  const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
   const now = new Date().toISOString();
 
   const [updateSessionRes] = await Promise.all([
     sb.from("table_sessions")
-      .update({ status: "closed", payment_method: paymentMethod, closed_at: now, end_time: now, subtotal, discount_amount: discountAmount, tax_amount: taxAmount, total })
+      .update({ status: "closed", payment_method: paymentMethod, closed_at: now, end_time: now })
       .eq("id", sessionId).select("*").single<TableSession>(),
     sb.from("restaurant_tables").update({ current_session_id: null }).eq("id", session.table_id),
   ]);
@@ -517,13 +497,6 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
 
   const hotel = (sessionData as any).hotels as Hotel;
   const items = await getSessionItems(sessionId);
-  const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const discountPercent = Number(sessionData.discount_percent || 0);
-  const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-  const taxRate = hotel ? Number(hotel.tax_rate) ?? 5 : 5;
-  const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
-  const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
 
   // We explicitly DO NOT assign order_number here to prevent "ghost" orders from skipping numbers.
   // order_number will be assigned later when payment is successfully confirmed.
@@ -534,13 +507,11 @@ export async function confirmQuickServiceOrder(sessionId: string, paymentMethod:
     .update({ 
       status: "payment_pending", 
       payment_method: paymentMethod, 
-      subtotal, 
-      discount_amount: discountAmount, 
-      tax_amount: taxAmount, 
-      total,
       start_time: new Date().toISOString()
     })
-    .eq("id", sessionId).select("*").single<TableSession>();
+    .eq("id", sessionId)
+    .eq("status", "draft")
+    .select("*").single<TableSession>();
     
   if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to confirm order");
   return mapTableSession(updated, items, hotel);
