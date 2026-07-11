@@ -5,6 +5,7 @@ import { generateBillHTML, silentPrint, type PrinterSize } from "@/lib/bill-gene
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { ClientDate } from "@/components/ui/client-date";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -755,7 +756,7 @@ Thank you for dining with us!`;
               </Badge>
               <span className="text-sm text-gray-500">
                 Session started{" "}
-                {formatDateTime(selected.currentSession.startTime)}
+                <ClientDate date={selected.currentSession.startTime} />
               </span>
             </div>
 
@@ -778,7 +779,7 @@ Thank you for dining with us!`;
                         {formatINR(item.price * item.quantity)}
                       </td>
                       <td className="px-3 py-2.5 text-right text-xs text-gray-400 dark:text-zinc-500">
-                        {formatDateTime(item.addedAt)}
+                        <ClientDate date={item.addedAt} />
                       </td>
                     </tr>
                   ))}

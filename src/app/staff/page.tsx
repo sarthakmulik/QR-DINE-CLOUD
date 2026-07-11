@@ -8,6 +8,7 @@ import QrScanner from "@/components/staff/QrScanner";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
+import { ClientDate } from "@/components/ui/client-date";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search, ShieldAlert, QrCode } from "lucide-react";
 import { Camera } from "@capacitor/camera";
@@ -637,7 +638,7 @@ export default function StaffPanelPage() {
                   </p>
                   <p className="text-[12px] text-gray-400 mt-0.5">
                     {isOnShift 
-                      ? `Clocked in at ${new Date(shiftData.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` 
+                      ? <>Clocked in at <ClientDate date={shiftData.clock_in} timeOnly /></> 
                       : "Scan your hotel's QR code to begin serving tables."}
                   </p>
                 </div>
@@ -691,7 +692,7 @@ export default function StaffPanelPage() {
                 <div key={req.id} className="bg-[#111113] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center">
                   <div>
                     <p className="font-semibold text-sm text-white">Table {req.table_number}</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Called at {new Date(req.created_at).toLocaleTimeString()}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Called at <ClientDate date={req.created_at} timeOnly /></p>
                   </div>
                   <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs px-3 font-semibold" onClick={() => handleCompleteRequest(req.id)}>
                     <Check size={12} /> Resolve
@@ -725,7 +726,7 @@ export default function StaffPanelPage() {
                         </span>
                         {item.addedAt && (
                           <span className="text-[10px] text-gray-500">
-                            {new Date(item.addedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <ClientDate date={item.addedAt} timeOnly />
                           </span>
                         )}
                       </div>
@@ -828,7 +829,7 @@ export default function StaffPanelPage() {
                     {selectedTable.currentSession.status.replace("_", " ")}
                   </Badge>
                   <span className="text-[11px] text-gray-500">
-                    Started {formatDateTime(selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString())}
+                    Started <ClientDate date={selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString()} />
                   </span>
                 </div>
 
