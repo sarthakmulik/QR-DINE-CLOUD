@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { formatDate, formatINR } from "@/lib/utils";
+import { formatINR } from "@/lib/utils";
+import { ClientDate } from "@/components/ui/client-date";
 import {
   Building2,
   IndianRupee,
@@ -399,8 +400,8 @@ export default function AdminPage() {
                     {hotel.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 dark:text-zinc-300">{formatDate(hotel.lastPaymentDate)}</td>
-                <td className="px-4 py-3 dark:text-zinc-300">{formatDate(hotel.nextDueDate)}</td>
+                <td className="px-4 py-3 dark:text-zinc-300"><ClientDate date={hotel.lastPaymentDate} /></td>
+                <td className="px-4 py-3 dark:text-zinc-300"><ClientDate date={hotel.nextDueDate} /></td>
                 <td className="px-4 py-3 dark:text-zinc-300">{formatINR(hotel.billingAmount)}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
@@ -495,7 +496,7 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant={b.is_active ? "active" : "suspended"}>{b.is_active ? "Active" : "Inactive"}</Badge>
                       <span className="text-xs text-gray-500 uppercase tracking-wider">{b.type}</span>
-                      <span className="text-xs text-gray-500">{formatDate(b.created_at)}</span>
+                      <span className="text-xs text-gray-500"><ClientDate date={b.created_at} /></span>
                     </div>
                     <p className="text-sm dark:text-zinc-300">{b.message}</p>
                   </div>
@@ -608,7 +609,7 @@ export default function AdminPage() {
               <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                 {auditLogs.map(log => (
                   <tr key={log.id}>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(log.created_at)}</td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap"><ClientDate date={log.created_at} /></td>
                     <td className="px-4 py-3">{log.hotels?.name || "Global"}</td>
                     <td className="px-4 py-3 font-medium">
                       <Badge variant={log.action.includes("DELETE") ? "suspended" : "active"}>
@@ -634,7 +635,7 @@ export default function AdminPage() {
       <Modal open={!!billingHotel} onClose={() => setBillingHotel(null)} title={`Billing Ledger - ${billingHotel?.name}`}>
         <div className="space-y-6">
           <div className="bg-blue-50 text-blue-800 p-4 rounded-lg text-sm border border-blue-200">
-            <strong>Next Due:</strong> {formatDate(billingHotel?.nextDueDate)}<br/>
+            <strong>Next Due:</strong> <ClientDate date={billingHotel?.nextDueDate} /><br/>
             <strong>Monthly Amount:</strong> {formatINR(billingHotel?.billingAmount || 0)}
           </div>
 
@@ -675,7 +676,7 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                   {payments.map(p => (
                     <tr key={p.id}>
-                      <td className="px-4 py-2 text-gray-500">{formatDate(p.payment_date)}</td>
+                      <td className="px-4 py-2 text-gray-500"><ClientDate date={p.payment_date} /></td>
                       <td className="px-4 py-2 font-medium">{formatINR(p.amount)}</td>
                       <td className="px-4 py-2 uppercase text-xs">{p.method}</td>
                     </tr>
