@@ -328,6 +328,10 @@ export default function QuickServiceClient({
             throw new Error("Razorpay SDK failed to load. Please check your connection or ad blocker.");
           }
 
+          // Extract the hotel's brand color dynamically from the CSS variables
+          const computedStyle = getComputedStyle(document.documentElement);
+          const brandColor = computedStyle.getPropertyValue('--brand-600').trim() || "#059669";
+
           const options = {
             key: initData.key_id,
             amount: initData.amount,
@@ -371,6 +375,10 @@ export default function QuickServiceClient({
               }
             },
             prefill: { name: "Customer", contact: "9999999999" },
+            theme: {
+              color: brandColor,
+              hide_topbar: true
+            },
             modal: {
               // FIX: ondismiss is the correct place to reset isProcessing.
               // Previously the finally block ran immediately after rzp.open(),
@@ -378,8 +386,7 @@ export default function QuickServiceClient({
               ondismiss: function () {
                 setIsProcessing(false);
               }
-            },
-            theme: { color: hotel?.customizations?.qsPrimaryColor || hotel?.customizations?.primaryColor || "#ea580c" }
+            }
           };
           const rzp = new (window as any).Razorpay(options);
           rzp.on("payment.failed", function (response: any) {

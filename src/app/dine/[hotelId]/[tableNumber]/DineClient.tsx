@@ -1622,6 +1622,10 @@ export default function DineClient({
           throw new Error("Razorpay SDK failed to load. Please check your connection or ad blocker.");
         }
 
+        // Extract the hotel's brand color dynamically from the CSS variables
+        const computedStyle = getComputedStyle(document.documentElement);
+        const brandColor = computedStyle.getPropertyValue('--brand-600').trim() || "#059669";
+
         const options = {
           key: initData.key_id,
           amount: initData.amount,
@@ -1662,7 +1666,8 @@ export default function DineClient({
             contact: ""
           },
           theme: {
-            color: "#059669"
+            color: brandColor,
+            hide_topbar: true
           },
           modal: {
             ondismiss: function() {
