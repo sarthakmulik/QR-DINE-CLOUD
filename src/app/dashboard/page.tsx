@@ -1021,7 +1021,7 @@ Thank you for dining with us!`;
             <ol className="list-decimal list-inside text-sm text-amber-700 dark:text-amber-500/80 space-y-1.5">
               <li>Open your tablet&apos;s camera app and scan this QR.</li>
               <li>Enter your 4-digit Kitchen PIN when prompted.</li>
-              <li>Tap the "Fullscreen" button on the KDS to lock it in app mode.</li>
+              <li>Tap the &quot;Fullscreen&quot; button on the KDS to lock it in app mode.</li>
               <li>Your tablet is now a dedicated KDS screen!</li>
             </ol>
           </div>
