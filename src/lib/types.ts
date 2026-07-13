@@ -120,6 +120,7 @@ export interface WaiterRequest {
   table_number: number;
   status: "pending" | "completed";
   created_at: string;
+  updated_at?: string;
   assigned_staff_id?: string | null;
   resolved_by?: string | null;
 }

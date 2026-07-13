@@ -243,7 +243,29 @@ export async function GET(req: NextRequest) {
     }
 
     // 8. Generate Advanced AI Insights
-    const deepInsights = generateAdvancedInsights(typedSessions, items);
+    // Fetch staff names for human-readable insights
+    const { data: staffData } = await sb
+      .from("hotel_staff")
+      .select("id, name")
+      .eq("hotel_id", hotelId);
+      
+    const staffMap: Record<string, string> = {};
+    (staffData || []).forEach(staff => {
+      staffMap[staff.id] = staff.name;
+    });
+
+    // Fetch waiter requests for service speed metrics
+    let requestsQuery = sb
+      .from("waiter_requests")
+      .select("*")
+      .eq("hotel_id", hotelId);
+      
+    if (from) requestsQuery = requestsQuery.gte("created_at", from);
+    if (to) requestsQuery = requestsQuery.lte("created_at", to);
+    
+    const { data: requests } = await requestsQuery;
+
+    const deepInsights = generateAdvancedInsights(typedSessions, items, requests || [], staffMap);
     
     const insights = [...basicInsights, ...deepInsights];
 

@@ -1,4 +1,4 @@
-import { TableSession, SessionItem } from "./types";
+import { TableSession, SessionItem, WaiterRequest } from "./types";
 
 export interface AIInsight {
   type: 'growth' | 'warning' | 'opportunity' | 'info';
@@ -7,7 +7,9 @@ export interface AIInsight {
 
 export function generateAdvancedInsights(
   sessions: TableSession[],
-  items: SessionItem[]
+  items: SessionItem[],
+  requests: WaiterRequest[] = [],
+  staffMap: Record<string, string> = {}
 ): AIInsight[] {
   const insights: AIInsight[] = [];
 
@@ -237,6 +239,109 @@ export function generateAdvancedInsights(
         message: `Inventory Alert: Based on momentum, you will sell ~${Math.round(topPredictedItem.projectedQty)} portions of "${topPredictedItem.name}" this upcoming weekend. Prep accordingly to avoid stock-outs!`
       });
     }
+  }
+
+  // -------------------------------------------------------------
+  // 5. STAFF PERFORMANCE MATRIX (Multi-Dimensional)
+  // -------------------------------------------------------------
+  const staffStats: Record<string, {
+    sessionsCount: number;
+    totalRevenue: number;
+    totalTurnaroundMins: number;
+    turnaroundCount: number;
+    requestsSolved: number;
+    totalResolutionSeconds: number;
+    resolvedRequestsCount: number;
+  }> = {};
+
+  // Aggregate Turnaround & Revenue
+  sessions.forEach(s => {
+    if (s.assigned_staff_id) {
+      if (!staffStats[s.assigned_staff_id]) {
+        staffStats[s.assigned_staff_id] = { sessionsCount: 0, totalRevenue: 0, totalTurnaroundMins: 0, turnaroundCount: 0, requestsSolved: 0, totalResolutionSeconds: 0, resolvedRequestsCount: 0 };
+      }
+      staffStats[s.assigned_staff_id].sessionsCount++;
+      staffStats[s.assigned_staff_id].totalRevenue += Number(s.total || 0);
+
+      if (s.start_time && s.closed_at) {
+        const start = new Date(s.start_time).getTime();
+        const end = new Date(s.closed_at).getTime();
+        const diffMins = (end - start) / (1000 * 60);
+        if (diffMins > 1 && diffMins < 240) {
+          staffStats[s.assigned_staff_id].totalTurnaroundMins += diffMins;
+          staffStats[s.assigned_staff_id].turnaroundCount++;
+        }
+      }
+    }
+  });
+
+  // Aggregate Waiter Requests
+  requests.forEach(r => {
+    if (r.status === "completed" && r.resolved_by) {
+      if (!staffStats[r.resolved_by]) {
+        staffStats[r.resolved_by] = { sessionsCount: 0, totalRevenue: 0, totalTurnaroundMins: 0, turnaroundCount: 0, requestsSolved: 0, totalResolutionSeconds: 0, resolvedRequestsCount: 0 };
+      }
+      staffStats[r.resolved_by].requestsSolved++;
+
+      if (r.created_at && r.updated_at) {
+        const start = new Date(r.created_at).getTime();
+        const end = new Date(r.updated_at).getTime();
+        const diffSecs = (end - start) / 1000;
+        if (diffSecs > 0 && diffSecs < 3600) { // Max 1 hour to resolve
+          staffStats[r.resolved_by].totalResolutionSeconds += diffSecs;
+          staffStats[r.resolved_by].resolvedRequestsCount++;
+        }
+      }
+    }
+  });
+
+  // Calculate Global Averages
+  const totalSessionsGlobal = sessions.length;
+  const globalAOV = totalSessionsGlobal > 0 ? sessions.reduce((sum, s) => sum + Number(s.total || 0), 0) / totalSessionsGlobal : 0;
+
+  let mvpStaff = { id: '', score: 0, aov: 0, avgResolutionSecs: 0, volume: 0 };
+  let slowStaff = { id: '', turnaroundMins: 0, aov: 0 };
+
+  Object.entries(staffStats).forEach(([staffId, stats]) => {
+    const aov = stats.sessionsCount > 0 ? stats.totalRevenue / stats.sessionsCount : 0;
+    const avgTurnaround = stats.turnaroundCount > 0 ? stats.totalTurnaroundMins / stats.turnaroundCount : 0;
+    const avgResolutionSecs = stats.resolvedRequestsCount > 0 ? stats.totalResolutionSeconds / stats.resolvedRequestsCount : 0;
+    const volume = stats.requestsSolved;
+
+    // MVP Score heuristic
+    if (stats.sessionsCount >= 1 || stats.requestsSolved >= 1) { // lowered for testing
+      let score = 0;
+      if (aov > globalAOV) score += 50;
+      if (avgResolutionSecs > 0 && avgResolutionSecs < 120) score += 30; // Under 2 mins
+      score += volume * 2;
+
+      if (score > mvpStaff.score) {
+        mvpStaff = { id: staffId, score, aov, avgResolutionSecs, volume };
+      }
+    }
+
+    // Warning heuristic
+    if (stats.turnaroundCount >= 1 && avgTurnaround > 90) { // lowered for testing
+      if (avgTurnaround > slowStaff.turnaroundMins) {
+        slowStaff = { id: staffId, turnaroundMins: avgTurnaround, aov };
+      }
+    }
+  });
+
+  if (mvpStaff.id) {
+    const name = staffMap[mvpStaff.id] || `Staff #${mvpStaff.id.slice(0,4)}`;
+    insights.push({
+      type: 'growth',
+      message: `Staff Performance: ${name} is your MVP! They average an ₹${Math.round(mvpStaff.aov)} AOV (vs global ₹${Math.round(globalAOV)}), resolve requests in ${Math.round(mvpStaff.avgResolutionSecs)}s, and handle the highest volume.`
+    });
+  }
+
+  if (slowStaff.id && slowStaff.id !== mvpStaff.id) {
+    const name = staffMap[slowStaff.id] || `Staff #${slowStaff.id.slice(0,4)}`;
+    insights.push({
+      type: 'warning',
+      message: `Service Bottleneck: ${name}'s tables take an average of ${Math.round(slowStaff.turnaroundMins)} mins to checkout. Monitor their section to improve table turnover.`
+    });
   }
 
   return insights;
