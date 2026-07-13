@@ -176,17 +176,22 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   }, [pinEntered]);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
+    const docElm = document.documentElement as any;
+    const doc = document as any;
+
+    if (!doc.fullscreenElement && !doc.webkitFullscreenElement) {
+      if (docElm.requestFullscreen) {
+        docElm.requestFullscreen().then(() => setIsFullscreen(true)).catch(console.error);
+      } else if (docElm.webkitRequestFullscreen) {
+        docElm.webkitRequestFullscreen();
         setIsFullscreen(true);
-      }).catch((err) => {
-        console.error("Fullscreen error:", err);
-      });
+      }
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().then(() => {
-          setIsFullscreen(false);
-        });
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().then(() => setIsFullscreen(false));
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+        setIsFullscreen(false);
       }
     }
   };
@@ -249,7 +254,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
       
       return changed ? next : prev;
     });
-  }, [sessions, itemStatus]);
+  }, [sessions, itemStatus, isSessionComplete]);
 
   // Handle individual item status toggle
   const toggleItemStatus = async (itemId: string, sessionId: string) => {

@@ -1013,6 +1013,7 @@ Thank you for dining with us!`;
           </p>
           {tabletQrUrl && (
             <div className="bg-white p-4 rounded-xl shadow-sm inline-block border border-gray-100 dark:border-none mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={tabletQrUrl} alt="Tablet KDS QR Code" className="w-56 h-56 object-contain" />
             </div>
           )}

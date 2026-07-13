@@ -448,7 +448,7 @@ export default function StaffPanelPage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, authFetch]);
 
   useEffect(() => {
     const cached = localStorage.getItem("staff_overview");
