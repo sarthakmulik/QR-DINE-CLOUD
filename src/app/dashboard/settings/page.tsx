@@ -1088,16 +1088,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <WelcomeAnimationSettings
-              plan={currentPlan as any || "basic"}
-              serviceType={form.serviceType}
-              settings={{
-                welcomeAnimationEnabled: form.welcomeAnimationEnabled,
-                welcomeAnimationPreset: form.welcomeAnimationPreset
-              }}
-              onUpdate={handleWelcomeAnimationUpdate}
-              restaurantName={form.name || "Your Restaurant"}
-            />
+
               </>
             )}
 
@@ -1188,6 +1179,18 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+
+            <WelcomeAnimationSettings
+              plan={currentPlan as any || "basic"}
+              serviceType={form.serviceType}
+              settings={{
+                welcomeAnimationEnabled: form.welcomeAnimationEnabled,
+                welcomeAnimationPreset: form.welcomeAnimationPreset
+              }}
+              onUpdate={handleWelcomeAnimationUpdate}
+              restaurantName={form.name || "Your Restaurant"}
+            />
+
             </div>
             )}
 
