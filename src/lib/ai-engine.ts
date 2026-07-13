@@ -186,6 +186,59 @@ export function generateAdvancedInsights(
     }
   }
 
+  // -------------------------------------------------------------
+  // 4. PREDICTIVE INVENTORY FORECASTING (Weekend Waste Reducer)
+  // -------------------------------------------------------------
+  if (sessions.length > 10) {
+    // 1. Identify unique dates to count weekends
+    const weekendDates = new Set<string>();
+    
+    sessions.forEach(s => {
+      const d = new Date(s.start_time);
+      const day = d.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+      if (day === 0 || day === 5 || day === 6) {
+        // format YYYY-MM-DD
+        const dateStr = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        weekendDates.add(dateStr);
+      }
+    });
+
+    const totalWeekendDays = weekendDates.size;
+    // A full weekend has 3 days (Fri, Sat, Sun). We divide by 3 to get the number of weekends represented.
+    const weekendCount = Math.max(1, totalWeekendDays / 3);
+
+    // 2. Count item quantities sold on weekends
+    const weekendItemQty: Record<string, number> = {};
+    const sessionToDay: Record<string, number> = {};
+    
+    sessions.forEach(s => {
+      sessionToDay[s.id] = new Date(s.start_time).getDay();
+    });
+
+    items.forEach(i => {
+      const day = sessionToDay[i.session_id];
+      if (day === 0 || day === 5 || day === 6) {
+        weekendItemQty[i.name] = (weekendItemQty[i.name] || 0) + (i.quantity || 1);
+      }
+    });
+
+    // 3. Find top velocity item
+    let topPredictedItem = { name: '', projectedQty: 0 };
+    Object.entries(weekendItemQty).forEach(([name, qty]) => {
+      const projected = qty / weekendCount;
+      if (projected > topPredictedItem.projectedQty && projected > 5) { // Threshold > 5 portions
+        topPredictedItem = { name, projectedQty: projected };
+      }
+    });
+
+    if (topPredictedItem.name) {
+      insights.push({
+        type: 'warning',
+        message: `Inventory Alert: Based on momentum, you will sell ~${Math.round(topPredictedItem.projectedQty)} portions of "${topPredictedItem.name}" this upcoming weekend. Prep accordingly to avoid stock-outs!`
+      });
+    }
+  }
+
   return insights;
 }
 
