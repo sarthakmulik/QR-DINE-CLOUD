@@ -155,6 +155,92 @@ export async function GET(req: NextRequest) {
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
+    // 7. Heatmap & Insights Engine
+    const heatmapMatrix: Record<number, Record<number, number>> = {};
+    for (let d = 0; d < 7; d++) {
+      heatmapMatrix[d] = {};
+      for (let h = 0; h < 24; h++) {
+        heatmapMatrix[d][h] = 0;
+      }
+    }
+
+    const sessionItemMap: Record<string, SessionItem[]> = {};
+    items.forEach(item => {
+      if (!sessionItemMap[item.session_id]) sessionItemMap[item.session_id] = [];
+      sessionItemMap[item.session_id].push(item);
+    });
+
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    
+    typedSessions.forEach((s) => {
+      const utcMs = new Date(s.start_time).getTime();
+      const istDate = new Date(utcMs + 5.5 * 60 * 60 * 1000);
+      const day = istDate.getUTCDay(); // 0 = Sunday, 1 = Monday
+      const hour = istDate.getUTCHours();
+      heatmapMatrix[day][hour] += 1;
+    });
+
+    const heatmapData: { day: number, hour: number, count: number }[] = [];
+    let busiest = { day: -1, hour: -1, count: -1 };
+    let slowest = { day: -1, hour: -1, count: 9999999 };
+
+    // Default active hours: 10 AM to 10 PM
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        const count = heatmapMatrix[d][h];
+        heatmapData.push({ day: d, hour: h, count });
+        
+        if (count > busiest.count) {
+          busiest = { day: d, hour: h, count };
+        }
+        
+        // Only consider active business hours for the "Slowest" calculation (10 AM to 10 PM)
+        if (h >= 10 && h <= 22) {
+          if (count < slowest.count) {
+            slowest = { day: d, hour: h, count };
+          }
+        }
+      }
+    }
+
+    // Determine top item during slowest hour
+    const slowItems: Record<string, number> = {};
+    typedSessions.forEach((s) => {
+      const utcMs = new Date(s.start_time).getTime();
+      const istDate = new Date(utcMs + 5.5 * 60 * 60 * 1000);
+      const day = istDate.getUTCDay();
+      const hour = istDate.getUTCHours();
+      
+      if (day === slowest.day && hour === slowest.hour) {
+        const sessItems = sessionItemMap[s.id] || [];
+        sessItems.forEach(i => {
+          slowItems[i.name] = (slowItems[i.name] || 0) + (i.quantity || 1);
+        });
+      }
+    });
+
+    const topSlowItem = Object.entries(slowItems).sort((a, b) => b[1] - a[1])[0];
+
+    const formatHour = (h: number) => {
+      const ampm = h >= 12 ? "PM" : "AM";
+      const fmt = h % 12 || 12;
+      return `${fmt} ${ampm}`;
+    };
+
+    const insights: string[] = [];
+    
+    if (busiest.count > 0) {
+      insights.push(`Your absolute peak is ${dayNames[busiest.day]}s at ${formatHour(busiest.hour)}. Ensure maximum staff coverage.`);
+    }
+
+    if (slowest.count !== 9999999 && slowest.count >= 0) {
+      if (topSlowItem) {
+        insights.push(`${dayNames[slowest.day]}s at ${formatHour(slowest.hour)} are your slowest hours, but ${topSlowItem[0]} sells the most. Run a ${topSlowItem[0]} promo next ${dayNames[slowest.day]}!`);
+      } else {
+        insights.push(`${dayNames[slowest.day]}s at ${formatHour(slowest.hour)} are unusually quiet. Consider a happy hour discount.`);
+      }
+    }
+
     return NextResponse.json({
       totalRevenue,
       totalSessions,
@@ -164,6 +250,8 @@ export async function GET(req: NextRequest) {
       topItems,
       byHour,
       tablePerformance,
+      heatmapData,
+      insights,
     });
   } catch (err) {
     console.error("Error in analytics API route:", err);

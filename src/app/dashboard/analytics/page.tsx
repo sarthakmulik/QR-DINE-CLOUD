@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { formatINR } from "@/lib/utils";
-import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar } from "lucide-react";
+import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar, Sparkles, Lightbulb } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 
@@ -23,6 +23,8 @@ interface AnalyticsData {
     revenue: number;
     avgValue: number;
   }[];
+  heatmapData: { day: number; hour: number; count: number }[];
+  insights: string[];
 }
 
 export default function AnalyticsPage() {
@@ -278,6 +280,26 @@ export default function AnalyticsPage() {
         </div>
       ) : data ? (
         <>
+          {/* AI Insights Banner */}
+          {data.insights && data.insights.length > 0 && (
+            <div className="bg-gradient-to-r from-indigo-50 to-fuchsia-50 dark:from-indigo-900/20 dark:to-fuchsia-900/20 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 shadow-sm mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="text-indigo-500" size={20} />
+                <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">Actionable Insights</h2>
+              </div>
+              <div className="space-y-3">
+                {data.insights.map((insight, idx) => (
+                  <div key={idx} className="flex items-start gap-3 bg-white/60 dark:bg-zinc-900/40 p-3 rounded-xl border border-white/40 dark:border-zinc-800/50">
+                    <div className="mt-0.5">
+                      <Lightbulb className="text-amber-500" size={16} />
+                    </div>
+                    <p className="text-sm font-medium text-gray-800 dark:text-zinc-200 leading-snug">{insight}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* STATS GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
@@ -375,6 +397,69 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </div>
+
+          {/* Heatmap Grid */}
+          {data.heatmapData && data.heatmapData.length > 0 && (
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-base font-bold text-gray-800 dark:text-zinc-200 mb-4">Weekly Sales Heatmap</h2>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mb-4">Darker squares indicate higher order volumes.</p>
+              
+              <div className="overflow-x-auto pb-4">
+                <div className="min-w-[800px]">
+                  {/* Heatmap Layout */}
+                  <div className="flex">
+                    {/* Y-axis labels (Days) */}
+                    <div className="flex flex-col gap-1 pr-4 pt-6">
+                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+                        <div key={day} className="h-6 flex items-center justify-end text-xs font-semibold text-gray-500 w-8">{day}</div>
+                      ))}
+                    </div>
+                    
+                    {/* Grid Area */}
+                    <div className="flex-1">
+                      {/* X-axis labels (Hours) */}
+                      <div className="flex gap-1 mb-1 pl-1">
+                        {Array.from({ length: 24 }).map((_, h) => (
+                          <div key={h} className="w-6 flex justify-center text-[10px] text-gray-400">
+                            {h % 2 === 0 ? h : ""}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* The Grid */}
+                      <div className="flex flex-col gap-1 pl-1">
+                        {Array.from({ length: 7 }).map((_, dayIndex) => (
+                          <div key={dayIndex} className="flex gap-1">
+                            {Array.from({ length: 24 }).map((_, hourIndex) => {
+                              const cellData = data.heatmapData.find(d => d.day === dayIndex && d.hour === hourIndex);
+                              const count = cellData?.count || 0;
+                              
+                              // Calculate intensity based on the max value in the entire heatmap
+                              const maxCount = Math.max(...data.heatmapData.map(d => d.count), 1);
+                              const intensity = count === 0 ? 0 : Math.max(0.15, count / maxCount);
+                              
+                              return (
+                                <div
+                                  key={`${dayIndex}-${hourIndex}`}
+                                  className="w-6 h-6 rounded bg-emerald-500 dark:bg-emerald-400 cursor-help relative group"
+                                  style={{ opacity: count === 0 ? 0.05 : intensity }}
+                                >
+                                  {/* Tooltip */}
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-10 shadow-lg transition-opacity">
+                                    {count} orders at {hourIndex}:00
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="h-64 flex items-center justify-center text-gray-400 dark:text-zinc-500">
