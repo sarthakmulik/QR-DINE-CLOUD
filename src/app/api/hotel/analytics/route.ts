@@ -245,7 +245,7 @@ export async function GET(req: NextRequest) {
     // 8. Generate Advanced AI Insights
     // Fetch staff names for human-readable insights
     const { data: staffData } = await sb
-      .from("hotel_staff")
+      .from("staff")
       .select("id, name")
       .eq("hotel_id", hotelId);
       
