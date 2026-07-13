@@ -60,7 +60,8 @@ export default async function BillPage({
 
   const groupedItems = Object.values(
     rawSessionItems.reduce((acc, item) => {
-      const key = `${item.menu_item_id}-${item.price}`;
+      // Group by name and price to ensure identical items always merge (even if manually added)
+      const key = `${item.name}-${item.price}`;
       if (!acc[key]) {
         acc[key] = { ...item };
       } else {

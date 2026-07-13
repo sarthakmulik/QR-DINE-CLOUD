@@ -59,6 +59,19 @@ export async function GET(
     const cgst = taxRate / 2;
     const sgst = taxRate / 2;
 
+    // Aggregate items by name and price to save bill space
+    const groupedItems = Object.values(
+      sessionItems.reduce((acc: any, item: any) => {
+        const key = `${item.name}-${item.price}`;
+        if (!acc[key]) {
+          acc[key] = { ...item };
+        } else {
+          acc[key].quantity += item.quantity;
+        }
+        return acc;
+      }, {})
+    );
+
     return NextResponse.json({
       session: {
         id: session.id,
@@ -72,7 +85,7 @@ export async function GET(
         couponCode: session.coupon_code,
         paymentMethod: session.payment_method,
       },
-      items: sessionItems.map((item: any) => ({
+      items: groupedItems.map((item: any) => ({
         id: item.id,
         name: item.name,
         price: Number(item.price),
