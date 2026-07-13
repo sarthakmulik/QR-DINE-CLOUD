@@ -375,9 +375,8 @@ export default function QuickServiceClient({
             throw new Error("Razorpay SDK failed to load. Please check your connection or ad blocker.");
           }
 
-          // Extract the hotel's brand color dynamically from the CSS variables
-          const computedStyle = getComputedStyle(document.documentElement);
-          const brandColor = computedStyle.getPropertyValue('--brand-600').trim() || "#059669";
+          // Extract the hotel's brand color dynamically from the customizations
+          const brandColor = hotel?.customizations?.qsPrimaryColor || hotel?.customizations?.primaryColor || "#059669";
 
           const options = {
             key: initData.key_id,

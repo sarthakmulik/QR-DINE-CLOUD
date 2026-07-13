@@ -14,15 +14,16 @@ interface WelcomeAnimationSettingsProps {
 }
 
 export function WelcomeAnimationSettings({ plan, serviceType, settings, onUpdate, restaurantName }: WelcomeAnimationSettingsProps) {
-  if (plan === "basic") return null;
-
   const { welcomeAnimationEnabled: enabled, welcomeAnimationPreset: preset } = settings;
+  const isBasic = plan === "basic";
 
   const handleToggle = () => {
+    if (isBasic) return; // Prevent toggle if basic
     onUpdate({ welcomeAnimationEnabled: !enabled });
   };
 
   const handlePresetSelect = (p: string) => {
+    if (isBasic) return;
     onUpdate({ welcomeAnimationPreset: p });
   };
 
