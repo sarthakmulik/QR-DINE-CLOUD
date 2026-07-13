@@ -121,7 +121,7 @@ export async function POST(
         redirectMode: "POST",
         callbackUrl: callbackUrl,
         paymentInstrument: {
-          type: "PAY_PAGE"
+          type: "UPI_QR"
         }
       };
 
@@ -148,7 +148,9 @@ export async function POST(
       if (phonePeData.success) {
         return NextResponse.json({
           gateway: "phonepe",
-          redirect_url: phonePeData.data.instrumentResponse.redirectInfo.url
+          native_upi: true,
+          qr_data: phonePeData.data?.instrumentResponse?.qrData,
+          sessionId: sessionId
         });
       } else {
         return NextResponse.json({ error: phonePeData.message || "PhonePe API Error" }, { status: 400 });

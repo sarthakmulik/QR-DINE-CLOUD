@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, use, useCallback, useMemo, useRef } from "react";
 import { formatINR, formatMenuPrice } from "@/lib/utils";
-import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search, Sparkles } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search, Sparkles, Smartphone } from "lucide-react";
+import QRCode from "qrcode";
 import { generateBrandColors } from "@/lib/theme";
 import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
 
@@ -657,6 +658,47 @@ export default function DineClient({
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [upsellsMap, setUpsellsMap] = useState<Record<string, string>>({});
   const [trendingItemIds, setTrendingItemIds] = useState<string[]>([]);
+
+  // Native UPI States
+  const [nativePaymentData, setNativePaymentData] = useState<{ qr_data: string, sessionId: string, gateway: string } | null>(null);
+  const [qrImageUrl, setQrImageUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (!nativePaymentData) return;
+    
+    // Poll for payment success
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/verify-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: nativePaymentData.sessionId, gateway: nativePaymentData.gateway })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setNativePaymentData(null);
+          setState({ type: "closed" });
+        }
+      } catch (err) {
+        // ignore errors during polling
+      }
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [nativePaymentData, hotelId, tableNumber]);
+
+  useEffect(() => {
+    if (nativePaymentData?.qr_data) {
+      QRCode.toDataURL(nativePaymentData.qr_data, {
+        width: 250,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      }).then(url => setQrImageUrl(url)).catch(err => console.error(err));
+    }
+  }, [nativePaymentData]);
 
   // Gated features state
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
@@ -1682,7 +1724,11 @@ export default function DineClient({
         });
         rzp.open();
       } else if (initData.gateway === "phonepe") {
-        window.location.href = initData.redirect_url;
+        if (initData.native_upi) {
+          setNativePaymentData({ qr_data: initData.qr_data, sessionId: initData.sessionId, gateway: initData.gateway });
+        } else {
+          window.location.href = initData.redirect_url;
+        }
       }
     } catch (err: any) {
       setIsProcessingPayment(false);
@@ -2718,6 +2764,54 @@ export default function DineClient({
           </div>
         </div>
       )}
+
+      {/* Native Payment Overlay */}
+      {nativePaymentData && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in duration-300">
+            <button 
+              onClick={() => setNativePaymentData(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mb-2 shadow-inner">
+              <Smartphone className="w-8 h-8 text-brand-600" />
+            </div>
+            
+            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Scan & Pay</h2>
+            <p className="text-sm text-gray-500 font-medium pb-2 leading-relaxed">
+              Scan the QR code below using any UPI app like GPay, PhonePe, or Paytm.
+            </p>
+            
+            {qrImageUrl ? (
+              <div className="p-3 bg-white border-2 border-gray-100 rounded-2xl shadow-sm transition-all hover:scale-105 duration-300">
+                <img src={qrImageUrl} alt="UPI QR Code" className="w-48 h-48 rounded-xl object-contain" />
+              </div>
+            ) : (
+              <div className="w-48 h-48 bg-gray-50 rounded-2xl flex items-center justify-center border-2 border-gray-100 border-dashed">
+                <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+              </div>
+            )}
+            
+            <div className="pt-4 w-full space-y-2">
+              <a 
+                href={nativePaymentData.qr_data}
+                className="w-full h-14 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30 transition-all active:scale-[0.98]"
+              >
+                <Sparkles className="w-5 h-5" /> Open UPI App (Mobile)
+              </a>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 pt-3 text-sm text-gray-500 font-medium">
+              <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+              Waiting for payment confirmation...
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );
