@@ -21,12 +21,23 @@ export async function POST(req: NextRequest) {
     const protocol = host.includes("localhost") ? "http" : "https";
     const baseUrl = `${protocol}://${host}`;
 
-    // Verify it via our own endpoint
+    // Look up session to see if it's Dine-In or Quick Service
+    const sb = createAdminClient();
+    const { data: session } = await sb.from("table_sessions").select("status, table_id, restaurant_tables(table_number)").eq("id", sessionId).single();
+
     try {
-      const verifyRes = await fetch(`${baseUrl}/api/quick-service/${hotelId}/order/${sessionId}/verify-payment`, {
+      let verifyEndpoint = "";
+      if (session && (session.status === "checkout_initiated" || session.status === "bill_printed")) {
+        const tableNumber = (session as any).restaurant_tables?.table_number;
+        verifyEndpoint = `${baseUrl}/api/dine/${hotelId}/${tableNumber}/verify-payment`;
+      } else {
+        verifyEndpoint = `${baseUrl}/api/quick-service/${hotelId}/order/${sessionId}/verify-payment`;
+      }
+
+      const verifyRes = await fetch(verifyEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gateway: "phonepe" })
+        body: JSON.stringify({ gateway: "phonepe", sessionId })
       });
       
       // We redirect back to the Dine page with a success or error query param

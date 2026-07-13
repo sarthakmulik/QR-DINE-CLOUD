@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Process payment
-    const { data: session } = await sb.from("table_sessions").select("status, payment_reference").eq("id", sessionId).single();
+    const { data: session } = await sb.from("table_sessions").select("status, payment_reference, payment_method").eq("id", sessionId).single();
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
@@ -59,11 +59,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Already processed" });
     }
 
+    if (session.status === "checkout_initiated" || session.status === "bill_printed") {
+      // Dine-in: Mark session as paid (closes it)
+      const { markAsPaid } = await import("@/lib/session-service");
+      await markAsPaid(sessionId, session.payment_method ?? "UPI");
+      return NextResponse.json({ success: true, message: "Dine-in order marked as paid" });
+    }
+
     await assignOrderNumber(sessionId);
 
     await sb.from("table_sessions").update({ 
       status: "open", 
-      payment_method: "UPI",
+      payment_method: session.payment_method ?? "UPI",
       payment_reference: responsePayload.data?.transactionId || session.payment_reference
     }).eq("id", sessionId);
 

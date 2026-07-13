@@ -677,6 +677,8 @@ export default function DineClient({
 
   const [showWelcome, setShowWelcome] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   useEffect(() => {
     fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)
@@ -1588,6 +1590,101 @@ export default function DineClient({
   }
 
 
+  async function triggerOnlinePayment() {
+    if (state.type !== "checkout") return;
+    
+    setIsProcessingPayment(true);
+    try {
+      const initRes = await fetch(`/api/dine/${hotelId}/${tableNumber}/initiate-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: state.sessionId })
+      });
+      const initData = await initRes.json();
+      
+      if (!initRes.ok) {
+        showToast(initData.error || "Failed to initiate payment", "error");
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      if (initData.gateway === "razorpay") {
+        if (!(window as any).Razorpay) {
+          await new Promise((resolve) => {
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = resolve;
+            script.onerror = resolve;
+            document.body.appendChild(script);
+          });
+        }
+        if (!(window as any).Razorpay) {
+          throw new Error("Razorpay SDK failed to load. Please check your connection or ad blocker.");
+        }
+
+        const options = {
+          key: initData.key_id,
+          amount: initData.amount,
+          currency: initData.currency,
+          name: initData.hotel_name,
+          description: `Table ${tableNumber} Order`,
+          image: state.hotelLogo || undefined,
+          order_id: initData.order_id,
+          handler: async function (response: any) {
+            setIsProcessingPayment(false);
+            setIsVerifyingPayment(true);
+            try {
+              const res = await fetch(`/api/dine/${hotelId}/${tableNumber}/verify-payment`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sessionId: state.sessionId,
+                  gateway: "razorpay",
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              
+              const data = await res.json();
+              
+              if (res.ok && data.success) {
+                setState({ type: "closed" });
+              } else {
+                throw new Error(data.error || "Payment verification failed");
+              }
+            } catch (err: any) {
+              setIsVerifyingPayment(false);
+              showToast(err.message || "Failed to verify payment", "error");
+            }
+          },
+          prefill: {
+            contact: ""
+          },
+          theme: {
+            color: "#059669"
+          },
+          modal: {
+            ondismiss: function() {
+              setIsProcessingPayment(false);
+            }
+          }
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on("payment.failed", function (response: any) {
+          setIsProcessingPayment(false);
+          showToast(response.error.description || "Payment failed", "error");
+        });
+        rzp.open();
+      } else if (initData.gateway === "phonepe") {
+        window.location.href = initData.redirect_url;
+      }
+    } catch (err: any) {
+      setIsProcessingPayment(false);
+      showToast(err.message || "Failed to initiate payment", "error");
+    }
+  }
+
   if (state.type === "checkout") {
     const isBasic = state.hotelPlan.toLowerCase() === "basic";
     
@@ -1643,13 +1740,13 @@ export default function DineClient({
 
         <main className="max-w-md mx-auto px-4 py-6 space-y-6">
           {/* Status Alert */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50/50 border border-amber-100 rounded-3xl p-5 text-center space-y-2 shadow-sm">
-            <div className="mx-auto w-12 h-12 bg-amber-100/60 rounded-full flex items-center justify-center text-2xl shadow-inner animate-pulse">
-              ⏳
+          <div className="bg-gradient-to-r from-brand-50 to-brand-100/50 border border-brand-200 rounded-3xl p-5 text-center space-y-2 shadow-sm">
+            <div className="mx-auto w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center text-2xl shadow-inner">
+              💳
             </div>
-            <h2 className="text-base font-extrabold text-amber-900 tracking-tight">Bill Being Prepared</h2>
-            <p className="text-xs text-amber-700 mt-1 font-medium leading-relaxed">
-              Your final bill is being prepared by the kitchen/staff. Please verify the items below.
+            <h2 className="text-base font-extrabold text-brand-900 tracking-tight">Select Payment Method</h2>
+            <p className="text-xs text-brand-700 mt-1 font-medium leading-relaxed">
+              Please verify your items below and choose how you would like to pay.
             </p>
           </div>
 
@@ -1706,6 +1803,31 @@ export default function DineClient({
                 <span className="text-brand-600 font-black tracking-tight">{formatINR(finalTotal)}</span>
               </div>
             </div>
+          </div>
+
+          {/* Payment Actions */}
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={triggerOnlinePayment}
+              disabled={isProcessingPayment || isVerifyingPayment}
+              className="w-full h-14 bg-gray-950 hover:bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-gray-900/20 transition-all active:scale-[0.98]"
+            >
+              {(isProcessingPayment || isVerifyingPayment) ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> {isVerifyingPayment ? "Verifying Payment..." : "Processing..."}</>
+              ) : (
+                <><Sparkles className="w-5 h-5 text-emerald-400" /> Pay Online (UPI / Card)</>
+              )}
+            </button>
+            <div className="text-center pt-2">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">OR</span>
+            </div>
+            <button
+              onClick={() => showToast("Please wait, the waiter will collect the cash shortly.", "info")}
+              disabled={isProcessingPayment || isVerifyingPayment}
+              className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 rounded-2xl font-bold transition-all active:scale-[0.98]"
+            >
+              Pay with Cash
+            </button>
           </div>
 
           {/* Coupon Input Area (Pro/Elite only) */}

@@ -97,9 +97,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Already processed" });
     }
 
+    if (session.status === "checkout_initiated" || session.status === "bill_printed") {
+      // Dine-in: Mark session as paid (closes it)
+      const { markAsPaid } = await import("@/lib/session-service");
+      await markAsPaid(sessionId, session.payment_method ?? "UPI");
+      return NextResponse.json({ success: true, message: "Dine-in order marked as paid" });
+    }
+
     await assignOrderNumber(sessionId);
 
-    // Atomic update to ensure idempotency
+    // Atomic update to ensure idempotency for Quick Service
     const { data: updated, error: updateError } = await sb.from("table_sessions").update({ 
       status: "open", 
       // Preserve the payment_method set at checkout (UPI or Card)
