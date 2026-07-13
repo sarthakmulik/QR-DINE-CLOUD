@@ -140,7 +140,7 @@ function DietaryBadges({ item, isDark }: { item: MenuItem; isDark: boolean }) {
   );
 }
 
-/* ─── SHARED QTY CONTROLLER ─── */
+/* ─── SHARED QTY CONTROLLER (Liquid Transition) ─── */
 function QtyController({ itemId, qty, updateQty, isDark, size = "md" }: {
   itemId: string;
   qty: number;
@@ -148,34 +148,37 @@ function QtyController({ itemId, qty, updateQty, isDark, size = "md" }: {
   isDark: boolean;
   size?: "sm" | "md" | "lg";
 }) {
-  const btnSize = size === "sm" ? "w-6 h-6" : size === "lg" ? "w-9 h-9" : "w-7 h-7";
-  const iconSize = size === "sm" ? "w-3 h-3" : size === "lg" ? "w-4.5 h-4.5" : "w-3.5 h-3.5";
+  const btnSize = size === "sm" ? "w-7 h-7" : size === "lg" ? "w-10 h-10" : "w-8 h-8";
+  const iconSize = size === "sm" ? "w-3.5 h-3.5" : size === "lg" ? "w-5 h-5" : "w-4 h-4";
+  
   return (
-    <div className={`flex items-center rounded-full px-1 gap-1 font-bold transition-all animate-fade-in border ${
-      size === "lg" ? "h-10" : size === "sm" ? "h-7" : "h-8"
+    <div className={`flex items-center rounded-full p-0.5 gap-1.5 font-bold transition-all duration-300 ease-bounce border backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.06)] ${
+      size === "lg" ? "h-11" : size === "sm" ? "h-8" : "h-9"
     } ${
       isDark
-        ? "bg-slate-950 border-brand-500/40 text-brand-300"
-        : "bg-brand-50 border-brand-200/70 text-brand-700"
+        ? "bg-slate-900/90 border-white/10 text-brand-300"
+        : "bg-white/90 border-brand-200/50 text-brand-700"
     }`}>
       <button
         onClick={(e) => { e.stopPropagation(); updateQty(itemId, -1); }}
-        className={`${btnSize} rounded-full flex items-center justify-center active:scale-75 transition-all ${
-          isDark ? "hover:bg-brand-500/25 text-brand-300" : "hover:bg-brand-200/60 text-brand-700"
+        className={`${btnSize} rounded-full flex items-center justify-center active:scale-[0.85] active:bg-brand-500/20 transition-all duration-300 ${
+          isDark ? "hover:bg-brand-500/15 text-white" : "hover:bg-brand-50 text-brand-800"
         }`}
       >
-        <Minus className={iconSize} />
+        <Minus className={iconSize} strokeWidth={3} />
       </button>
-      <span className={`min-w-[18px] text-center select-none font-black text-xs ${
-        isDark ? "text-white" : "text-brand-800"
-      }`}>{qty}</span>
+      <span className={`min-w-[20px] text-center select-none font-black ${size === "lg" ? "text-sm" : "text-xs"} ${
+        isDark ? "text-white" : "text-brand-900"
+      }`}>
+        {qty}
+      </span>
       <button
         onClick={(e) => { e.stopPropagation(); updateQty(itemId, 1); }}
-        className={`${btnSize} rounded-full flex items-center justify-center active:scale-75 transition-all ${
-          isDark ? "hover:bg-brand-500/25 text-brand-300" : "hover:bg-brand-200/60 text-brand-700"
+        className={`${btnSize} rounded-full flex items-center justify-center active:scale-[0.85] active:bg-brand-500/20 transition-all duration-300 ${
+          isDark ? "hover:bg-brand-500/15 text-white" : "hover:bg-brand-50 text-brand-800"
         }`}
       >
-        <Plus className={iconSize} />
+        <Plus className={iconSize} strokeWidth={3} />
       </button>
     </div>
   );
@@ -212,15 +215,15 @@ const CategorySection = React.memo(function CategorySection({
     </div>
   );
 
-  /* ══════════════════ 1. COMPACT ("Sleek List") ══════════════════ */
+  /* ══════════════════ 1. COMPACT ("The Apple Minimalist") ══════════════════ */
   if (layout === "compact") {
     return (
       <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
         {categoryHeading}
-        <div className={`rounded-3xl border overflow-hidden ${
+        <div className={`rounded-[2rem] border overflow-hidden backdrop-blur-xl ${
           isDark
-            ? "bg-slate-900/80 border-white/[0.06] divide-y divide-white/[0.04] backdrop-blur-sm"
-            : "bg-white border-gray-200/60 divide-y divide-gray-100/80 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)]"
+            ? "bg-slate-900/60 border-white/10 divide-y divide-white/5"
+            : "bg-white/70 border-gray-200/50 divide-y divide-gray-100/50 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.08)]"
         }`}>
           {cat.items.map((item) => {
             const qty = cartMap[item.id] || 0;
@@ -228,50 +231,50 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className={`px-4 py-3.5 flex items-center justify-between gap-3 transition-all duration-300 ease-bounce cursor-pointer group relative ${
-                  isDark ? "hover:bg-white/[0.04] active:bg-white/[0.08]" : "hover:bg-brand-50/40 active:bg-brand-100/50"
+                className={`px-4 py-4 flex items-center justify-between gap-4 transition-all duration-300 ease-bounce cursor-pointer group relative ${
+                  isDark ? "hover:bg-white/[0.08] active:bg-white/[0.12]" : "hover:bg-brand-50/50 active:bg-brand-100/60"
                 }`}
               >
                 {/* Left: thumb + info */}
-                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
                   <div className="relative flex-shrink-0">
                     {item.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-[52px] h-[52px] rounded-2xl object-cover shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-black/[0.04] transition-transform duration-300 group-hover:scale-105"
+                        className="w-[56px] h-[56px] rounded-[1.25rem] object-cover shadow-[0_4px_16px_rgba(0,0,0,0.1)] transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                       />
                     ) : (
-                      <div className={`w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-xl flex-shrink-0 ${
+                      <div className={`w-[56px] h-[56px] rounded-[1.25rem] flex items-center justify-center text-2xl flex-shrink-0 ${
                         isDark ? "bg-slate-800 border border-white/5" : "bg-gradient-to-br from-brand-50 to-amber-50 border border-brand-100/40"
                       }`}>🍽️</div>
                     )}
                     {item.isRecommended && (
-                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(251,146,60,0.5)] border-[1.5px] border-white z-10">
-                        <Star className="w-2.5 h-2.5 text-white fill-white" />
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(251,146,60,0.6)] border-2 border-white dark:border-slate-900 z-10 animate-bounce-slight">
+                        <Star className="w-3 h-3 text-white fill-white" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className={`font-bold leading-tight text-[13.5px] tracking-tight truncate transition-colors ${
+                    <h3 className={`font-extrabold leading-tight text-[15px] tracking-tight truncate transition-colors duration-300 ${
                       isDark ? "text-white group-hover:text-brand-300" : "text-gray-900 group-hover:text-brand-700"
                     }`}>{item.name}</h3>
                     {item.description && (
-                      <p className={`text-[11px] line-clamp-1 mt-0.5 font-medium ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                      <p className={`text-[12px] line-clamp-1 mt-0.5 font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                         {item.description}
                       </p>
                     )}
-                    <div className="mt-1.5">
+                    <div className="mt-2">
                       <DietaryBadges item={item} isDark={isDark} />
                     </div>
                   </div>
                 </div>
 
                 {/* Right: price + CTA */}
-                <div className="flex flex-col items-end gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <span className={`font-black text-[14px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
+                <div className="flex flex-col items-end justify-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <span className={`font-black text-[15px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
                     {formatMenuPrice(item.price)}
                   </span>
                   {qty > 0 ? (
@@ -279,13 +282,14 @@ const CategorySection = React.memo(function CategorySection({
                   ) : (
                     <button
                       onClick={() => addToCart(item)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all active:scale-90 ${
-                        bounceId === item.id ? "animate-cart-bounce" : ""
-                      } ${isDark
-                          ? "bg-brand-500/20 text-brand-300 border border-brand-500/30 hover:bg-brand-500 hover:text-white"
-                          : "bg-gray-950 text-white hover:bg-brand-600 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 active:scale-90 ${
+                        isDark 
+                          ? "bg-brand-500/20 text-brand-300 hover:bg-brand-500/30 border border-brand-500/30" 
+                          : "bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200/50"
                       }`}
-                    ><Plus className="w-3.5 h-3.5" /></button>
+                    >
+                      ADD
+                    </button>
                   )}
                 </div>
               </div>
@@ -296,7 +300,7 @@ const CategorySection = React.memo(function CategorySection({
     );
   }
 
-  /* ══════════════════ 2. MASONRY ("Visual Grid") ══════════════════ */
+  /* ══════════════════ 2. MASONRY ("The Bento Box Grid") ══════════════════ */
   if (layout === "masonry") {
     return (
       <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
@@ -308,20 +312,20 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className={`flex flex-col rounded-[2rem] border overflow-hidden relative transition-all duration-500 ease-bounce group cursor-pointer hover:-translate-y-1 ${
+                className={`flex flex-col rounded-[2.5rem] border overflow-hidden relative transition-all duration-[400ms] cubic-bezier-[0.34,1.56,0.64,1] group cursor-pointer hover:-translate-y-1.5 ${
                   isDark
-                    ? "bg-slate-900 border-white/[0.06] shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:border-brand-500/30 hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)]"
-                    : "bg-white border-gray-200/60 shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.1)] hover:border-brand-300/50"
+                    ? "bg-slate-900 border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:border-brand-500/40 hover:shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
+                    : "bg-white border-gray-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12)] hover:border-brand-300/60"
                 }`}
               >
                 {/* Image zone */}
-                <div className="relative overflow-hidden w-full h-36 flex-shrink-0">
+                <div className="relative overflow-hidden w-full h-40 flex-shrink-0">
                   {item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                       loading="lazy"
                     />
                   ) : (
@@ -329,35 +333,35 @@ const CategorySection = React.memo(function CategorySection({
                       isDark ? "bg-gradient-to-br from-slate-800 to-slate-900" : "bg-gradient-to-br from-brand-50 via-orange-50 to-amber-50"
                     }`}>🍽️</div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
                     {item.isRecommended && (
-                      <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md border border-amber-300/30">
+                      <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg border-2 border-white/20 backdrop-blur-md">
                         ⭐ Chef&apos;s Pick
                       </span>
                     )}
                     {item.isVegetarian && (
-                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/90 border border-white/30 shadow-sm">
-                        <span className="w-2 h-2 rounded-full bg-white dark:bg-[#16161A]" />
+                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-md">
+                        <span className="w-2 h-2 rounded-full bg-white" />
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-3 flex-1 flex flex-col justify-between gap-2.5">
+                <div className="p-3.5 flex-1 flex flex-col justify-between gap-3">
                   <div>
-                    <h3 className={`font-black text-[13px] tracking-tight line-clamp-2 leading-tight transition-colors ${
-                      isDark ? "text-white group-hover:text-brand-300" : "text-gray-900 group-hover:text-brand-700"
+                    <h3 className={`font-extrabold text-[14px] tracking-tight line-clamp-2 leading-tight transition-colors duration-300 ${
+                      isDark ? "text-white group-hover:text-brand-300" : "text-gray-950 group-hover:text-brand-700"
                     }`}>{item.name}</h3>
                     {item.description && (
-                      <p className={`text-[10px] line-clamp-2 mt-1 leading-relaxed font-medium ${isDark ? "text-slate-500" : "text-gray-450"}`}>
+                      <p className={`text-[11px] line-clamp-2 mt-1.5 leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                         {item.description}
                       </p>
                     )}
                   </div>
-                  <div className={`flex flex-col gap-2 pt-2 border-t ${isDark ? "border-white/[0.06]" : "border-gray-100"}`}>
-                    <span className={`font-black text-[14px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
+                  <div className={`flex flex-col gap-2.5 pt-2.5 border-t ${isDark ? "border-white/[0.08]" : "border-gray-100"}`}>
+                    <span className={`font-black text-[15px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
                       {formatMenuPrice(item.price)}
                     </span>
                     <div onClick={(e) => e.stopPropagation()}>
@@ -366,14 +370,13 @@ const CategorySection = React.memo(function CategorySection({
                       ) : (
                         <button
                           onClick={() => addToCart(item)}
-                          className={`w-full h-8 rounded-2xl font-black text-[11px] flex items-center justify-center gap-1 shadow-sm active:scale-95 transition-all ${
-                            bounceId === item.id ? "animate-cart-bounce" : ""
-                          } ${isDark
+                          className={`w-full h-9 rounded-[1rem] font-bold text-[12px] flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all duration-300 ${
+                            isDark
                               ? "bg-brand-500/20 text-brand-300 hover:bg-brand-500 hover:text-white border border-brand-500/30"
-                              : "bg-gray-950 text-white hover:bg-brand-600 shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+                              : "bg-gray-950 text-white hover:bg-brand-600 shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
                           }`}
                         >
-                          <Plus className="w-3 h-3" /> Add
+                          <Plus className="w-3.5 h-3.5" strokeWidth={3} /> ADD
                         </button>
                       )}
                     </div>
@@ -387,7 +390,7 @@ const CategorySection = React.memo(function CategorySection({
     );
   }
 
-  /* ══════════════════ 3. FULLSCREEN STORY ("Immersive Story") ══════════════════ */
+  /* ══════════════════ 3. FULLSCREEN STORY ("The Instagram Immersive") ══════════════════ */
   if (layout === "fullscreen_story") {
     return (
       <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
@@ -403,61 +406,53 @@ const CategorySection = React.memo(function CategorySection({
                   if (target.closest(".qty-controller") || target.closest(".add-btn")) return;
                   setSelectedItem(item);
                 }}
-                className={`flex flex-col rounded-[2rem] overflow-hidden h-72 relative transition-all duration-500 ease-bounce group cursor-pointer active:scale-95 hover:-translate-y-1 ${
+                className={`flex flex-col rounded-[2.5rem] overflow-hidden h-80 relative transition-all duration-[600ms] cubic-bezier-[0.16,1,0.3,1] group cursor-pointer active:scale-95 hover:-translate-y-1 ${
                   isDark
-                    ? "shadow-[0_12px_40px_rgba(0,0,0,0.8)] hover:shadow-[0_20px_50px_rgba(var(--brand-rgb),0.35)]"
-                    : "shadow-[0_8px_28px_rgba(0,0,0,0.15)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
+                    ? "shadow-[0_16px_48px_rgba(0,0,0,0.9)] hover:shadow-[0_24px_64px_rgba(var(--brand-rgb),0.2)]"
+                    : "shadow-[0_8px_32px_rgba(0,0,0,0.15)] hover:shadow-[0_24px_64px_rgba(0,0,0,0.25)]"
                 }`}
               >
                 {item.isRecommended && (
-                  <span className="absolute top-3 left-3 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full z-20 shadow-lg border border-white/40 bg-gradient-to-r from-amber-400/95 to-orange-500/95 text-white">
+                  <span className="absolute top-3 left-3 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-20 shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-white/40 bg-gradient-to-r from-amber-400/95 to-orange-500/95 text-white backdrop-blur-md">
                     ✦ Signature
                   </span>
                 )}
-                <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 z-0 bg-black">
                   {item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-full object-cover opacity-90 transition-transform duration-[2000ms] ease-out group-hover:scale-110"
                       loading="lazy"
                     />
                   ) : (
-                    <div className={`w-full h-full flex items-center justify-center text-5xl ${isDark ? "bg-slate-800" : "bg-gradient-to-br from-brand-100 to-amber-100"}`}>🍽️</div>
+                    <div className={`w-full h-full flex items-center justify-center text-5xl ${isDark ? "bg-slate-900" : "bg-gradient-to-br from-brand-900 to-amber-900"}`}>🍽️</div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/5" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
+                  {/* Heavy dark gradient for Instagram-style text contrast */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/5 opacity-90" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent opacity-60" />
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-3.5 z-10 flex flex-col gap-2">
-                  <div>
-                    <h3 className="font-black text-[14px] leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-brand-300 transition-colors">{item.name}</h3>
-                    <span className="font-black text-[14px] text-brand-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] mt-0.5 block">
+                <div className="absolute bottom-0 left-0 right-0 p-4 z-10 flex flex-col gap-2.5">
+                  <div className="transform transition-transform duration-500 group-hover:-translate-y-1">
+                    <h3 className="font-extrabold text-[15px] leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,1)] line-clamp-2 group-hover:text-brand-300 transition-colors duration-300">{item.name}</h3>
+                    <span className="font-black text-[15px] text-brand-400 drop-shadow-[0_2px_12px_rgba(0,0,0,1)] mt-1 block">
                       {formatMenuPrice(item.price)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end transform transition-transform duration-500 group-hover:-translate-y-1" onClick={(e) => e.stopPropagation()}>
                     {qty > 0 ? (
-                      <div className="qty-controller flex items-center border rounded-full h-8 px-1 gap-1 font-bold shadow-lg bg-black/80 border-white/20 text-white">
-                        <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1); }} className="w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all hover:bg-white/20">
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-xs min-w-[18px] text-center select-none font-black text-white">{qty}</span>
-                        <button onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1); }} className="w-6 h-6 rounded-full flex items-center justify-center active:scale-75 transition-all hover:bg-white/20">
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <QtyController itemId={item.id} qty={qty} updateQty={updateQty} isDark={true} size="md" />
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); addToCart(item); }}
-                        className={`add-btn px-4 py-1.5 rounded-full font-black text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition-all border ${
-                          bounceId === item.id ? "animate-cart-bounce" : ""
-                        } ${isDark
-                            ? "bg-brand-500 text-white hover:bg-brand-400 border-brand-400/50"
-                            : "bg-white text-gray-950 hover:bg-brand-50 border-white/60"
+                        className={`add-btn px-5 py-2 rounded-[1.25rem] font-black text-xs flex items-center gap-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.5)] active:scale-95 transition-all duration-300 border backdrop-blur-md ${
+                          isDark
+                            ? "bg-brand-500/80 text-white hover:bg-brand-500 border-white/20"
+                            : "bg-white/95 text-brand-900 hover:bg-white border-white/50"
                         }`}
                       >
-                        <Plus className="w-3 h-3" /> Add
+                        <Plus className="w-3.5 h-3.5" strokeWidth={3} /> ADD
                       </button>
                     )}
                   </div>
@@ -470,13 +465,13 @@ const CategorySection = React.memo(function CategorySection({
     );
   }
 
-  /* ══════════════════ 4. DARK SLIDER ("Noir Luxe") ══════════════════ */
+  /* ══════════════════ 4. DARK SLIDER ("The Noir Luxe") ══════════════════ */
   if (layout === "dark_slider") {
     return (
       <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
         <div className="flex items-center gap-3 mb-3">
           <h2 className="font-black text-sm tracking-widest uppercase text-slate-400">{cat.name}</h2>
-          <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
+          <div className="flex-1 h-px bg-gradient-to-r from-brand-500/50 to-transparent" />
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{cat.items.length} items</span>
         </div>
         <div className="space-y-3">
@@ -486,62 +481,67 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="group relative cursor-pointer snap-center rounded-[2rem] border border-white/[0.05] p-4 flex gap-4 transition-all duration-500 ease-bounce hover:border-brand-500/40 hover:-translate-y-1 overflow-hidden"
-                style={{ background: "linear-gradient(135deg, rgba(15,15,25,0.98), rgba(8,8,18,1))", boxShadow: "0 12px 40px -6px rgba(0,0,0,0.85)" }}
+                className="group relative cursor-pointer snap-center rounded-[2rem] p-4 flex gap-5 transition-all duration-500 ease-bounce hover:-translate-y-1 overflow-hidden"
+                style={{ 
+                  background: "#050505", 
+                  boxShadow: "0 12px 40px -6px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.03)"
+                }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem]" />
+                {/* Neon Glow Hover Effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[2rem]" style={{ boxShadow: "inset 0 0 40px rgba(var(--brand-rgb), 0.08)" }} />
+                
                 {item.imageUrl ? (
-                  <div className="relative overflow-hidden rounded-[18px] flex-shrink-0 w-[92px] h-[92px] z-10" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.7)" }}>
+                  <div className="relative overflow-hidden rounded-[1.25rem] flex-shrink-0 w-[96px] h-[96px] z-10" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.9)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
+                      className="w-full h-full object-cover transition-transform duration-[800ms] group-hover:scale-110"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60 group-hover:opacity-20 transition-opacity duration-400" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60 group-hover:opacity-20 transition-opacity duration-500" />
                     {item.isRecommended && (
-                      <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full flex items-center justify-center border border-amber-200/40" style={{ boxShadow: "0 0 12px rgba(251,191,36,0.5)" }}>
-                        <Star className="w-3 h-3 text-black fill-black" />
+                      <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-black rounded-full flex items-center justify-center border border-brand-500/50" style={{ boxShadow: "0 0 16px rgba(var(--brand-rgb),0.6)" }}>
+                        <Star className="w-3.5 h-3.5 text-brand-400 fill-brand-400" />
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="w-[92px] h-[92px] rounded-[18px] bg-gradient-to-br from-slate-800 to-slate-900 border border-white/[0.06] flex items-center justify-center text-3xl flex-shrink-0 z-10 relative">
+                  <div className="w-[96px] h-[96px] rounded-[1.25rem] bg-[#0a0a0a] border border-white/[0.03] flex items-center justify-center text-3xl flex-shrink-0 z-10 relative shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
                     🍽️
                     {item.isRecommended && (
-                      <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full flex items-center justify-center" style={{ boxShadow: "0 0 12px rgba(251,191,36,0.5)" }}>
-                        <Star className="w-3 h-3 text-black fill-black" />
+                      <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-black rounded-full flex items-center justify-center border border-brand-500/50" style={{ boxShadow: "0 0 16px rgba(var(--brand-rgb),0.6)" }}>
+                        <Star className="w-3.5 h-3.5 text-brand-400 fill-brand-400" />
                       </div>
                     )}
                   </div>
                 )}
-                <div className="flex-1 min-w-0 flex flex-col justify-between z-10 py-0.5">
+                
+                <div className="flex-1 min-w-0 flex flex-col justify-between z-10 py-1">
                   <div>
-                    <h3 className="font-black text-white text-[15px] leading-tight tracking-tight group-hover:text-brand-300 transition-colors">{item.name}</h3>
+                    <h3 className="font-extrabold text-white text-[16px] leading-tight tracking-tight group-hover:text-brand-400 transition-colors duration-300">{item.name}</h3>
                     {item.description && (
-                      <p className="text-[11px] text-slate-500 font-medium line-clamp-2 mt-1 leading-relaxed">{item.description}</p>
+                      <p className="text-[12px] text-slate-500 font-medium line-clamp-2 mt-1.5 leading-relaxed">{item.description}</p>
                     )}
-                    <div className="mt-1.5">
+                    <div className="mt-2">
                       <DietaryBadges item={item} isDark={true} />
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 text-[15px] tracking-tight">
+                  <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.03)" }}>
+                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 text-[16px] tracking-tight">
                       {formatMenuPrice(item.price)}
                     </span>
                     <div onClick={(e) => e.stopPropagation()}>
                       {qty > 0 ? (
-                        <QtyController itemId={item.id} qty={qty} updateQty={updateQty} isDark={true} />
+                        <QtyController itemId={item.id} qty={qty} updateQty={updateQty} isDark={true} size="sm" />
                       ) : (
                         <button
                           onClick={() => addToCart(item)}
-                          className={`px-5 py-2 rounded-full font-black text-xs flex items-center gap-1.5 active:scale-95 transition-all duration-300 border border-brand-500/40 text-brand-300 hover:border-brand-400 hover:text-white hover:bg-brand-500/40 hover:shadow-[0_4px_16px_rgba(var(--brand-rgb),0.3)] animate-gradient-x ${
-                            bounceId === item.id ? "animate-cart-bounce" : ""
-                          }`}
-                          style={{ background: "linear-gradient(135deg, rgba(var(--brand-rgb),0.2), rgba(var(--brand-rgb),0.05), rgba(var(--brand-rgb),0.2))", backgroundSize: "200% 200%" }}
+                          className="px-5 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-all duration-300 border border-brand-500/30 text-brand-400 hover:text-white hover:bg-brand-500/20 hover:border-brand-500/60"
+                          style={{ boxShadow: "0 0 20px rgba(var(--brand-rgb),0.15)" }}
                         >
-                          <Plus className="w-3.5 h-3.5" /> Add
+                          <Plus className="w-3.5 h-3.5" strokeWidth={3} /> ADD
                         </button>
                       )}
                     </div>
@@ -555,75 +555,74 @@ const CategorySection = React.memo(function CategorySection({
     );
   }
 
-  /* ══════════════════ 5. DEFAULT ("Elegant Card") ══════════════════ */
+  /* ══════════════════ 5. DEFAULT ("The Floating Glass") ══════════════════ */
   return (
     <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
       {categoryHeading}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {cat.items.map((item) => {
           const qty = cartMap[item.id] || 0;
           return (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className={`rounded-[1.75rem] border p-3.5 flex gap-4 transition-all duration-500 ease-bounce cursor-pointer group hover:-translate-y-1 active:scale-95 ${
+              className={`rounded-[2rem] border p-4 flex gap-5 transition-all duration-[500ms] cubic-bezier-[0.25,1,0.5,1] cursor-pointer group hover:-translate-y-1.5 active:scale-[0.98] relative mt-4 ${
                 isDark
-                  ? "bg-slate-900/80 border-white/[0.06] hover:border-white/[0.12] hover:bg-slate-800/80 shadow-[inset_0_1px_3px_rgba(255,255,255,0.02),0_4px_24px_-4px_rgba(0,0,0,0.5)] hover:shadow-[inset_0_1px_3px_rgba(255,255,255,0.02),0_12px_40px_-4px_rgba(0,0,0,0.6)]"
-                  : "bg-white border-gray-150/70 hover:border-brand-200/60 hover:shadow-[inset_0_1px_3px_rgba(0,0,0,0.01),0_16px_50px_-8px_rgba(0,0,0,0.12)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.01),0_2px_12px_-2px_rgba(0,0,0,0.03)]"
+                  ? "bg-slate-900/60 border-white/[0.08] hover:border-white/[0.15] backdrop-blur-xl shadow-[inset_0_1px_3px_rgba(255,255,255,0.05),0_8px_32px_-8px_rgba(0,0,0,0.6)] hover:shadow-[inset_0_1px_3px_rgba(255,255,255,0.05),0_16px_48px_-8px_rgba(0,0,0,0.8)]"
+                  : "bg-white/70 border-gray-100 hover:border-brand-200/50 backdrop-blur-xl shadow-[inset_0_1px_4px_rgba(255,255,255,0.5),0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_4px_rgba(255,255,255,0.5),0_16px_40px_-8px_rgba(0,0,0,0.1)]"
               }`}
             >
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 -mt-6">
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={item.imageUrl}
                     alt={item.name}
-                    className="w-24 h-24 rounded-2xl object-cover shadow-[0_4px_16px_rgba(0,0,0,0.1)] border border-black/[0.04] transition-transform duration-400 group-hover:scale-103"
+                    className="w-[104px] h-[104px] rounded-[1.5rem] object-cover shadow-[0_8px_24px_rgba(0,0,0,0.15)] border-2 border-white dark:border-slate-800 transition-transform duration-[600ms] ease-out group-hover:scale-105 group-hover:-translate-y-1"
                     loading="lazy"
                   />
                 ) : (
-                  <div className={`w-24 h-24 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 ${
-                    isDark ? "bg-slate-800 border border-white/[0.05]" : "bg-gradient-to-br from-brand-50 to-amber-50 border border-brand-100/50"
+                  <div className={`w-[104px] h-[104px] rounded-[1.5rem] flex items-center justify-center text-4xl flex-shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.1)] border-2 border-white dark:border-slate-800 transition-transform duration-[600ms] ease-out group-hover:scale-105 group-hover:-translate-y-1 ${
+                    isDark ? "bg-slate-800" : "bg-gradient-to-br from-brand-50 to-amber-50"
                   }`}>🍽️</div>
                 )}
                 {item.isRecommended && (
-                  <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(251,146,60,0.55)] border-2 border-white z-10">
-                    <Star className="w-3.5 h-3.5 text-white fill-white" />
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(251,146,60,0.6)] border-2 border-white dark:border-slate-900 z-10 animate-pulse-slow">
+                    <Star className="w-4 h-4 text-white fill-white" />
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+              <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                 <div>
-                  <h3 className={`font-extrabold text-[15px] leading-tight tracking-tight transition-colors ${
+                  <h3 className={`font-extrabold text-[16px] leading-tight tracking-tight transition-colors duration-300 ${
                     isDark ? "text-white group-hover:text-brand-300" : "text-gray-950 group-hover:text-brand-700"
                   }`}>{item.name}</h3>
                   {item.description && (
-                    <p className={`text-[11px] font-medium line-clamp-2 mt-1 leading-relaxed ${isDark ? "text-slate-500" : "text-gray-450"}`}>
+                    <p className={`text-[12px] font-medium line-clamp-2 mt-1.5 leading-relaxed ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                       {item.description}
                     </p>
                   )}
-                  <div className="mt-1.5">
+                  <div className="mt-2">
                     <DietaryBadges item={item} isDark={isDark} />
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-1">
-                  <span className={`font-black text-[15px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
+                <div className="flex items-center justify-between mt-3 pt-2">
+                  <span className={`font-black text-[16px] tracking-tight ${isDark ? "text-brand-400" : "text-brand-650"}`}>
                     {formatMenuPrice(item.price)}
                   </span>
                   <div onClick={(e) => e.stopPropagation()}>
                     {qty > 0 ? (
-                      <QtyController itemId={item.id} qty={qty} updateQty={updateQty} isDark={isDark} />
+                      <QtyController itemId={item.id} qty={qty} updateQty={updateQty} isDark={isDark} size="md" />
                     ) : (
                       <button
                         onClick={() => addToCart(item)}
-                        className={`px-5 py-2 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all ${
-                          bounceId === item.id ? "animate-cart-bounce" : ""
-                        } ${isDark
-                            ? "bg-brand-500 text-white hover:bg-brand-400 shadow-[0_4px_16px_rgba(var(--brand-rgb),0.35)] hover:-translate-y-0.5"
-                            : "bg-gray-950 text-white hover:bg-brand-700 shadow-[0_4px_14px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.25)] hover:-translate-y-0.5"
+                        className={`px-6 py-2 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all duration-300 ${
+                          isDark
+                            ? "bg-brand-500 text-white hover:bg-brand-400 shadow-[0_4px_20px_rgba(var(--brand-rgb),0.3)] hover:shadow-[0_8px_24px_rgba(var(--brand-rgb),0.4)] hover:-translate-y-0.5 border border-brand-400/20"
+                            : "bg-gray-950 text-white hover:bg-brand-700 shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:-translate-y-0.5"
                         }`}
                       >
-                        <Plus className="w-3.5 h-3.5" /> Add
+                        <Plus className="w-3.5 h-3.5" strokeWidth={3} /> ADD
                       </button>
                     )}
                   </div>
@@ -1269,6 +1268,11 @@ export default function DineClient({
   }
 
   const addToCart = useCallback((item: MenuItem) => {
+    // Premium Haptic Feedback
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(50); // Light tap
+    }
+    
     setBounceId(item.id);
     setTimeout(() => setBounceId(null), 400);
     setCart((prev) => {
@@ -1291,6 +1295,11 @@ export default function DineClient({
   }, [setCart]);
 
   const updateQty = useCallback((menuItemId: string, delta: number) => {
+    // Premium Haptic Feedback
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(delta > 0 ? 50 : 30); // Lighter tap for minus
+    }
+    
     setCart((prev) =>
       prev
           .map((c) =>
