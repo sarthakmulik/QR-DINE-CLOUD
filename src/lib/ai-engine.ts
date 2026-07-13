@@ -224,17 +224,17 @@ export function generateUpsellMap(
   const upsellMap: Record<string, string> = {};
 
   Object.keys(pairCounts).forEach(itemA => {
-    // Only analyze items that sell decently (support > 3)
-    if (itemCounts[itemA] > 3) {
+    // Only analyze items that sell at least once
+    if (itemCounts[itemA] >= 1) {
       let bestMatch = '';
       let highestConfidence = 0;
 
       Object.keys(pairCounts[itemA]).forEach(itemB => {
         const confidence = pairCounts[itemA][itemB] / itemCounts[itemA];
         
-        // We look for confidence > 30% to offer a suggestion
-        // and ensure the pair occurred at least 2 times
-        if (confidence > highestConfidence && confidence > 0.3 && pairCounts[itemA][itemB] >= 2) {
+        // We look for confidence > 10% to offer a suggestion
+        // and ensure the pair occurred at least 1 time
+        if (confidence > highestConfidence && confidence >= 0.1 && pairCounts[itemA][itemB] >= 1) {
           highestConfidence = confidence;
           bestMatch = itemB;
         }

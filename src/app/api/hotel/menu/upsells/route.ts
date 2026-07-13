@@ -3,8 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generateUpsellMap } from "@/lib/ai-engine";
 import type { SessionItem } from "@/lib/types";
 
-// Cache this endpoint at the edge for 1 hour to ensure lightning-fast menu loads
-export const revalidate = 3600;
+// Cache disabled for testing/development (set back to 3600 in prod)
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
