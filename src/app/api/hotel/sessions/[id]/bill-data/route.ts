@@ -53,7 +53,7 @@ export async function GET(
     const discountPercent = Number(session.discount_percent || 0);
     const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
     const taxableAmount = Math.max(0, subtotal - discountAmount);
-    const taxRate = hotel ? Number(hotel.tax_rate) || 5 : 5;
+    const taxRate = hotel && hotel.tax_rate !== undefined && hotel.tax_rate !== null ? Number(hotel.tax_rate) : 5;
     const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
     const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
     const cgst = taxRate / 2;
