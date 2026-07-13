@@ -188,3 +188,63 @@ export function generateAdvancedInsights(
 
   return insights;
 }
+
+export function generateUpsellMap(
+  items: SessionItem[]
+): Record<string, string> {
+  const sessionItemsMap: Record<string, Set<string>> = {};
+  
+  items.forEach(item => {
+    // We strictly map menu_item_ids so we can look them up on the frontend
+    if (!item.menu_item_id) return;
+    
+    if (!sessionItemsMap[item.session_id]) {
+      sessionItemsMap[item.session_id] = new Set();
+    }
+    sessionItemsMap[item.session_id].add(item.menu_item_id);
+  });
+
+  const itemCounts: Record<string, number> = {};
+  const pairCounts: Record<string, Record<string, number>> = {};
+
+  Object.values(sessionItemsMap).forEach(itemSet => {
+    const itemArray = Array.from(itemSet);
+    itemArray.forEach(itemA => {
+      itemCounts[itemA] = (itemCounts[itemA] || 0) + 1;
+      if (!pairCounts[itemA]) pairCounts[itemA] = {};
+      
+      itemArray.forEach(itemB => {
+        if (itemA !== itemB) {
+          pairCounts[itemA][itemB] = (pairCounts[itemA][itemB] || 0) + 1;
+        }
+      });
+    });
+  });
+
+  const upsellMap: Record<string, string> = {};
+
+  Object.keys(pairCounts).forEach(itemA => {
+    // Only analyze items that sell decently (support > 3)
+    if (itemCounts[itemA] > 3) {
+      let bestMatch = '';
+      let highestConfidence = 0;
+
+      Object.keys(pairCounts[itemA]).forEach(itemB => {
+        const confidence = pairCounts[itemA][itemB] / itemCounts[itemA];
+        
+        // We look for confidence > 30% to offer a suggestion
+        // and ensure the pair occurred at least 2 times
+        if (confidence > highestConfidence && confidence > 0.3 && pairCounts[itemA][itemB] >= 2) {
+          highestConfidence = confidence;
+          bestMatch = itemB;
+        }
+      });
+
+      if (bestMatch) {
+        upsellMap[itemA] = bestMatch;
+      }
+    }
+  });
+
+  return upsellMap;
+}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use, useCallback, useMemo, useRef } from "react";
 import { formatINR, formatMenuPrice } from "@/lib/utils";
-import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search, Sparkles } from "lucide-react";
 import { generateBrandColors } from "@/lib/theme";
 import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
 
@@ -649,6 +649,7 @@ export default function DineClient({
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [customizations, setCustomizations] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [upsellsMap, setUpsellsMap] = useState<Record<string, string>>({});
 
   // Gated features state
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
@@ -669,6 +670,15 @@ export default function DineClient({
 
   const [showWelcome, setShowWelcome] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.upsellsMap) setUpsellsMap(data.upsellsMap);
+      })
+      .catch(console.error);
+  }, [hotelId]);
 
   useEffect(() => {
     const key = `qr_welcome_shown_${initialHotel?.id}`;
@@ -2461,6 +2471,67 @@ export default function DineClient({
                 </div>
               ))}
             </div>
+
+            {/* Smart AI Upsell Widget */}
+            {(() => {
+              if (state.type !== "menu" || cart.length === 0) return null;
+              
+              const cartItemIds = new Set(cart.map(c => c.menuItemId));
+              let suggestedUpsell: MenuItem | null = null;
+              let sourceItemName = "";
+
+              for (const cartItem of cart) {
+                const recId = upsellsMap[cartItem.menuItemId];
+                if (recId && !cartItemIds.has(recId)) {
+                  for (const cat of state.categories) {
+                    const match = cat.items.find(i => i.id === recId);
+                    if (match) {
+                      suggestedUpsell = match;
+                      sourceItemName = cartItem.name;
+                      break;
+                    }
+                  }
+                }
+                if (suggestedUpsell) break;
+              }
+
+              if (!suggestedUpsell) return null;
+
+              return (
+                <div className={`mx-6 mb-4 p-4 rounded-2xl border ${
+                  isDark 
+                    ? "bg-brand-900/10 border-brand-500/20 shadow-[0_4px_20px_rgba(var(--brand-rgb),0.1)]" 
+                    : "bg-brand-50 border-brand-100 shadow-sm"
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-brand-400" : "text-brand-600"}`}>
+                      Matches perfectly with {sourceItemName}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 pr-3">
+                      <p className={`font-bold text-sm tracking-tight leading-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {suggestedUpsell.name}
+                      </p>
+                      <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                        {formatMenuPrice(suggestedUpsell.price)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => addToCart(suggestedUpsell!)}
+                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+                        isDark 
+                          ? "bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-500/20" 
+                          : "bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Total and Checkout Action */}
             <div className={`p-6 border-t ${
