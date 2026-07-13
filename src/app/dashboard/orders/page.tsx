@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
+import Link from "next/link";
+import { usePlan } from "@/lib/contexts/plan-context";
+import { PairTabletModal } from "@/components/dashboard/PairTabletModal";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { Clock, RefreshCw, ChefHat, ScrollText, AlertCircle } from "lucide-react";
@@ -21,6 +24,8 @@ interface Session {
 }
 
 export default function LiveOrdersPage() {
+  const { hotelId, canAccess } = usePlan();
+  const hasKdsAccess = canAccess("kds_access");
   const { data: sessions = [], mutate, error, isValidating } = useSWR<Session[]>("/api/hotel/sessions", fetcher, {
     refreshInterval: 15000,
     revalidateOnFocus: true,
@@ -97,14 +102,28 @@ export default function LiveOrdersPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Live Orders</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Real-time view of all active table sessions</p>
         </div>
-        <button
-          onClick={() => load(true)}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#16161A] border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-[#1C1C21] hover:border-slate-300 dark:border-zinc-700 dark:hover:border-white/20 active:scale-95 transition-all disabled:opacity-50 text-sm"
-        >
-          <RefreshCw size={15} className={isRefreshing ? "animate-spin text-brand-500" : "text-slate-400"} />
-          {isRefreshing ? "Syncing…" : "Sync"}
-        </button>
+        <div className="flex items-center gap-3">
+          {hotelId && hasKdsAccess && (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link
+                href={`/kitchen/${hotelId}`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 rounded-xl font-medium transition px-4 py-2 text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:bg-[#16161A] dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-[#1C1C21]"
+              >
+                Kitchen Screen
+              </Link>
+              <PairTabletModal hotelId={hotelId} />
+            </div>
+          )}
+          <button
+            onClick={() => load(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#16161A] border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-[#1C1C21] hover:border-slate-300 dark:border-zinc-700 dark:hover:border-white/20 active:scale-95 transition-all disabled:opacity-50 text-sm"
+          >
+            <RefreshCw size={15} className={isRefreshing ? "animate-spin text-brand-500" : "text-slate-400"} />
+            {isRefreshing ? "Syncing…" : "Sync"}
+          </button>
+        </div>
       </div>
 
       {fetchError && (
