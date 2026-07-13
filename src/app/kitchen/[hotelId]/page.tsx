@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, use, useCallback } from "react";
-import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle } from "lucide-react";
+import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize } from "lucide-react";
 
 interface SessionItem {
   id: string;
@@ -39,6 +39,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   const [completedSessions, setCompletedSessions] = useState<Record<string, number>>({});
   const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid");
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Ref to track loaded order IDs for new order alert beep
   const prevOrderIdsRef = useRef<string[] | null>(null);
@@ -134,15 +135,63 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     return () => clearInterval(interval);
   }, [hotelId, pinEntered, hotelPlan]);
 
-  // 3. Keep elapsed times updated in real time (every second)
+  // 3. Keep current time fresh
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!pinEntered) return;
+    const t = setInterval(() => setCurrentTime(Date.now()), 10000);
+    return () => clearInterval(t);
+  }, [pinEntered]);
 
-  // Web Audio API beep generator
+  // Request wake lock to prevent tablet screen from sleeping
+  useEffect(() => {
+    let wakeLock: any = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.error("Wake Lock error:", err);
+      }
+    };
+
+    if (pinEntered) {
+      requestWakeLock();
+    }
+
+    const handleVisibilityChange = () => {
+      if (wakeLock !== null && document.visibilityState === 'visible' && pinEntered) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (wakeLock !== null) {
+        wakeLock.release().then(() => { wakeLock = null; });
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [pinEntered]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch((err) => {
+        console.error("Fullscreen error:", err);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+        });
+      }
+    }
+  };
+
+  // Status mapping colors API beep generator
   const playBeep = () => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -485,6 +534,14 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
               <span>Timeline View</span>
             </button>
           </div>
+
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:text-emerald-400 rounded-lg transition-all"
+            title="Toggle Fullscreen"
+          >
+            {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+          </button>
 
           {/* Back lock button */}
           <button

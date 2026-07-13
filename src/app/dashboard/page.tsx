@@ -10,6 +10,7 @@ import { formatINR, formatDateTime } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePlan } from "@/lib/contexts/plan-context";
+import QRCode from "qrcode";
 import {
   DollarSign,
   IndianRupee,
@@ -51,6 +52,8 @@ export default function TablesDashboardPage() {
   const [selected, setSelected] = useState<TableData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hotelPaused, setHotelPaused] = useState(false);
+  const [showPairModal, setShowPairModal] = useState(false);
+  const [tabletQrUrl, setTabletQrUrl] = useState<string>("");
   const [menuItems, setMenuItems] = useState<
     { id: string; name: string; price: number; categoryId: string }[]
   >([]);
@@ -493,6 +496,18 @@ Thank you for dining with us!`;
   const hasFeedbackAccess = canAccess("customer_feedback");
   const hasKdsAccess = canAccess("kds_access");
 
+  const openPairTabletModal = async () => {
+    if (!hotelProfile?.id) return;
+    const kdsUrl = `${window.location.origin}/kitchen/${hotelProfile.id}`;
+    try {
+      const qrUrl = await QRCode.toDataURL(kdsUrl, { width: 300, margin: 2 });
+      setTabletQrUrl(qrUrl);
+      setShowPairModal(true);
+    } catch (err) {
+      console.error("Failed to generate QR code", err);
+    }
+  };
+
   const isSkeletons = loading && tables.length === 0;
 
   // Find max value in hourly distribution to normalize CSS bar heights
@@ -527,13 +542,21 @@ Thank you for dining with us!`;
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {hotelProfile?.id && hasKdsAccess && (
-            <Link
-              href={`/kitchen/${hotelProfile.id}`}
-              target="_blank"
-              className="inline-flex items-center gap-1.5 rounded-md font-medium transition px-3 py-1.5 text-sm bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-[#1A1A1D] dark:border-zinc-700/80 dark:text-zinc-200 dark:hover:bg-[#222225]"
-            >
-              Kitchen Screen
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/kitchen/${hotelProfile.id}`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 rounded-md font-medium transition px-3 py-1.5 text-sm bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-[#1A1A1D] dark:border-zinc-700/80 dark:text-zinc-200 dark:hover:bg-[#222225]"
+              >
+                Kitchen Screen
+              </Link>
+              <button
+                onClick={openPairTabletModal}
+                className="inline-flex items-center gap-1.5 rounded-md font-medium transition px-3 py-1.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/20"
+              >
+                📱 Pair Tablet
+              </button>
+            </div>
           )}
           <div className="flex gap-4 text-[11px] text-gray-400 dark:text-zinc-500">
             <span className="flex items-center gap-1.5">
@@ -982,6 +1005,32 @@ Thank you for dining with us!`;
           </div>
         )}
       </Modal>
+      {/* Pair Tablet Modal */}
+      <Modal open={showPairModal} onClose={() => setShowPairModal(false)} title="Pair Kitchen Tablet">
+        <div className="p-6 text-center">
+          <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
+            Scan this QR code with your iPad or Android tablet&apos;s camera to instantly open the Kitchen Display System (KDS).
+          </p>
+          {tabletQrUrl && (
+            <div className="bg-white p-4 rounded-xl shadow-sm inline-block border border-gray-100 dark:border-none mb-6">
+              <img src={tabletQrUrl} alt="Tablet KDS QR Code" className="w-56 h-56 object-contain" />
+            </div>
+          )}
+          <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-4 text-left">
+            <h4 className="text-amber-800 dark:text-amber-400 font-semibold text-sm mb-1">Tablet Setup Instructions</h4>
+            <ol className="list-decimal list-inside text-sm text-amber-700 dark:text-amber-500/80 space-y-1.5">
+              <li>Open your tablet&apos;s camera app and scan this QR.</li>
+              <li>Enter your 4-digit Kitchen PIN when prompted.</li>
+              <li>Tap the "Fullscreen" button on the KDS to lock it in app mode.</li>
+              <li>Your tablet is now a dedicated KDS screen!</li>
+            </ol>
+          </div>
+          <div className="mt-6">
+            <Button onClick={() => setShowPairModal(false)} className="w-full">Done</Button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }
