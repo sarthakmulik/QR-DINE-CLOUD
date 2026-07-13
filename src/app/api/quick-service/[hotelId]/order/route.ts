@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrCreateQuickServiceSession, confirmQuickServiceOrder } from "@/lib/session-service";
+import { getOrCreateQuickServiceSession, confirmQuickServiceOrder, recalculateSessionTotals } from "@/lib/session-service";
 import { revalidateTag } from "next/cache";
 
 // ─── Simple in-process rate limiter for order creation ───────────────────────
@@ -139,6 +139,9 @@ export async function POST(
     if (insertErr) {
       throw new Error("Failed to insert items");
     }
+
+    // Recalculate totals before confirming (this updates total, tax, and discount)
+    await recalculateSessionTotals(session.id, hotel);
 
     // 3. Confirm the order (generates order_number and sets status to payment_pending)
     const finalSession = await confirmQuickServiceOrder(session.id, paymentMethod);
