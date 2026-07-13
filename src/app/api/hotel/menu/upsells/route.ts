@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateUpsellMap } from "@/lib/ai-engine";
+import { generateUpsellMap, getTrendingItems } from "@/lib/ai-engine";
 import type { SessionItem } from "@/lib/types";
 
 // Cache disabled for testing/development (set back to 3600 in prod)
@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
 
     if (sessionsError) {
       console.error("Error fetching sessions for upsells:", sessionsError);
-      return NextResponse.json({ upsellsMap: {} }); // Fail gracefully so menu still loads
+      return NextResponse.json({ upsellsMap: {}, trendingItems: [] }); // Fail gracefully so menu still loads
     }
 
     if (!sessions || sessions.length === 0) {
-      return NextResponse.json({ upsellsMap: {} });
+      return NextResponse.json({ upsellsMap: {}, trendingItems: [] });
     }
 
     const sessionIds = sessions.map(s => s.id);
@@ -55,10 +55,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. Generate Upsell Map using AI Engine
+    // 3. Generate Upsell Map & Trending Items using AI Engine
     const upsellsMap = generateUpsellMap(items);
+    const trendingItems = getTrendingItems(items, 5); // Get top 5
 
-    return NextResponse.json({ upsellsMap });
+    return NextResponse.json({ upsellsMap, trendingItems });
 
   } catch (err) {
     console.error("Error in AI upsells API route:", err);

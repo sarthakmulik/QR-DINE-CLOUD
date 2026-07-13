@@ -406,3 +406,18 @@ export function generateUpsellMap(
 
   return upsellMap;
 }
+
+export function getTrendingItems(items: SessionItem[], limit: number = 5): string[] {
+  const itemCounts: Record<string, number> = {};
+  
+  items.forEach(item => {
+    if (item.menu_item_id) {
+      itemCounts[item.menu_item_id] = (itemCounts[item.menu_item_id] || 0) + (item.quantity || 1);
+    }
+  });
+
+  return Object.entries(itemCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(entry => entry[0]);
+}

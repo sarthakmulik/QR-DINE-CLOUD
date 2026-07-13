@@ -193,12 +193,19 @@ const CategorySection = React.memo(function CategorySection({
 }: CategorySectionProps) {
 
   /* ── CATEGORY HEADING ── */
+  const isTrending = cat.id === "trending-now-virtual";
   const categoryHeading = (
     <div className="flex items-center gap-3 mb-3">
-      <h2 className={`font-black text-sm tracking-widest uppercase ${
-        isDark ? "text-slate-300" : "text-gray-500"
-      }`}>{cat.name}</h2>
-      <div className={`flex-1 h-px ${isDark ? "bg-white/5" : "bg-gray-200/60"}`} />
+      {isTrending ? (
+        <h2 className="font-black text-sm tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 animate-pulse drop-shadow-sm">
+          {cat.name}
+        </h2>
+      ) : (
+        <h2 className={`font-black text-sm tracking-widest uppercase ${
+          isDark ? "text-slate-300" : "text-gray-500"
+        }`}>{cat.name}</h2>
+      )}
+      <div className={`flex-1 h-px ${isTrending ? "bg-gradient-to-r from-orange-500/50 to-transparent" : isDark ? "bg-white/5" : "bg-gray-200/60"}`} />
       <span className={`text-[10px] font-black uppercase tracking-wider ${
         isDark ? "text-slate-600" : "text-gray-400"
       }`}>{cat.items.length} items</span>
@@ -650,6 +657,7 @@ export default function DineClient({
   const [customizations, setCustomizations] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [upsellsMap, setUpsellsMap] = useState<Record<string, string>>({});
+  const [trendingItemIds, setTrendingItemIds] = useState<string[]>([]);
 
   // Gated features state
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
@@ -676,6 +684,7 @@ export default function DineClient({
       .then(res => res.json())
       .then(data => {
         if (data.upsellsMap) setUpsellsMap(data.upsellsMap);
+        if (data.trendingItems) setTrendingItemIds(data.trendingItems);
       })
       .catch(console.error);
   }, [hotelId]);
@@ -953,8 +962,27 @@ export default function DineClient({
   }, [customizations?.layout]);
 
   const categories = useMemo(() => {
-    return state.type === "menu" ? state.categories : [];
-  }, [state]);
+    if (state.type !== "menu") return [];
+    
+    const baseCats = [...state.categories];
+    
+    if (trendingItemIds.length > 0) {
+      const allItems = baseCats.flatMap(c => c.items);
+      const trendingItems = trendingItemIds
+        .map(id => allItems.find(item => item.id === id))
+        .filter(Boolean) as MenuItem[];
+        
+      if (trendingItems.length > 0) {
+        baseCats.unshift({
+          id: "trending-now-virtual",
+          name: "🔥 Trending Now",
+          items: trendingItems
+        });
+      }
+    }
+    
+    return baseCats;
+  }, [state, trendingItemIds]);
 
   // Keep activeCategory ref to avoid recreating the scroll listener
   const activeCategoryRef = useRef<string | null>(null);
