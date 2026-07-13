@@ -210,3 +210,205 @@
 @keyframes waJustFade {
   to { opacity: 1; }
 }
+
+/* ───────────────────────────────────────── */
+/* PRESET 4 — "qs-neon"                      */
+/* ───────────────────────────────────────── */
+
+.wa-qs-neon {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #05050A;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  animation: waQsNeonExit 400ms cubic-bezier(0.8, 0, 0.2, 1) 2800ms both;
+}
+
+.wa-qs-neon::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: waNeonGrid 4s linear infinite;
+}
+
+@keyframes waNeonGrid {
+  from { transform: translateY(0); }
+  to { transform: translateY(20px); }
+}
+
+@keyframes waQsNeonExit {
+  to { transform: scale(1.1); filter: blur(10px); opacity: 0; visibility: hidden; }
+}
+
+.wa-qs-neon-content {
+  text-align: center; z-index: 2; padding: 0 2rem;
+}
+
+.wa-qs-neon-name {
+  font-family: 'Inter', var(--wa-font);
+  font-weight: 900;
+  font-style: italic;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  color: #fff;
+  text-shadow: 0 0 10px #0FF, 0 0 20px #0FF, 0 0 30px #0FF;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: waNeonFlicker 2000ms forwards 200ms;
+}
+
+@keyframes waNeonFlicker {
+  0%   { opacity: 0; text-shadow: none; }
+  5%   { opacity: 1; text-shadow: 0 0 10px #0FF; }
+  10%  { opacity: 0; }
+  15%  { opacity: 1; text-shadow: 0 0 10px #0FF, 0 0 20px #0FF; }
+  25%  { opacity: 0.5; }
+  30%  { opacity: 1; text-shadow: 0 0 10px #0FF, 0 0 20px #0FF, 0 0 30px #0FF; }
+  100% { opacity: 1; text-shadow: 0 0 10px #0FF, 0 0 20px #0FF, 0 0 30px #0FF; }
+}
+
+.wa-qs-neon-sub {
+  font-family: 'Inter', var(--wa-font);
+  font-weight: 600;
+  font-size: 1rem;
+  color: #0FF;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  margin-top: 20px;
+  opacity: 0;
+  animation: waNeonGlitch 150ms infinite alternate, waJustFade 1000ms forwards 1200ms;
+}
+
+@keyframes waNeonGlitch {
+  0%   { transform: translate(0) skew(0deg); }
+  20%  { transform: translate(-2px, 1px) skew(-5deg); }
+  40%  { transform: translate(1px, -1px) skew(2deg); }
+  60%  { transform: translate(0) skew(0deg); }
+  80%  { transform: translate(2px, 0) skew(5deg); }
+  100% { transform: translate(-1px, 2px) skew(-2deg); }
+}
+
+/* ───────────────────────────────────────── */
+/* PRESET 5 — "qs-glass"                     */
+/* ───────────────────────────────────────── */
+
+.wa-qs-glass {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(45deg, #FF9A9E 0%, #FECFEF 50%, #A1C4FD 100%);
+  background-size: 400% 400%;
+  display: flex; align-items: center; justify-content: center;
+  animation: waGlassGrad 6s ease infinite, waQsGlassExit 500ms ease-in-out 2700ms both;
+}
+
+@keyframes waGlassGrad {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes waQsGlassExit {
+  to { filter: blur(20px); opacity: 0; visibility: hidden; }
+}
+
+.wa-qs-glass-card {
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 30px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+  text-align: center;
+  transform: translateY(50px);
+  opacity: 0;
+  animation: waGlassFloatIn 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) 200ms forwards, waGlassHover 4s ease-in-out infinite 1200ms;
+}
+
+@keyframes waGlassFloatIn {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes waGlassHover {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+.wa-qs-glass-name {
+  font-family: 'Outfit', var(--wa-font);
+  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.wa-qs-glass-sub {
+  font-family: 'Outfit', var(--wa-font);
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 10px;
+  font-weight: 300;
+}
+
+/* ───────────────────────────────────────── */
+/* PRESET 6 — "qs-kinetic"                   */
+/* ───────────────────────────────────────── */
+
+.wa-qs-kinetic {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #D4FF00;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  animation: waQsKineticExit 400ms ease-in 2600ms both;
+}
+
+@keyframes waQsKineticExit {
+  to { transform: translateX(100%); opacity: 0; visibility: hidden; }
+}
+
+.wa-qs-kinetic-ticker {
+  position: absolute;
+  top: 15%;
+  left: -50%;
+  width: 200%;
+  height: 60px;
+  background: #000;
+  transform: rotate(-5deg);
+  display: flex; align-items: center;
+  z-index: 1;
+}
+
+.wa-qs-kinetic-ticker-text {
+  color: #D4FF00;
+  font-family: 'Space Grotesk', var(--wa-font);
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: 4px;
+  white-space: nowrap;
+  animation: waKineticScroll 4s linear infinite;
+}
+
+@keyframes waKineticScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.wa-qs-kinetic-content {
+  text-align: center; z-index: 2; mix-blend-mode: difference; color: #fff;
+}
+
+.wa-qs-kinetic-name {
+  font-family: 'Space Grotesk', var(--wa-font);
+  font-weight: 900;
+  font-size: clamp(3rem, 10vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  transform: scale(0.5) rotate(-15deg);
+  opacity: 0;
+  animation: waKineticSlam 600ms cubic-bezier(0.175, 0.885, 0.32, 1.275) 300ms forwards;
+}
+
+@keyframes waKineticSlam {
+  to { transform: scale(1) rotate(0deg); opacity: 1; }
+}

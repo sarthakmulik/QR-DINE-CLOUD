@@ -5,7 +5,7 @@ import "./welcome-animation.css";
 
 interface WelcomeAnimationProps {
   restaurantName: string;
-  preset: "elegant" | "vibrant" | "minimal";
+  preset: "elegant" | "vibrant" | "minimal" | "qs-neon" | "qs-glass" | "qs-kinetic";
   theme?: {
     primaryColor?: string;
     fontFamily?: string;
@@ -120,14 +120,50 @@ export function WelcomeAnimation({ restaurantName, preset, theme, onComplete }: 
     );
   }
 
-  // minimal
+  if (preset === "minimal") {
+    return (
+      <div className="wa-minimal" style={cssVars}>
+        <div className="wa-minimal-ring"></div>
+        <div className="wa-minimal-content">
+          <div className="wa-minimal-name">{restaurantName}</div>
+          <div className="wa-minimal-dot"></div>
+          <div className="wa-minimal-sub">Welcome</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (preset === "qs-neon") {
+    return (
+      <div className="wa-qs-neon" style={cssVars}>
+        <div className="wa-qs-neon-content">
+          <div className="wa-qs-neon-name">{restaurantName}</div>
+          <div className="wa-qs-neon-sub">System Online</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (preset === "qs-glass") {
+    return (
+      <div className="wa-qs-glass" style={cssVars}>
+        <div className="wa-qs-glass-card">
+          <div className="wa-qs-glass-name">{restaurantName}</div>
+          <div className="wa-qs-glass-sub">Scan • Order • Enjoy</div>
+        </div>
+      </div>
+    );
+  }
+
+  // qs-kinetic
+  const tickerStr = Array(20).fill("ORDER NOW • ").join("");
   return (
-    <div className="wa-minimal" style={cssVars}>
-      <div className="wa-minimal-ring"></div>
-      <div className="wa-minimal-content">
-        <div className="wa-minimal-name">{restaurantName}</div>
-        <div className="wa-minimal-dot"></div>
-        <div className="wa-minimal-sub">Welcome</div>
+    <div className="wa-qs-kinetic" style={cssVars}>
+      <div className="wa-qs-kinetic-ticker">
+         <span className="wa-qs-kinetic-ticker-text">{tickerStr}</span>
+      </div>
+      <div className="wa-qs-kinetic-content">
+        <div className="wa-qs-kinetic-name">{restaurantName}</div>
       </div>
     </div>
   );

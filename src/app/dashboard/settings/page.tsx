@@ -1090,6 +1090,7 @@ export default function SettingsPage() {
 
             <WelcomeAnimationSettings
               plan={currentPlan as any || "basic"}
+              serviceType={form.serviceType}
               settings={{
                 welcomeAnimationEnabled: form.welcomeAnimationEnabled,
                 welcomeAnimationPreset: form.welcomeAnimationPreset

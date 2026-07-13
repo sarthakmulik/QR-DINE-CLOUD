@@ -7,12 +7,13 @@ export interface RestaurantSettings {
 
 interface WelcomeAnimationSettingsProps {
   plan: "basic" | "pro" | "elite";
+  serviceType?: string;
   settings: RestaurantSettings;
   onUpdate: (patch: Partial<RestaurantSettings>) => void;
   restaurantName: string;
 }
 
-export function WelcomeAnimationSettings({ plan, settings, onUpdate, restaurantName }: WelcomeAnimationSettingsProps) {
+export function WelcomeAnimationSettings({ plan, serviceType, settings, onUpdate, restaurantName }: WelcomeAnimationSettingsProps) {
   if (plan === "basic") return null;
 
   const { welcomeAnimationEnabled: enabled, welcomeAnimationPreset: preset } = settings;
@@ -66,6 +67,43 @@ export function WelcomeAnimationSettings({ plan, settings, onUpdate, restaurantN
             <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1A1A1A", margin: "16px auto" }}></div>
             <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.72rem", letterSpacing: "0.24em", textTransform: "uppercase", color: "#999999" }}>
               Welcome
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (p === "qs-neon") {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "#05050A", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
+          <div style={{ textAlign: "center", zIndex: 2 }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 900, fontStyle: "italic", fontSize: "2.5rem", color: "#fff", textShadow: "0 0 10px #0FF, 0 0 20px #0FF, 0 0 30px #0FF", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              {restaurantName}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (p === "qs-glass") {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(45deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: "300px", height: "150px", background: "rgba(255, 255, 255, 0.2)", backdropFilter: "blur(10px)", border: "1px solid rgba(255, 255, 255, 0.5)", borderRadius: "20px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)", zIndex: 2 }}>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: "2rem", color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
+              {restaurantName}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (p === "qs-kinetic") {
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "#D4FF00", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <div style={{ position: "absolute", width: "200%", height: "20px", background: "#000", top: "20px", transform: "rotate(-5deg)", display: "flex", alignItems: "center" }}>
+             <span style={{ color: "#D4FF00", fontWeight: 900, fontSize: "10px", letterSpacing: "2px" }}>ORDER NOW ORDER NOW ORDER NOW</span>
+          </div>
+          <div style={{ textAlign: "center", zIndex: 2 }}>
+            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 900, fontSize: "3rem", color: "#000", letterSpacing: "-0.05em", lineHeight: 0.9, textTransform: "uppercase" }}>
+              {restaurantName}
             </div>
           </div>
         </div>
@@ -128,11 +166,18 @@ export function WelcomeAnimationSettings({ plan, settings, onUpdate, restaurantN
           {plan === "elite" && (
             <div>
               <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
-                {[
-                  { id: "elegant", label: "Elegant", color: "#C8A882" },
-                  { id: "vibrant", label: "Vibrant", color: "#FF6B6B" },
-                  { id: "minimal", label: "Minimal", color: "#1A1A1A" },
-                ].map((p) => {
+                {(serviceType === "quick_service"
+                  ? [
+                      { id: "qs-neon", label: "Neon Cyberpunk", color: "#00FFFF" },
+                      { id: "qs-glass", label: "Liquid Glass", color: "#FF9A9E" },
+                      { id: "qs-kinetic", label: "Kinetic", color: "#D4FF00" },
+                    ]
+                  : [
+                      { id: "elegant", label: "Elegant", color: "#C8A882" },
+                      { id: "vibrant", label: "Vibrant", color: "#FF6B6B" },
+                      { id: "minimal", label: "Minimal", color: "#1A1A1A" },
+                    ]
+                ).map((p) => {
                   const isSelected = preset === p.id;
                   return (
                     <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
