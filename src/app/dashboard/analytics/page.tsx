@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { formatINR } from "@/lib/utils";
-import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar, Sparkles, Lightbulb } from "lucide-react";
+import { TrendingUp, ShoppingBag, IndianRupee, Award, Calendar, Sparkles, Lightbulb, AlertTriangle, Info } from "lucide-react";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PlanUpgradePaywall } from "@/components/dashboard/plan-upgrade-paywall";
 
@@ -24,7 +24,7 @@ interface AnalyticsData {
     avgValue: number;
   }[];
   heatmapData: { day: number; hour: number; count: number }[];
-  insights: string[];
+  insights: { type: 'growth' | 'warning' | 'opportunity' | 'info'; message: string }[];
 }
 
 export default function AnalyticsPage() {
@@ -285,17 +285,37 @@ export default function AnalyticsPage() {
             <div className="bg-gradient-to-r from-indigo-50 to-fuchsia-50 dark:from-indigo-900/20 dark:to-fuchsia-900/20 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-6 shadow-sm mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="text-indigo-500" size={20} />
-                <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">Actionable Insights</h2>
+                <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">Advanced AI Insights</h2>
               </div>
-              <div className="space-y-3">
-                {data.insights.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-3 bg-white/60 dark:bg-zinc-900/40 p-3 rounded-xl border border-white/40 dark:border-zinc-800/50">
-                    <div className="mt-0.5">
-                      <Lightbulb className="text-amber-500" size={16} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {data.insights.map((insight, idx) => {
+                  let Icon = Info;
+                  let colorClass = "text-sky-500";
+                  let bgClass = "bg-sky-50 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20";
+                  
+                  if (insight.type === 'growth') {
+                    Icon = TrendingUp;
+                    colorClass = "text-emerald-500";
+                    bgClass = "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20";
+                  } else if (insight.type === 'warning') {
+                    Icon = AlertTriangle;
+                    colorClass = "text-rose-500";
+                    bgClass = "bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20";
+                  } else if (insight.type === 'opportunity') {
+                    Icon = Lightbulb;
+                    colorClass = "text-amber-500";
+                    bgClass = "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20";
+                  }
+
+                  return (
+                    <div key={idx} className={`flex items-start gap-3 p-4 rounded-xl border ${bgClass}`}>
+                      <div className="mt-0.5">
+                        <Icon className={colorClass} size={18} />
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 dark:text-zinc-200 leading-snug">{insight.message}</p>
                     </div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-zinc-200 leading-snug">{insight}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TableSession, SessionItem } from "@/lib/types";
+import { generateAdvancedInsights, AIInsight } from "@/lib/ai-engine";
 
 export async function GET(req: NextRequest) {
   try {
@@ -227,19 +228,24 @@ export async function GET(req: NextRequest) {
       return `${fmt} ${ampm}`;
     };
 
-    const insights: string[] = [];
+    const basicInsights: AIInsight[] = [];
     
     if (busiest.count > 0) {
-      insights.push(`Your absolute peak is ${dayNames[busiest.day]}s at ${formatHour(busiest.hour)}. Ensure maximum staff coverage.`);
+      basicInsights.push({ type: 'growth', message: `Your absolute peak is ${dayNames[busiest.day]}s at ${formatHour(busiest.hour)}. Ensure maximum staff coverage.` });
     }
 
     if (slowest.count !== 9999999 && slowest.count >= 0) {
       if (topSlowItem) {
-        insights.push(`${dayNames[slowest.day]}s at ${formatHour(slowest.hour)} are your slowest hours, but ${topSlowItem[0]} sells the most. Run a ${topSlowItem[0]} promo next ${dayNames[slowest.day]}!`);
+        basicInsights.push({ type: 'opportunity', message: `${dayNames[slowest.day]}s at ${formatHour(slowest.hour)} are your slowest hours, but ${topSlowItem[0]} sells the most. Run a ${topSlowItem[0]} promo next ${dayNames[slowest.day]}!` });
       } else {
-        insights.push(`${dayNames[slowest.day]}s at ${formatHour(slowest.hour)} are unusually quiet. Consider a happy hour discount.`);
+        basicInsights.push({ type: 'warning', message: `${dayNames[slowest.day]}s at ${formatHour(slowest.hour)} are unusually quiet. Consider a happy hour discount.` });
       }
     }
+
+    // 8. Generate Advanced AI Insights
+    const deepInsights = generateAdvancedInsights(typedSessions, items);
+    
+    const insights = [...basicInsights, ...deepInsights];
 
     return NextResponse.json({
       totalRevenue,
