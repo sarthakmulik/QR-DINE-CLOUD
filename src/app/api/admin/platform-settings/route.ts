@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   try {
     const user = await requireSuperAdmin();
     const body = await req.json();
-    const { whatsapp_api_key, password } = body;
+    const { whatsapp_api_key, password, whatsapp_rate } = body;
 
     if (!password) {
       return NextResponse.json({ error: "Password required to verify changes." }, { status: 403 });
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       .from("platform_settings")
       .update({
         whatsapp_api_key: whatsapp_api_key || null,
+        whatsapp_rate: whatsapp_rate !== undefined ? Number(whatsapp_rate) : undefined,
         updated_at: new Date().toISOString()
       })
       .eq("id", "00000000-0000-0000-0000-000000000001")

@@ -106,9 +106,9 @@ export default function AdminPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [newPayment, setNewPayment] = useState({ amount: "", method: "upi", notes: "" });
   const [whatsappUsage, setWhatsappUsage] = useState<Record<string, { platform: number, custom: number }>>({});
-  const [platformSettings, setPlatformSettings] = useState<{ whatsapp_api_key: string | null }>({ whatsapp_api_key: null });
+  const [platformSettings, setPlatformSettings] = useState<{ whatsapp_api_key: string | null, whatsapp_rate?: number }>({ whatsapp_api_key: null });
   const [showPlatformModal, setShowPlatformModal] = useState(false);
-  const [platformForm, setPlatformForm] = useState({ whatsapp_api_key: "", password: "" });
+  const [platformForm, setPlatformForm] = useState({ whatsapp_api_key: "", whatsapp_rate: "0", password: "" });
 
   async function loadData() {
     const [hotelsRes, statsRes, broadcastsRes, whatsappRes, platformRes] = await Promise.all([
@@ -129,7 +129,11 @@ export default function AdminPage() {
     if (platformRes.ok) {
       const data = await platformRes.json();
       setPlatformSettings(data);
-      setPlatformForm({ whatsapp_api_key: data?.whatsapp_api_key || "", password: "" });
+      setPlatformForm({ 
+        whatsapp_api_key: data?.whatsapp_api_key || "", 
+        whatsapp_rate: data?.whatsapp_rate !== undefined ? String(data.whatsapp_rate) : "0",
+        password: "" 
+      });
     }
     setLoading(false);
   }
@@ -268,7 +272,10 @@ export default function AdminPage() {
     const res = await fetch("/api/admin/platform-settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(platformForm),
+      body: JSON.stringify({
+        ...platformForm,
+        whatsapp_rate: parseFloat(platformForm.whatsapp_rate)
+      }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -372,7 +379,7 @@ export default function AdminPage() {
                 Next Due
               </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
-                Monthly Revenue
+                Total Due
               </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 WhatsApp
@@ -437,13 +444,26 @@ export default function AdminPage() {
                 </td>
                 <td className="px-4 py-3 dark:text-zinc-300"><ClientDate date={hotel.lastPaymentDate} /></td>
                 <td className="px-4 py-3 dark:text-zinc-300"><ClientDate date={hotel.nextDueDate} /></td>
-                <td className="px-4 py-3 dark:text-zinc-300">{formatINR(hotel.billingAmount)}</td>
+                <td className="px-4 py-3 font-medium dark:text-zinc-300">
+                  {(() => {
+                    const baseAmount = hotel.billingAmount || 0;
+                    const rate = platformSettings?.whatsapp_rate || 0;
+                    const waCost = (whatsappUsage[hotel.id]?.platform || 0) * rate;
+                    const total = baseAmount + waCost;
+                    return (
+                      <div className="flex flex-col">
+                        <span>{formatINR(total)}</span>
+                        {waCost > 0 && <span className="text-[10px] text-gray-500 font-normal">Incl. {formatINR(waCost)} WA</span>}
+                      </div>
+                    );
+                  })()}
+                </td>
                 <td className="px-4 py-3 dark:text-zinc-300">
                   {whatsappUsage[hotel.id] ? (
                     <div className="flex flex-col gap-1">
                       {whatsappUsage[hotel.id].platform > 0 && (
                         <Badge variant="active" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
-                          {whatsappUsage[hotel.id].platform} Platform
+                          {whatsappUsage[hotel.id].platform} Platform {platformSettings?.whatsapp_rate ? `(${formatINR(whatsappUsage[hotel.id].platform * platformSettings.whatsapp_rate)})` : ""}
                         </Badge>
                       )}
                       {whatsappUsage[hotel.id].custom > 0 && (
@@ -615,17 +635,22 @@ export default function AdminPage() {
         </div>
         
         <div className="bg-white dark:bg-[#16161A] p-5 rounded-xl border border-gray-200 dark:border-zinc-800 flex justify-between items-center">
-          <div>
-            <h3 className="font-medium text-lg mb-1">WhatsApp API Key</h3>
-            <p className="text-sm text-gray-500 mb-2">
-              Global API Key used as a fallback. Format for Twilio: `AccountSID:AuthToken`
-            </p>
-            {platformSettings?.whatsapp_api_key ? (
-              <Badge variant="active">Configured securely</Badge>
-            ) : (
-              <Badge variant="suspended">Not configured</Badge>
-            )}
-          </div>
+            <div>
+              <h3 className="font-medium text-lg mb-1">Platform Settings</h3>
+              <p className="text-sm text-gray-500 mb-2">
+                Configure Global WhatsApp API key and Markup rate.
+              </p>
+              <div className="flex items-center gap-4 mt-3">
+                {platformSettings?.whatsapp_api_key ? (
+                  <Badge variant="active">API Configured</Badge>
+                ) : (
+                  <Badge variant="suspended">API Not configured</Badge>
+                )}
+                {platformSettings?.whatsapp_rate !== undefined && (
+                  <Badge variant="secondary">Rate: {formatINR(platformSettings.whatsapp_rate)} / msg</Badge>
+                )}
+              </div>
+            </div>
           <Button onClick={() => setShowPlatformModal(true)}>Manage API Keys</Button>
         </div>
       </div>
@@ -710,12 +735,27 @@ export default function AdminPage() {
         </div>
       </Modal>
 
-      <Modal open={!!billingHotel} onClose={() => setBillingHotel(null)} title={`Billing Ledger - ${billingHotel?.name}`}>
-        <div className="space-y-6">
-          <div className="bg-blue-50 text-blue-800 p-4 rounded-lg text-sm border border-blue-200">
-            <strong>Next Due:</strong> <ClientDate date={billingHotel?.nextDueDate} /><br/>
-            <strong>Monthly Amount:</strong> {formatINR(billingHotel?.billingAmount || 0)}
-          </div>
+        <Modal open={!!billingHotel} onClose={() => setBillingHotel(null)} title={`Billing Ledger - ${billingHotel?.name}`}>
+          <div className="space-y-6">
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-lg text-sm border border-blue-200">
+              <strong>Billing Cycle:</strong> <ClientDate date={billingHotel?.lastPaymentDate} /> to <ClientDate date={billingHotel?.nextDueDate} /><br/>
+              <div className="mt-2 space-y-1">
+                <div className="flex justify-between">
+                  <span>Base Subscription:</span>
+                  <span>{formatINR(billingHotel?.billingAmount || 0)}</span>
+                </div>
+                {billingHotel && whatsappUsage[billingHotel.id]?.platform > 0 && platformSettings?.whatsapp_rate ? (
+                  <div className="flex justify-between text-blue-700/80">
+                    <span>WhatsApp Usage ({whatsappUsage[billingHotel.id].platform} msgs @ {formatINR(platformSettings.whatsapp_rate)}):</span>
+                    <span>{formatINR(whatsappUsage[billingHotel.id].platform * platformSettings.whatsapp_rate)}</span>
+                  </div>
+                ) : null}
+                <div className="flex justify-between font-semibold pt-1 border-t border-blue-200 mt-1">
+                  <span>Total Due:</span>
+                  <span>{formatINR((billingHotel?.billingAmount || 0) + (billingHotel && platformSettings?.whatsapp_rate ? (whatsappUsage[billingHotel.id]?.platform || 0) * platformSettings.whatsapp_rate : 0))}</span>
+                </div>
+              </div>
+            </div>
 
           <div>
             <h3 className="font-semibold mb-3">Record New Payment</h3>
@@ -798,7 +838,22 @@ export default function AdminPage() {
               className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80 font-mono text-sm"
             />
           </div>
-          <hr className="border-gray-100 dark:border-zinc-800 my-4" />
+            <div>
+              <label className="block text-sm font-medium mb-1">WhatsApp Message Rate (₹)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={platformForm.whatsapp_rate}
+                onChange={(e) => setPlatformForm({ ...platformForm, whatsapp_rate: e.target.value })}
+                placeholder="0.80"
+                className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This rate will be used to calculate billing cost for Platform messages.
+              </p>
+            </div>
+            <hr className="border-gray-100 dark:border-zinc-800 my-4" />
           <Input 
             label="Super Admin Password" 
             type="password"
