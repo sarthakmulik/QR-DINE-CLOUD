@@ -791,6 +791,7 @@ export default function AdminPage() {
             <label className="block text-sm font-medium mb-1">WhatsApp API Key</label>
             <input
               type="text"
+              autoComplete="off"
               value={platformForm.whatsapp_api_key}
               onChange={(e) => setPlatformForm({ ...platformForm, whatsapp_api_key: e.target.value })}
               placeholder="Twilio SID:Token OR Interakt Base64"
@@ -800,7 +801,8 @@ export default function AdminPage() {
           <hr className="border-gray-100 dark:border-zinc-800 my-4" />
           <Input 
             label="Super Admin Password" 
-            type="password" 
+            type="password"
+            autoComplete="new-password"
             value={platformForm.password} 
             onChange={(v) => setPlatformForm({ ...platformForm, password: v })} 
             required 
