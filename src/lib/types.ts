@@ -299,3 +299,16 @@ export function mapMenuItem(i: MenuItem) {
     isRecommended: !!i.is_recommended,
   };
 }
+export interface Customer {
+  id: string;
+  hotel_id: string;
+  phone: string;
+  name: string | null;
+  cycle_visits: number;
+  monthly_visits: number;
+  current_month: string | null;
+  total_visits: number;
+  total_spent: number;
+  last_visit_date: string | null;
+  created_at: string;
+}

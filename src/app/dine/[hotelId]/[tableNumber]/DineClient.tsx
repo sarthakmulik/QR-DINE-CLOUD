@@ -727,6 +727,37 @@ export default function DineClient({
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState<{ type: string; percent: number; name: string | null } | null>(null);
+  const [checkingLoyalty, setCheckingLoyalty] = useState(false);
+
+  // Check loyalty discount when phone number is complete
+  useEffect(() => {
+    if (customerPhone.length === 10 && hotelId) {
+      setCheckingLoyalty(true);
+      fetch(`/api/dine/${hotelId}/customer?phone=${customerPhone}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.discountPercent > 0) {
+            setLoyaltyDiscount({
+              type: data.discountType,
+              percent: data.discountPercent,
+              name: data.customer?.name || null
+            });
+            if (data.customer?.name && !customerName) {
+              setCustomerName(data.customer.name);
+            }
+            showToast(`Welcome back${data.customer?.name ? " " + data.customer.name : ""}! ${data.discountPercent}% loyalty discount applied.`, "success");
+          } else {
+            setLoyaltyDiscount(null);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setCheckingLoyalty(false));
+    } else {
+      setLoyaltyDiscount(null);
+    }
+  }, [customerPhone, hotelId]);
 
   useEffect(() => {
     fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)

@@ -159,10 +159,19 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
     if (customerName && !currentSession.customer_name) updates.customer_name = customerName;
     if (customerPhone && !currentSession.customer_phone) updates.customer_phone = customerPhone;
     
+    // Apply loyalty discount if not already set and customerPhone exists
+    if (customerPhone && (!currentSession.discount_percent || Number(currentSession.discount_percent) === 0)) {
+      const discount = await calculateLoyaltyDiscount(hotelId, customerPhone);
+      if (discount > 0) {
+        updates.discount_percent = discount;
+      }
+    }
+    
     await sb.from("table_sessions").update(updates).eq("id", currentSession.id);
     
     if (updates.customer_name) currentSession.customer_name = customerName;
     if (updates.customer_phone) currentSession.customer_phone = customerPhone;
+    if (updates.discount_percent) currentSession.discount_percent = updates.discount_percent;
     
     return { session: mapTableSession(currentSession, currentSession.items), hotel, table, created: false };
   }
@@ -191,6 +200,11 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
       }
     }
 
+    let discountPercent = 0;
+    if (customerPhone) {
+      discountPercent = await calculateLoyaltyDiscount(hotelId, customerPhone);
+    }
+
     const { data: newSession, error: sessionError } = await sb
       .from("table_sessions")
       .insert({ 
@@ -200,7 +214,8 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
         status: "open", 
         customer_count: 1,
         customer_name: customerName || null,
-        customer_phone: customerPhone || null
+        customer_phone: customerPhone || null,
+        discount_percent: discountPercent
       })
       .select("*")
       .single<TableSession>();
@@ -436,8 +451,13 @@ export async function markAsPaid(
   const closed = updateSessionRes.data;
   if (updateSessionRes.error || !closed) throw new Error(updateSessionRes.error?.message || "Failed to close session");
 
-  // Asynchronously send WhatsApp bill if enabled and phone number exists
+  // Process Loyalty Points
   const finalPhone = closed.customer_phone || session.customer_phone;
+  if (finalPhone) {
+    await processLoyaltyOnCheckout(session.hotel_id, finalPhone, Number(session.discount_percent || 0), Number(closed.total || 0));
+  }
+
+  // Asynchronously send WhatsApp bill if enabled and phone number exists
   if (hotel?.whatsapp_bill_enabled && finalPhone) {
     sendWhatsappBill(finalPhone, closed, items, hotel).catch((err) => {
       console.error("Failed to send background WhatsApp bill:", err);
@@ -591,4 +611,78 @@ export async function assignOrderNumber(sessionId: string) {
   }
   
   return orderNumber;
+}
+
+/** Loyalty Helper Functions */
+
+async function calculateLoyaltyDiscount(hotelId: string, phone: string): Promise<number> {
+  const sb = admin();
+  const { data: customer } = await sb
+    .from("customers")
+    .select("*")
+    .eq("hotel_id", hotelId)
+    .eq("phone", phone)
+    .maybeSingle();
+
+  if (!customer) return 0;
+
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  let currentMonthlyVisits = customer.monthly_visits || 0;
+  if (customer.current_month !== currentMonthStr) {
+    currentMonthlyVisits = 0;
+  }
+
+  if (currentMonthlyVisits >= 10) return 20; // 20% VIP
+  if (customer.cycle_visits >= 1) return 5; // 5% Repeating
+  return 0;
+}
+
+async function processLoyaltyOnCheckout(hotelId: string, phone: string, discountApplied: number, totalSpent: number) {
+  const sb = admin();
+  const { data: customer } = await sb
+    .from("customers")
+    .select("*")
+    .eq("hotel_id", hotelId)
+    .eq("phone", phone)
+    .maybeSingle();
+
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+
+  if (!customer) {
+    // New customer
+    await sb.from("customers").insert({
+      hotel_id: hotelId,
+      phone,
+      name: null,
+      cycle_visits: 1,
+      monthly_visits: 1,
+      current_month: currentMonthStr,
+      total_visits: 1,
+      total_spent: totalSpent
+    });
+    return;
+  }
+
+  let newMonthlyVisits = customer.monthly_visits || 0;
+  if (customer.current_month !== currentMonthStr) {
+    newMonthlyVisits = 0;
+  }
+  newMonthlyVisits += 1;
+
+  let newCycleVisits = customer.cycle_visits + 1;
+
+  if (discountApplied === 20 && newMonthlyVisits > 10) {
+    newMonthlyVisits = 0; // Reset VIP cycle after claim
+  } else if (discountApplied === 5) {
+    newCycleVisits = 0; // Reset normal cycle
+  }
+
+  await sb.from("customers").update({
+    cycle_visits: newCycleVisits,
+    monthly_visits: newMonthlyVisits,
+    current_month: currentMonthStr,
+    total_visits: customer.total_visits + 1,
+    total_spent: Number(customer.total_spent || 0) + totalSpent,
+    last_visit_date: new Date().toISOString()
+  }).eq("id", customer.id);
 }
