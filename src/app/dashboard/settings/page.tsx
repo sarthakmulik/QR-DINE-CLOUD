@@ -56,6 +56,10 @@ export default function SettingsPage() {
   const [logoError, setLogoError] = useState("");
   const [previewTab, setPreviewTab] = useState<"dine_in" | "quick_service">("dine_in");
   const [activeTab, setActiveTab] = useState<"general" | "operations" | "appearance" | "payments">("general");
+  const [isPaymentsAuthenticated, setIsPaymentsAuthenticated] = useState(false);
+  const [authPassword, setAuthPassword] = useState("");
+  const [verifyingPaymentAuth, setVerifyingPaymentAuth] = useState(false);
+  const [paymentAuthError, setPaymentAuthError] = useState("");
 
   async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -274,6 +278,77 @@ export default function SettingsPage() {
       })
       .catch(console.error);
   }, []);
+
+  async function verifyPaymentAuth(e: React.FormEvent) {
+    e.preventDefault();
+    setVerifyingPaymentAuth(true);
+    setPaymentAuthError("");
+    try {
+      const res = await fetch("/api/hotel/verify-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: authPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setPaymentAuthError(data.error || "Incorrect password");
+        return;
+      }
+      setIsPaymentsAuthenticated(true);
+      setAuthPassword("");
+
+      // Load payment settings now
+      fetch("/api/hotel/payment-settings")
+        .then((r) => r.json())
+        .then((ps) => {
+          setForm((prev: any) => ({
+            ...prev,
+            paymentSettings: {
+              active_pg: ps?.active_pg || "none",
+              razorpay: {
+                key_id: ps?.razorpay?.key_id || "",
+                key_secret: ps?.razorpay?.key_secret || "",
+              },
+              phonepe: {
+                merchant_id: ps?.phonepe?.merchant_id || "",
+                salt_key: ps?.phonepe?.salt_key || "",
+                salt_index: ps?.phonepe?.salt_index || "",
+                env: ps?.phonepe?.env || "TEST",
+              }
+            }
+          }));
+        })
+        .catch(console.error);
+
+    } catch {
+      setPaymentAuthError("Network error. Please try again.");
+    } finally {
+      setVerifyingPaymentAuth(false);
+    }
+  }
+
+  async function savePaymentSettings() {
+    setSaving(true);
+    setSaveError("");
+    setSaved(false);
+    try {
+      const psRes = await fetch("/api/hotel/payment-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form.paymentSettings),
+      });
+      if (!psRes.ok) {
+        const d = await psRes.json();
+        setSaveError(d.error || "Failed to save Payment Gateway settings.");
+        return;
+      }
+      setSaved(true);
+    } catch {
+      setSaveError("Network error.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
