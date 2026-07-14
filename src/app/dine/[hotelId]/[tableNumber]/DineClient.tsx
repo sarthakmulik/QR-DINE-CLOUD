@@ -910,11 +910,11 @@ export default function DineClient({
       const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
       
       if (lastSessionId) {
-        let isRecentlyClosed = true;
+        let isRecentlyClosed = false;
         if (closedAt) {
           const diff = Date.now() - parseInt(closedAt);
-          if (diff > 30 * 60 * 1000) { // 30 minutes
-            isRecentlyClosed = false;
+          if (diff <= 30 * 60 * 1000) { // 30 minutes
+            isRecentlyClosed = true;
           }
         }
         
