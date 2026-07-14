@@ -723,6 +723,10 @@ export default function DineClient({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+
   useEffect(() => {
     fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)
       .then(res => res.json())
@@ -1414,6 +1418,13 @@ export default function DineClient({
 
   async function placeOrder() {
     if (cart.length === 0) return;
+
+    if (state.type === "menu" && !state.sessionId && (!customerName || customerPhone.length !== 10)) {
+      setShowIdentityModal(true);
+      setShowCart(false);
+      return;
+    }
+
     setOrdering(true);
 
     // Optimistic UI: show confirmed immediately, clear cart
@@ -1421,6 +1432,7 @@ export default function DineClient({
     const prevState = state;
     setCart([]);
     setShowCart(false);
+    setShowIdentityModal(false);
     setState({ type: "confirmed" });
 
     try {
@@ -1438,6 +1450,8 @@ export default function DineClient({
             quantity: c.quantity,
           })),
           sessionId: state.type === "menu" ? state.sessionId : undefined,
+          customerName: customerName || undefined,
+          customerPhone: customerPhone || undefined,
         }),
       });
 
@@ -2817,6 +2831,104 @@ export default function DineClient({
               >
                 {ordering && <Loader2 className="w-5 h-5 animate-spin" />}
                 {ordering ? "Placing Order..." : "Confirm & Send to Kitchen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Identity Modal Bottom Sheet */}
+      {showIdentityModal && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center p-0 transition-all duration-300"
+          onClick={() => setShowIdentityModal(false)}
+        >
+          <div
+            className={`w-full max-w-md rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl border-t overflow-hidden animate-slide-up transition-all duration-500 ease-bounce modal-scroll ${
+              isDark ? "bg-slate-900 border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]" : "bg-white border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Slide handle visual */}
+            <div className={`mx-auto w-12 h-1.5 rounded-full my-3 flex-shrink-0 ${
+              isDark ? "bg-slate-800" : "bg-gray-200"
+            }`} />
+            
+            {/* Header */}
+            <div className={`flex items-center justify-between px-6 pb-4 pt-1 border-b sticky top-0 z-10 ${
+              isDark ? "bg-slate-900 border-white/5" : "bg-white border-gray-100"
+            }`}>
+              <h2 className={`font-extrabold text-lg tracking-tight ${isDark ? "text-white" : "text-gray-950"}`}>Verify Details</h2>
+              <button 
+                onClick={() => setShowIdentityModal(false)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors active:scale-90 ${
+                  isDark ? "bg-slate-850 border-white/5 hover:bg-slate-800" : "bg-gray-50 border-gray-100 hover:bg-gray-100"
+                }`}
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <div className="p-6 space-y-5">
+              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} font-medium leading-relaxed`}>
+                Please enter your details to start the session. We use this to verify your table and securely process your order.
+              </p>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className={`w-full px-4 py-3.5 rounded-2xl text-sm font-semibold outline-none transition-all ${
+                      isDark 
+                        ? "bg-slate-800/50 border border-white/10 text-white placeholder:text-gray-500 focus:border-brand-500 focus:bg-slate-800" 
+                        : "bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white"
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-bold ${isDark ? "text-gray-400" : "text-gray-500"}`}>+91</span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="9999999999"
+                      className={`w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm font-semibold outline-none transition-all ${
+                        isDark 
+                          ? "bg-slate-800/50 border border-white/10 text-white placeholder:text-gray-500 focus:border-brand-500 focus:bg-slate-800" 
+                          : "bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={placeOrder}
+                disabled={!customerName.trim() || customerPhone.length !== 10}
+                className="w-full relative py-4 mt-2 rounded-[1.25rem] font-black text-white text-[15px] tracking-wide overflow-hidden transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 group"
+                style={{
+                  background: isDark
+                    ? "linear-gradient(135deg, rgba(var(--brand-rgb),1), rgba(var(--brand-rgb),0.8))"
+                    : "linear-gradient(135deg, rgb(var(--brand-rgb)), hsl(24,96%,45%))",
+                  boxShadow: "0 8px 32px rgba(var(--brand-rgb), 0.3)",
+                }}
+              >
+                <span className="relative flex items-center justify-center gap-2">
+                  Start Order
+                </span>
               </button>
             </div>
           </div>

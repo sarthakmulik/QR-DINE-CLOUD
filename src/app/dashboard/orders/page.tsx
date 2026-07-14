@@ -7,7 +7,7 @@ import { usePlan } from "@/lib/contexts/plan-context";
 import { PairTabletModal } from "@/components/dashboard/PairTabletModal";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatDateTime } from "@/lib/utils";
-import { Clock, RefreshCw, ChefHat, ScrollText, AlertCircle } from "lucide-react";
+import { Clock, RefreshCw, ChefHat, ScrollText, AlertCircle, User } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
 
@@ -21,6 +21,8 @@ interface Session {
   total: number;
   items: { id: string; name: string; quantity: number; price: number; addedAt: string }[];
   table: { label: string };
+  customerName?: string | null;
+  customerPhone?: string | null;
 }
 
 export default function LiveOrdersPage() {
@@ -177,7 +179,16 @@ export default function LiveOrdersPage() {
                       {session.table?.label ? `Table ${session.table.label}` : `Quick Service`}
                       {session.orderNumber && <span className="text-brand-600 ml-1">#{session.orderNumber}</span>}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded-md inline-flex">
+                    {session.customerName && (
+                      <div className="flex items-center gap-1.5 mt-1.5 text-sm font-semibold text-brand-600 dark:text-brand-400">
+                        <User size={14} />
+                        <span>{session.customerName}</span>
+                        {session.customerPhone && (
+                          <span className="text-slate-500 dark:text-slate-400 text-xs ml-1">({session.customerPhone})</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-widest bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded-md inline-flex">
                       <Clock size={11} />
                       {formatDateTime(session.startTime)}
                     </div>

@@ -34,6 +34,8 @@ interface TableData {
     taxAmount: number;
     total: number;
     items: TableItem[];
+    customerName?: string | null;
+    customerPhone?: string | null;
   } | null;
 }
 
@@ -825,13 +827,24 @@ export default function StaffPanelPage() {
                   </p>
 
                   {table.currentSession && (
-                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-white/[0.06]">
-                      <span className="text-[12px] font-semibold text-white">
-                        {formatINR(table.currentSession.total)}
-                      </span>
-                      <span className="text-[10px] bg-white/[0.06] px-1.5 py-0.5 rounded text-gray-400 font-medium">
-                        {table.currentSession.items.length} items
-                      </span>
+                    <div className="mt-3 pt-2 border-t border-white/[0.06] flex flex-col gap-1.5">
+                      {table.currentSession.customerName && (
+                        <div className="flex items-center gap-1.5 text-xs text-brand-400 font-medium bg-brand-500/10 w-fit px-1.5 py-0.5 rounded">
+                          <User size={12} />
+                          <span>{table.currentSession.customerName}</span>
+                          {table.currentSession.customerPhone && (
+                            <span className="text-gray-400 opacity-80 text-[10px] ml-1">({table.currentSession.customerPhone})</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-[12px] font-semibold text-white">
+                          {formatINR(table.currentSession.total)}
+                        </span>
+                        <span className="text-[10px] bg-white/[0.06] px-1.5 py-0.5 rounded text-gray-400 font-medium">
+                          {table.currentSession.items.length} items
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -859,13 +872,26 @@ export default function StaffPanelPage() {
           <div className="space-y-4">
             {!isAddingItems ? (
               <>
-                <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
-                  <Badge dark variant={selectedTable.currentSession.status === "open" ? "occupied" : "checkout"}>
-                    {selectedTable.currentSession.status.replace("_", " ")}
-                  </Badge>
-                  <span className="text-[11px] text-gray-500">
-                    Started <ClientDate date={selectedTable.currentSession.items[0]?.addedAt || new Date().toISOString()} />
-                  </span>
+                <div className="flex flex-col gap-2 border-b border-white/[0.07] pb-3">
+                  <div className="flex items-center justify-between">
+                    <Badge dark variant={selectedTable?.currentSession?.status === "open" ? "occupied" : "checkout"}>
+                      {selectedTable?.currentSession?.status?.replace("_", " ") || ""}
+                    </Badge>
+                    <span className="text-[11px] text-gray-500">
+                      Started <ClientDate date={selectedTable?.currentSession?.items[0]?.addedAt || new Date().toISOString()} />
+                    </span>
+                  </div>
+                  {selectedTable?.currentSession?.customerName && (
+                    <div className="flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 px-3 py-2 rounded-lg mt-1">
+                      <User className="w-4 h-4 text-brand-400" />
+                      <div>
+                        <p className="text-sm font-semibold text-white leading-none">{selectedTable.currentSession.customerName}</p>
+                        {selectedTable.currentSession.customerPhone && (
+                          <p className="text-[11px] text-gray-400 font-medium mt-0.5">{selectedTable.currentSession.customerPhone}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Items Table */}

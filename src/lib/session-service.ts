@@ -134,7 +134,7 @@ async function loadTableWithSession(hotelId: string, tableNumber: number) {
   return { table, currentSession };
 }
 
-export async function getOrCreateOpenSession(hotelId: string, tableNumber: number, expectedSessionId?: string | null) {
+export async function getOrCreateOpenSession(hotelId: string, tableNumber: number, expectedSessionId?: string | null, customerName?: string | null, customerPhone?: string | null) {
   const sb = admin();
   const [hotelRes, tableData] = await Promise.all([
     sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>(),
@@ -153,7 +153,16 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
     if (currentSession.status === "checkout_initiated" || currentSession.status === "bill_printed") {
       return { error: "checkout" as const, session: mapTableSession(currentSession, currentSession.items), hotel, table };
     }
-    await sb.from("table_sessions").update({ customer_count: currentSession.customer_count + 1 }).eq("id", currentSession.id);
+    // Update existing session with customer info if it wasn't provided yet
+    const updates: any = { customer_count: currentSession.customer_count + 1 };
+    if (customerName && !currentSession.customer_name) updates.customer_name = customerName;
+    if (customerPhone && !currentSession.customer_phone) updates.customer_phone = customerPhone;
+    
+    await sb.from("table_sessions").update(updates).eq("id", currentSession.id);
+    
+    if (updates.customer_name) currentSession.customer_name = customerName;
+    if (updates.customer_phone) currentSession.customer_phone = customerPhone;
+    
     return { session: mapTableSession(currentSession, currentSession.items), hotel, table, created: false };
   }
 
@@ -183,7 +192,15 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
 
     const { data: newSession, error: sessionError } = await sb
       .from("table_sessions")
-      .insert({ hotel_id: hotelId, table_id: table.id, table_number: tableNumber, status: "open", customer_count: 1 })
+      .insert({ 
+        hotel_id: hotelId, 
+        table_id: table.id, 
+        table_number: tableNumber, 
+        status: "open", 
+        customer_count: 1,
+        customer_name: customerName || null,
+        customer_phone: customerPhone || null
+      })
       .select("*")
       .single<TableSession>();
 

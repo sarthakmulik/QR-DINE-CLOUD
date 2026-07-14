@@ -100,6 +100,8 @@ export interface TableSession {
   coupon_code: string | null;
   discount_percent: number;
   assigned_staff_id?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
 }
 
 export interface SessionItem {
@@ -258,6 +260,8 @@ export function mapTableSession(
     couponCode: s.coupon_code ?? null,
     discountPercent: Number(s.discount_percent || 0),
     assignedStaffId: s.assigned_staff_id ?? null,
+    customerName: s.customer_name ?? null,
+    customerPhone: s.customer_phone ?? null,
     items: items.map(mapSessionItem),
     hotel: hotel ? mapHotel(hotel) : undefined,
     table: table

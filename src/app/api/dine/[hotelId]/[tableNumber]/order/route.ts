@@ -35,7 +35,12 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { items, sessionId: expectedSessionId } = body as { items: { menuItemId: string; quantity: number }[], sessionId?: string };
+    const { items, sessionId: expectedSessionId, customerName, customerPhone } = body as { 
+      items: { menuItemId: string; quantity: number }[], 
+      sessionId?: string,
+      customerName?: string,
+      customerPhone?: string
+    };
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
@@ -120,7 +125,7 @@ export async function POST(
     );
 
     // Get or create session
-    const sessionResult = await getOrCreateOpenSession(hotelId, tableNumber, expectedSessionId);
+    const sessionResult = await getOrCreateOpenSession(hotelId, tableNumber, expectedSessionId, customerName, customerPhone);
 
     if ("error" in sessionResult) {
       if (sessionResult.error === "session_closed") {
