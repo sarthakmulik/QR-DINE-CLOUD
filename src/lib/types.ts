@@ -102,6 +102,7 @@ export interface TableSession {
   assigned_staff_id?: string | null;
   customer_name?: string | null;
   customer_phone?: string | null;
+  checkout_initiated_at?: string | null;
 }
 
 export interface SessionItem {
@@ -262,6 +263,7 @@ export function mapTableSession(
     assignedStaffId: s.assigned_staff_id ?? null,
     customerName: s.customer_name ?? null,
     customerPhone: s.customer_phone ?? null,
+    checkoutInitiatedAt: s.checkout_initiated_at ?? null,
     items: items.map(mapSessionItem),
     hotel: hotel ? mapHotel(hotel) : undefined,
     table: table

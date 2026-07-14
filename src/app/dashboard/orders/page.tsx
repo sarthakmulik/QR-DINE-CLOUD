@@ -23,6 +23,7 @@ interface Session {
   table: { label: string };
   customerName?: string | null;
   customerPhone?: string | null;
+  checkoutInitiatedAt?: string | null;
 }
 
 export default function LiveOrdersPage() {
@@ -157,6 +158,14 @@ export default function LiveOrdersPage() {
             const isPaymentPending = session.status === "payment_pending";
             const isReady = session.status === "ready_for_pickup";
             const isOpenQS = !session.table && session.status === "open";
+            const isCheckout = session.status === "checkout_initiated";
+
+            let checkoutTimerState: "safe" | "attention" | "danger" = "safe";
+            if (isCheckout && session.checkoutInitiatedAt) {
+              const elapsedMins = (Date.now() - new Date(session.checkoutInitiatedAt).getTime()) / (1000 * 60);
+              if (elapsedMins >= 15) checkoutTimerState = "danger";
+              else if (elapsedMins >= 10) checkoutTimerState = "attention";
+            }
 
             let topBorder = "border-slate-200 dark:border-zinc-800";
             let glowColor = "";
@@ -169,6 +178,14 @@ export default function LiveOrdersPage() {
             } else if (isOpenQS) {
               topBorder = "border-blue-500";
               glowColor = "shadow-blue-500/10";
+            } else if (isCheckout) {
+              if (checkoutTimerState === "danger") {
+                topBorder = "border-red-500 animate-pulse";
+                glowColor = "shadow-[0_0_15px_rgba(239,68,68,0.4)] bg-red-500/10";
+              } else if (checkoutTimerState === "attention") {
+                topBorder = "border-amber-500";
+                glowColor = "shadow-amber-500/20 bg-amber-500/10";
+              }
             }
 
             return (
@@ -196,9 +213,9 @@ export default function LiveOrdersPage() {
                   <div className="text-right flex flex-col items-end gap-1.5">
                     <Badge
                       variant={isPaymentPending ? "checkout" : (session.status === "open" ? "occupied" : "checkout")}
-                      className="shadow-sm font-bold tracking-wide"
+                      className={`shadow-sm font-bold tracking-wide ${checkoutTimerState === "danger" ? "bg-red-500 text-white animate-pulse" : checkoutTimerState === "attention" ? "bg-amber-500 text-white" : ""}`}
                     >
-                      {session.status.replace("_", " ")}
+                      {checkoutTimerState === "danger" ? "OVERDUE" : checkoutTimerState === "attention" ? "PENDING" : session.status.replace("_", " ")}
                     </Badge>
                     <p className="font-black text-2xl text-brand-600 tracking-tight leading-none mt-1">
                       {formatINR(session.total)}

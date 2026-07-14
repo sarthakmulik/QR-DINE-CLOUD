@@ -347,7 +347,10 @@ export async function initiateCheckout(sessionId: string, preVerifiedSession?: T
 
   const { data: updated, error: updateErr } = await sb
     .from("table_sessions")
-    .update({ status: "checkout_initiated" })
+    .update({ 
+      status: "checkout_initiated",
+      checkout_initiated_at: new Date().toISOString()
+    })
     .eq("id", sessionId)
     .eq("status", "open")
     .select("*").single<TableSession>();

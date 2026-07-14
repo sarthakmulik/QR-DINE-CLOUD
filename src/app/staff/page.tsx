@@ -37,6 +37,7 @@ interface TableData {
     customerName?: string | null;
     customerPhone?: string | null;
   } | null;
+  checkoutTimerState?: "safe" | "attention" | "danger";
 }
 
 interface WaiterRequest {
@@ -370,6 +371,7 @@ export default function StaffPanelPage() {
 
   // Audio alert reference
   const prevRequestsCountRef = useRef<number | null>(null);
+  const prevDangerTablesRef = useRef<Set<string>>(new Set());
 
   // Staff details
   const [staffName, setStaffName] = useState("");
@@ -446,6 +448,15 @@ export default function StaffPanelPage() {
           playBeep();
         }
         prevRequestsCountRef.current = currentCount;
+
+        // Sound alert for checkout danger state
+        const currentDangerTables = new Set(data.tables.filter((t: any) => t.checkoutTimerState === "danger").map((t: any) => t.id));
+        let hasNewDanger = false;
+        currentDangerTables.forEach(id => {
+          if (!prevDangerTablesRef.current.has(id as string)) hasNewDanger = true;
+        });
+        if (hasNewDanger) playBeep();
+        prevDangerTablesRef.current = currentDangerTables as Set<string>;
       }
     } catch (err) {
       console.error("Failed to load staff stats:", err);
@@ -814,6 +825,10 @@ export default function StaffPanelPage() {
                       ? "bg-[#111113] border-white/[0.06] hover:border-white/[0.12]"
                       : table.status === "occupied"
                       ? "bg-orange-500/[0.07] border-orange-500/20"
+                      : table.checkoutTimerState === "danger"
+                      ? "bg-red-500/[0.2] border-red-500/60 shadow-[0_0_15px_rgba(239,68,68,0.4)] animate-pulse"
+                      : table.checkoutTimerState === "attention"
+                      ? "bg-yellow-500/[0.1] border-yellow-500/40"
                       : "bg-red-500/[0.07] border-red-500/20"
                   }`}
                 >
@@ -821,9 +836,11 @@ export default function StaffPanelPage() {
                   <p className={`text-[11px] font-medium mt-1 ${
                     table.status === "free" ? "text-gray-500"
                     : table.status === "occupied" ? "text-orange-400"
+                    : table.checkoutTimerState === "danger" ? "text-red-400 font-bold"
+                    : table.checkoutTimerState === "attention" ? "text-yellow-400"
                     : "text-red-400"
                   }`}>
-                    {table.status === "free" ? "Available" : table.status === "occupied" ? "Occupied" : "Checkout"}
+                    {table.status === "free" ? "Available" : table.status === "occupied" ? "Occupied" : table.checkoutTimerState === "danger" ? "Checkout Overdue" : table.checkoutTimerState === "attention" ? "Checkout Pending" : "Checkout"}
                   </p>
 
                   {table.currentSession && (

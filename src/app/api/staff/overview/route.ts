@@ -88,7 +88,30 @@ export async function GET() {
     
     try {
       const data = await getOverviewForHotel(hotelId);
-      return NextResponse.json(data);
+      
+      // Calculate real-time checkout timers outside the cache
+      const tablesWithTimers = data.tables.map(table => {
+        let checkoutTimerState: "safe" | "attention" | "danger" = "safe";
+        
+        if (table.currentSession?.status === "checkout_initiated" && table.currentSession.checkoutInitiatedAt) {
+          const elapsedMins = (Date.now() - new Date(table.currentSession.checkoutInitiatedAt).getTime()) / (1000 * 60);
+          if (elapsedMins >= 15) {
+            checkoutTimerState = "danger";
+          } else if (elapsedMins >= 10) {
+            checkoutTimerState = "attention";
+          }
+        }
+        
+        return {
+          ...table,
+          checkoutTimerState
+        };
+      });
+
+      return NextResponse.json({
+        ...data,
+        tables: tablesWithTimers
+      });
     } catch (err: any) {
       if (err.message === "SERVICE_PAUSED") {
         return NextResponse.json({ error: "Service Paused", code: "SERVICE_PAUSED" }, { status: 403 });
