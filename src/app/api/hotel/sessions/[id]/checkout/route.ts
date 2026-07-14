@@ -24,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const body = await req.json().catch(() => ({}));
+    const body = await _req.json().catch(() => ({}));
     const updated = await initiateCheckout(id, session, body.customerPhone);
 
     revalidateTag(`staff-overview-${hotelId}`);
