@@ -169,6 +169,21 @@ export async function PATCH(req: NextRequest) {
       updates.secure_qr = Boolean(body.secureQr);
     }
 
+    if (body.whatsappBillEnabled !== undefined) {
+      updates.whatsapp_bill_enabled = Boolean(body.whatsappBillEnabled);
+    }
+
+    if (body.whatsappProviderType !== undefined) {
+      const type = String(body.whatsappProviderType);
+      if (type === "platform" || type === "custom") {
+        updates.whatsapp_provider_type = type;
+      }
+    }
+
+    if (body.whatsappCustomApiKey !== undefined) {
+      updates.whatsapp_custom_api_key = String(body.whatsappCustomApiKey).trim() || null;
+    }
+
     if (body.customizations !== undefined) {
       const plan = (currentHotel?.plan || "basic").toLowerCase();
       let layout = body.customizations?.layout || "default";

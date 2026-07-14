@@ -27,6 +27,9 @@ export default function SettingsPage() {
     password: "",
     status: "active",
     secureQr: false,
+    whatsappBillEnabled: false,
+    whatsappProviderType: "platform",
+    whatsappCustomApiKey: "",
     serviceType: "dine_in",
     customizations: {
       theme: "default",
@@ -165,6 +168,9 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
+          whatsappBillEnabled: !!data.whatsappBillEnabled || !!data.whatsapp_bill_enabled,
+          whatsappProviderType: data.whatsappProviderType || data.whatsapp_provider_type || "platform",
+          whatsappCustomApiKey: data.whatsappCustomApiKey || data.whatsapp_custom_api_key || "",
           serviceType: data.serviceType || data.service_type || "dine_in",
           customizations: data.customizations ? {
             theme: data.customizations.theme || "default",
@@ -212,6 +218,9 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
+          whatsappBillEnabled: !!data.whatsappBillEnabled || !!data.whatsapp_bill_enabled,
+          whatsappProviderType: data.whatsappProviderType || data.whatsapp_provider_type || "platform",
+          whatsappCustomApiKey: data.whatsappCustomApiKey || data.whatsapp_custom_api_key || "",
           serviceType: data.serviceType || data.service_type || "dine_in",
           customizations: data.customizations ? {
             theme: data.customizations.theme || "default",
@@ -480,6 +489,78 @@ export default function SettingsPage() {
                 </span>
               </div>
             </div>
+
+            <div className="bg-emerald-50/40 border border-emerald-200/50 rounded-2xl p-4 space-y-4">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="whatsappBillEnabled"
+                    checked={form.whatsappBillEnabled || false}
+                    onChange={(e) => setForm({ ...form, whatsappBillEnabled: e.target.checked })}
+                    className="mt-1.5 h-4 w-4 rounded border-gray-300 dark:border-zinc-700 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <div className="space-y-1">
+                    <label htmlFor="whatsappBillEnabled" className="block text-sm font-bold text-gray-800 dark:text-zinc-200 cursor-pointer">
+                      Automated WhatsApp Bills
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 leading-relaxed">
+                      Automatically send the final bill to the customer&apos;s WhatsApp number in the background immediately after payment is completed.
+                    </p>
+                  </div>
+                </div>
+
+                {form.whatsappBillEnabled && (
+                  <div className="pl-7 pt-2 border-t border-emerald-200/30 space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-zinc-300">
+                        Select WhatsApp Provider
+                      </label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="radio"
+                            name="whatsappProviderType"
+                            value="platform"
+                            checked={form.whatsappProviderType === "platform"}
+                            onChange={(e) => setForm({ ...form, whatsappProviderType: e.target.value })}
+                            className="text-brand-600 focus:ring-brand-500"
+                          />
+                          Platform Provided (Billed Monthly)
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="radio"
+                            name="whatsappProviderType"
+                            value="custom"
+                            checked={form.whatsappProviderType === "custom"}
+                            onChange={(e) => setForm({ ...form, whatsappProviderType: e.target.value })}
+                            className="text-brand-600 focus:ring-brand-500"
+                          />
+                          Custom Interakt API
+                        </label>
+                      </div>
+                    </div>
+
+                    {form.whatsappProviderType === "custom" && (
+                      <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                        <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-zinc-300">
+                          Custom Interakt API Key
+                        </label>
+                        <input
+                          type="text"
+                          value={form.whatsappCustomApiKey || ""}
+                          onChange={(e) => setForm({ ...form, whatsappCustomApiKey: e.target.value })}
+                          className="w-full border border-emerald-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-900"
+                          placeholder="Paste your Interakt Base64 API Key here..."
+                        />
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          Using a custom API key means you will cover your own messaging costs directly with Interakt.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             
             <div>
               <label className="block text-sm font-medium mb-1">

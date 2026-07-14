@@ -7,6 +7,7 @@ import type {
   TableSession,
 } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
+import { sendWhatsappBill } from "./whatsapp-service";
 
 function admin() {
   return createAdminClient();
@@ -427,6 +428,14 @@ export async function markAsPaid(
 
   const closed = updateSessionRes.data;
   if (updateSessionRes.error || !closed) throw new Error(updateSessionRes.error?.message || "Failed to close session");
+
+  // Asynchronously send WhatsApp bill if enabled and phone number exists
+  if (hotel?.whatsapp_bill_enabled && session.customer_phone) {
+    sendWhatsappBill(session.customer_phone, closed, items, hotel).catch((err) => {
+      console.error("Failed to send background WhatsApp bill:", err);
+    });
+  }
+
   return mapTableSession(closed, items, hotel || undefined, table || undefined);
 }
 

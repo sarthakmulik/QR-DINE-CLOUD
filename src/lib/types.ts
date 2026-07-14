@@ -36,6 +36,9 @@ export interface Hotel {
   created_at: string;
   kitchen_pin: string | null;
   upi_id: string | null;
+  whatsapp_bill_enabled?: boolean;
+  whatsapp_provider_type?: "platform" | "custom" | null;
+  whatsapp_custom_api_key?: string | null;
   secure_qr?: boolean | null;
   quick_service_token?: string | null;
   attendance_qr_token?: string | null;
@@ -208,6 +211,9 @@ export function mapHotel(h: Hotel) {
     kitchenPin: h.kitchen_pin ?? null,
     upiId: h.upi_id ?? null,
     secureQr: !!h.secure_qr,
+    whatsappBillEnabled: !!h.whatsapp_bill_enabled,
+    whatsappProviderType: h.whatsapp_provider_type ?? "platform",
+    whatsappCustomApiKey: h.whatsapp_custom_api_key ?? null,
     welcomeAnimationEnabled: h.welcome_animation_enabled ?? true,
     welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
     quickServiceToken: h.quick_service_token ?? null,

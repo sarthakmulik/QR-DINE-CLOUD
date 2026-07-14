@@ -37,6 +37,8 @@ interface TableData {
     startTime: string;
     couponCode?: string | null;
     discountPercent?: number;
+    customerPhone?: string | null;
+    customerName?: string | null;
     items: {
       id: string;
       name: string;
@@ -704,6 +706,12 @@ Thank you for dining with us!`;
                   setSessionToOpen(table);
                 } else {
                   setSelected(table);
+                  if (table.currentSession?.customerPhone && !whatsappNumbers[table.currentSession.id]) {
+                    setWhatsappNumbers(prev => ({
+                      ...prev,
+                      [table.currentSession!.id]: table.currentSession!.customerPhone!
+                    }));
+                  }
                 }
               }}
               className={`rounded-xl border p-4 text-left transition-all cursor-pointer group ${
