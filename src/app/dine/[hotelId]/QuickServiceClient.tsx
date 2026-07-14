@@ -360,6 +360,8 @@ export default function QuickServiceClient({
         // Reset processing since there's nothing more to do
         setIsProcessing(false);
       } else {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         if (initData.gateway === "razorpay") {
           // Dynamically load Razorpay script to guarantee it's available
           if (!(window as any).Razorpay) {
@@ -387,7 +389,7 @@ export default function QuickServiceClient({
             image: hotel?.logo || undefined,
             order_id: initData.order_id,
             handler: async function (response: any) {
-              // Payment done — reset isProcessing, show verifying spinner
+              // Payment done - reset isProcessing, show verifying spinner
               setIsProcessing(false);
               setIsVerifying(true);
               try {
@@ -433,19 +435,27 @@ export default function QuickServiceClient({
                 setIsProcessing(false);
               }
             }
-          };
+          } as any;
+
+          if (isMobile) {
+            options.prefill.method = 'upi';
+          }
+
           const rzp = new (window as any).Razorpay(options);
           rzp.on("payment.failed", function (response: any) {
             setIsProcessing(false);
             alert(response.error.description || "Payment failed!");
           });
-          // NOTE: Do NOT call setIsProcessing(false) here — the modal is still open.
+          // NOTE: Do NOT call setIsProcessing(false) here - the modal is still open.
           // isProcessing will be reset in ondismiss, handler, or payment.failed.
           rzp.open();
-          return; // ← prevent the finally block from resetting isProcessing too early
+          return; // <- prevent the finally block from resetting isProcessing too early
           } else if (initData.gateway === "phonepe") {
             if (initData.native_upi) {
               setNativePaymentData({ qr_data: initData.qr_data, sessionId: sessionToPay.id, gateway: initData.gateway });
+              if (isMobile) {
+                window.location.href = initData.qr_data;
+              }
             } else {
               window.location.href = initData.redirect_url;
             }

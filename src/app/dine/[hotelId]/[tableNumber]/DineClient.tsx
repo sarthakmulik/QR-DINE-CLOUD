@@ -1650,6 +1650,8 @@ export default function DineClient({
         return;
       }
 
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
       if (initData.gateway === "razorpay") {
         if (!(window as any).Razorpay) {
           await new Promise((resolve) => {
@@ -1715,7 +1717,12 @@ export default function DineClient({
               setIsProcessingPayment(false);
             }
           }
-        };
+        } as any;
+
+        if (isMobile) {
+          options.prefill.method = 'upi';
+        }
+
         const rzp = new (window as any).Razorpay(options);
         rzp.on("payment.failed", function (response: any) {
           setIsProcessingPayment(false);
@@ -1725,6 +1732,9 @@ export default function DineClient({
       } else if (initData.gateway === "phonepe") {
         if (initData.native_upi) {
           setNativePaymentData({ qr_data: initData.qr_data, sessionId: initData.sessionId, gateway: initData.gateway });
+          if (isMobile) {
+            window.location.href = initData.qr_data;
+          }
         } else {
           window.location.href = initData.redirect_url;
         }
