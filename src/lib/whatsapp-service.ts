@@ -79,7 +79,6 @@ export async function sendWhatsappBill(
     // In production, uncomment the blocks below when you configure Twilio or Interakt.
 
     if (isTwilio) {
-      /*
       // Twilio Sandbox Implementation
       let accountSid = process.env.TWILIO_ACCOUNT_SID;
       let authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -89,6 +88,10 @@ export async function sendWhatsappBill(
         const parts = apiKey.split(":");
         accountSid = parts[0];
         authToken = parts[1];
+      }
+
+      if (!accountSid || !authToken) {
+        throw new Error("Missing Twilio credentials");
       }
 
       const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER || "+14155238886"; // Default Twilio Sandbox Number
@@ -112,9 +115,7 @@ export async function sendWhatsappBill(
         const errBody = await response.text();
         throw new Error(`Twilio API Error: ${errBody}`);
       }
-      */
     } else {
-      /*
       // Interakt Implementation
       const response = await fetch("https://api.interakt.ai/v1/public/message/", {
         method: "POST",
@@ -139,7 +140,6 @@ export async function sendWhatsappBill(
         const errBody = await response.text();
         throw new Error(`Interakt API Error: ${errBody}`);
       }
-      */
     }
 
     // Simulate success
