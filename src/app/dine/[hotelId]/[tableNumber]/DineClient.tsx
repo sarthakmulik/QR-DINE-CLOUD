@@ -856,10 +856,15 @@ export default function DineClient({
       sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
       sessionStorage.setItem(`table_last_active_${hotelId}_${tableNumber}`, Date.now().toString());
     } else {
-      const isTerminated = sessionStorage.getItem(`session_terminated_${hotelId}_${tableNumber}`);
-      if (isTerminated === "true") {
-        setState({ type: "closed" });
-        return;
+      const cooldownAt = localStorage.getItem(`table_cooldown_${hotelId}_${tableNumber}`);
+      if (cooldownAt) {
+        const diff = Date.now() - parseInt(cooldownAt);
+        if (diff < 2 * 60 * 60 * 1000) {
+          setState({ type: "closed" });
+          return;
+        } else {
+          localStorage.removeItem(`table_cooldown_${hotelId}_${tableNumber}`);
+        }
       }
       const lastSessionId = sessionStorage.getItem(`last_session_id_${hotelId}_${tableNumber}`);
       const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
@@ -968,7 +973,7 @@ export default function DineClient({
         if (prev <= 1) {
           clearInterval(interval);
           try {
-            sessionStorage.setItem(`session_terminated_${hotelId}_${tableNumber}`, "true");
+            localStorage.setItem(`table_cooldown_${hotelId}_${tableNumber}`, Date.now().toString());
             sessionStorage.removeItem(`cart_${hotelId}_${tableNumber}`);
             sessionStorage.removeItem(`last_session_id_${hotelId}_${tableNumber}`);
             sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
@@ -1118,11 +1123,15 @@ export default function DineClient({
     setCartRaw(saved);
     setCartLoaded(true);
 
-    const isTerminated = sessionStorage.getItem(`session_terminated_${hotelId}_${tableNumber}`);
-    if (isTerminated === "true") {
-      setState({ type: "closed" });
-      load();
-      return;
+    const cooldownAt = localStorage.getItem(`table_cooldown_${hotelId}_${tableNumber}`);
+    if (cooldownAt) {
+      const diff = Date.now() - parseInt(cooldownAt);
+      if (diff < 2 * 60 * 60 * 1000) {
+        setState({ type: "closed" });
+        return;
+      } else {
+        localStorage.removeItem(`table_cooldown_${hotelId}_${tableNumber}`);
+      }
     }
 
     // Check if the session was recently closed BEFORE loading cached menu
