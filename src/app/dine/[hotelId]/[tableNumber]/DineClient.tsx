@@ -663,23 +663,6 @@ export default function DineClient({
   const [nativePaymentData, setNativePaymentData] = useState<{ qr_data: string, sessionId: string, gateway: string } | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
-  const triggerOnlinePayment = async () => {
-    try {
-      const initRes = await fetch(`/api/dine/${hotelId}/${tableNumber}/initiate-payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          sessionId: state.sessionId,
-          customerPhone: customerPhone && customerPhone.length === 10 ? customerPhone : undefined
-        })
-      });
-      const initData = await initRes.json();
-      if (!initRes.ok) throw new Error(initData.error || "Payment initiation failed");
-      setNativePaymentData(initData);
-    } catch (err: any) {
-      showToast(err.message || "Could not initiate payment", "error");
-    }
-  };
 
   useEffect(() => {
     if (!nativePaymentData) return;
