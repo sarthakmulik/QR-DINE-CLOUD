@@ -802,7 +802,6 @@ export default function AdminPage() {
           <Input 
             label="Super Admin Password" 
             type="password"
-            autoComplete="new-password"
             value={platformForm.password} 
             onChange={(v) => setPlatformForm({ ...platformForm, password: v })} 
             required 
