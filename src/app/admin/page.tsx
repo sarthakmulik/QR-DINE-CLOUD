@@ -105,17 +105,22 @@ export default function AdminPage() {
   const [billingHotel, setBillingHotel] = useState<Hotel | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [newPayment, setNewPayment] = useState({ amount: "", method: "upi", notes: "" });
+  const [whatsappUsage, setWhatsappUsage] = useState<Record<string, { platform: number, custom: number }>>({});
 
   async function loadData() {
-    const [hotelsRes, statsRes, broadcastsRes] = await Promise.all([
+    const [hotelsRes, statsRes, broadcastsRes, whatsappRes] = await Promise.all([
       fetch("/api/admin/hotels"),
       fetch("/api/admin/stats"),
       fetch("/api/admin/broadcasts"),
+      fetch("/api/admin/whatsapp-usage"),
     ]);
     setHotels(await hotelsRes.json());
     setStats(await statsRes.json());
     if (broadcastsRes.ok) {
       setBroadcasts(await broadcastsRes.json());
+    }
+    if (whatsappRes.ok) {
+      setWhatsappUsage(await whatsappRes.json());
     }
     setLoading(false);
   }
@@ -343,6 +348,9 @@ export default function AdminPage() {
                 Monthly Revenue
               </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
+                WhatsApp
+              </th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-zinc-300">
                 Actions
               </th>
             </tr>
@@ -403,6 +411,27 @@ export default function AdminPage() {
                 <td className="px-4 py-3 dark:text-zinc-300"><ClientDate date={hotel.lastPaymentDate} /></td>
                 <td className="px-4 py-3 dark:text-zinc-300"><ClientDate date={hotel.nextDueDate} /></td>
                 <td className="px-4 py-3 dark:text-zinc-300">{formatINR(hotel.billingAmount)}</td>
+                <td className="px-4 py-3 dark:text-zinc-300">
+                  {whatsappUsage[hotel.id] ? (
+                    <div className="flex flex-col gap-1">
+                      {whatsappUsage[hotel.id].platform > 0 && (
+                        <Badge variant="active" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                          {whatsappUsage[hotel.id].platform} Platform
+                        </Badge>
+                      )}
+                      {whatsappUsage[hotel.id].custom > 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {whatsappUsage[hotel.id].custom} Custom
+                        </Badge>
+                      )}
+                      {whatsappUsage[hotel.id].platform === 0 && whatsappUsage[hotel.id].custom === 0 && (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">-</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <Button
@@ -440,7 +469,7 @@ export default function AdminPage() {
             ))}
             {hotels.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
                   No hotels yet. Create your first hotel account.
                 </td>
               </tr>

@@ -663,6 +663,24 @@ export default function DineClient({
   const [nativePaymentData, setNativePaymentData] = useState<{ qr_data: string, sessionId: string, gateway: string } | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
 
+  const triggerOnlinePayment = async () => {
+    try {
+      const initRes = await fetch(`/api/dine/${hotelId}/${tableNumber}/initiate-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          sessionId: state.sessionId,
+          customerPhone: customerPhone && customerPhone.length === 10 ? customerPhone : undefined
+        })
+      });
+      const initData = await initRes.json();
+      if (!initRes.ok) throw new Error(initData.error || "Payment initiation failed");
+      setNativePaymentData(initData);
+    } catch (err: any) {
+      showToast(err.message || "Could not initiate payment", "error");
+    }
+  };
+
   useEffect(() => {
     if (!nativePaymentData) return;
     
@@ -1247,7 +1265,8 @@ export default function DineClient({
           tableNumber: parseInt(tableNumber), 
           signature: sign,
           reason: "cash_collection",
-          sessionId: state.type === "checkout" ? state.sessionId : null
+          sessionId: state.type === "checkout" ? state.sessionId : null,
+          customerPhone: customerPhone && customerPhone.length === 10 ? customerPhone : undefined
         }),
       });
       const data = await res.json();
@@ -1699,7 +1718,7 @@ export default function DineClient({
       const initRes = await fetch(`/api/dine/${hotelId}/${tableNumber}/initiate-payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: state.sessionId })
+        body: JSON.stringify({ sessionId: state.sessionId, customerPhone: customerPhone && customerPhone.length === 10 ? customerPhone : undefined })
       });
       const initData = await initRes.json();
       
@@ -1926,6 +1945,27 @@ export default function DineClient({
 
           {/* Payment Actions */}
           <div className="space-y-3 pt-2">
+            <div className="bg-white dark:bg-[#16161A] rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-zinc-800/50 mb-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                WhatsApp Number for e-Bill (Optional)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">+91</span>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
+                  placeholder="9999999999"
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-semibold outline-none transition-all ${
+                    isDark 
+                      ? "bg-slate-800/50 border border-white/10 text-white placeholder:text-gray-500 focus:border-brand-500 focus:bg-slate-800" 
+                      : "bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white"
+                  }`}
+                />
+              </div>
+            </div>
+
             <button
               onClick={triggerOnlinePayment}
               disabled={isProcessingPayment || isVerifyingPayment}

@@ -18,7 +18,10 @@ export async function GET() {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json(mapHotel(hotel));
+    return NextResponse.json({
+      ...mapHotel(hotel),
+      whatsappCustomApiKey: hotel.whatsapp_custom_api_key ?? null
+    });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -239,7 +242,10 @@ export async function PATCH(req: NextRequest) {
           .is("clock_out", null);
       }
 
-      return NextResponse.json(mapHotel(hotel));
+      return NextResponse.json({
+        ...mapHotel(hotel),
+        whatsappCustomApiKey: hotel.whatsapp_custom_api_key ?? null
+      });
     }
 
     // If no database updates, fetch fresh hotel to return
@@ -253,7 +259,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json(mapHotel(hotel));
+    return NextResponse.json({
+      ...mapHotel(hotel),
+      whatsappCustomApiKey: hotel.whatsapp_custom_api_key ?? null
+    });
   } catch (err: any) {
     console.error("Hotel profile patch error:", err);
     return NextResponse.json({ error: err.message || "Unauthorized" }, { status: 401 });

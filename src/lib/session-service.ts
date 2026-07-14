@@ -315,7 +315,7 @@ export async function removeItemFromSession(sessionId: string, itemId: string, h
   return recalculateSessionTotals(sessionId, (sessionData as any).hotels as Hotel);
 }
 
-export async function initiateCheckout(sessionId: string, preVerifiedSession?: TableSession | null) {
+export async function initiateCheckout(sessionId: string, preVerifiedSession?: TableSession | null, customerPhone?: string | null) {
   const sb = admin();
   let session: TableSession;
   let hotel: Hotel | null = null;
@@ -350,7 +350,8 @@ export async function initiateCheckout(sessionId: string, preVerifiedSession?: T
     .from("table_sessions")
     .update({ 
       status: "checkout_initiated",
-      checkout_initiated_at: new Date().toISOString()
+      checkout_initiated_at: new Date().toISOString(),
+      ...(customerPhone !== undefined ? { customer_phone: customerPhone } : {})
     })
     .eq("id", sessionId)
     .eq("status", "open")
@@ -387,7 +388,8 @@ export async function printBill(sessionId: string) {
 export async function markAsPaid(
   sessionId: string,
   paymentMethod: "Cash" | "UPI" | "Card",
-  preVerifiedSession?: TableSession | null
+  preVerifiedSession?: TableSession | null,
+  customerPhone?: string | null
 ) {
   const sb = admin();
   let session: TableSession;
@@ -418,10 +420,15 @@ export async function markAsPaid(
   }
 
   const now = new Date().toISOString();
+  
+  const updatePayload: any = { status: "closed", payment_method: paymentMethod, closed_at: now, end_time: now };
+  if (customerPhone !== undefined) {
+    updatePayload.customer_phone = customerPhone;
+  }
 
   const [updateSessionRes] = await Promise.all([
     sb.from("table_sessions")
-      .update({ status: "closed", payment_method: paymentMethod, closed_at: now, end_time: now })
+      .update(updatePayload)
       .eq("id", sessionId).select("*").single<TableSession>(),
     sb.from("restaurant_tables").update({ current_session_id: null }).eq("id", session.table_id),
   ]);
@@ -430,8 +437,9 @@ export async function markAsPaid(
   if (updateSessionRes.error || !closed) throw new Error(updateSessionRes.error?.message || "Failed to close session");
 
   // Asynchronously send WhatsApp bill if enabled and phone number exists
-  if (hotel?.whatsapp_bill_enabled && session.customer_phone) {
-    sendWhatsappBill(session.customer_phone, closed, items, hotel).catch((err) => {
+  const finalPhone = closed.customer_phone || session.customer_phone;
+  if (hotel?.whatsapp_bill_enabled && finalPhone) {
+    sendWhatsappBill(finalPhone, closed, items, hotel).catch((err) => {
       console.error("Failed to send background WhatsApp bill:", err);
     });
   }

@@ -25,7 +25,7 @@ export async function POST(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const updated = await markAsPaid(id, body.paymentMethod, session);
+    const updated = await markAsPaid(id, body.paymentMethod, session, body.customerPhone);
 
     revalidateTag(`staff-overview-${hotelId}`);
     revalidateTag(`kitchen-orders-${hotelId}`);

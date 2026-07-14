@@ -213,7 +213,6 @@ export function mapHotel(h: Hotel) {
     secureQr: !!h.secure_qr,
     whatsappBillEnabled: !!h.whatsapp_bill_enabled,
     whatsappProviderType: h.whatsapp_provider_type ?? "platform",
-    whatsappCustomApiKey: h.whatsapp_custom_api_key ?? null,
     welcomeAnimationEnabled: h.welcome_animation_enabled ?? true,
     welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
     quickServiceToken: h.quick_service_token ?? null,

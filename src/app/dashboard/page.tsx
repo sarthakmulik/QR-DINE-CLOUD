@@ -351,7 +351,11 @@ export default function TablesDashboardPage() {
     updateStatus("checkout_initiated");
     checkoutPendingRef.current[sessionId] = true;
 
-    fetch(`/api/hotel/sessions/${sessionId}/checkout`, { method: "POST" })
+    fetch(`/api/hotel/sessions/${sessionId}/checkout`, { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerPhone: whatsappNumbers[sessionId] || undefined })
+    })
       .then(async (res) => {
         if (!res.ok) {
           delete checkoutPendingRef.current[sessionId];
@@ -436,7 +440,7 @@ export default function TablesDashboardPage() {
     fetch(`/api/hotel/sessions/${sessionId}/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentMethod: method }),
+      body: JSON.stringify({ paymentMethod: method, customerPhone: number || undefined }),
     })
       .then(async (res) => {
         if (!res.ok) {
@@ -455,30 +459,6 @@ export default function TablesDashboardPage() {
         pollTables();
         alert("Failed to record payment");
       });
-
-    const cleanPhone = number.replace(/\D/g, "");
-    if (cleanPhone.length === 10) {
-      let itemsText = selected.currentSession.items
-        .map((item: any) => `${item.quantity}x ${item.name} — ₹${item.price * item.quantity}`)
-        .join("\n");
-
-      const taxRate = hotelProfile?.taxRate !== undefined && hotelProfile?.taxRate !== null ? hotelProfile.taxRate : 5;
-      const cgstRate = (taxRate / 2).toFixed(1).replace(/\.0$/, "");
-      const sgstRate = (taxRate / 2).toFixed(1).replace(/\.0$/, "");
-
-      const message = `*${hotelProfile?.name || "Hotel"}* — Table ${selected.tableNumber}
-${itemsText}
-——————————
-Subtotal: ₹${selected.currentSession.subtotal}
-CGST (${cgstRate}%): ₹${(selected.currentSession.taxAmount / 2).toFixed(2)}
-SGST (${sgstRate}%): ₹${(selected.currentSession.taxAmount / 2).toFixed(2)}
-*Total: ₹${selected.currentSession.total}*
-Thank you for dining with us!`;
-
-      const formattedPhone = `91${cleanPhone}`;
-      const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-      window.open(url, "_blank");
-    }
 
     setWhatsappNumbers((prev) => {
       const copy = { ...prev };
