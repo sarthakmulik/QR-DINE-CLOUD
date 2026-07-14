@@ -709,6 +709,7 @@ export default function DineClient({
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackComment, setFeedbackComment] = useState("");
   const [waiterCallCooldown, setWaiterCallCooldown] = useState(false);
+  const [cashRequested, setCashRequested] = useState(false);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   const [countdown, setCountdown] = useState(5);
@@ -1217,6 +1218,37 @@ export default function DineClient({
         setTimeout(() => setWaiterCallCooldown(false), 30000); // 30s cooldown
       } else {
         showToast(data.error || "Failed to notify waiter.", "error");
+      }
+    } catch {
+      showToast("Failed to connect to the server.", "error");
+    }
+  }
+
+  async function requestCashCollection() {
+    if (cashRequested) return;
+    try {
+      let sign = "";
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        sign = params.get("sign") || "";
+      }
+      const res = await fetch(`/api/dine/${hotelId}/call-waiter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          tableNumber: parseInt(tableNumber), 
+          signature: sign,
+          reason: "cash_collection",
+          sessionId: state.type === "checkout" ? state.sessionId : null
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Cash waiter called! Please wait.", "success");
+        setCashRequested(true);
+        setTimeout(() => setCashRequested(false), 60000);
+      } else {
+        showToast(data.error || "Failed to call cash waiter.", "error");
       }
     } catch {
       showToast("Failed to connect to the server.", "error");
@@ -1891,11 +1923,15 @@ export default function DineClient({
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">OR</span>
             </div>
             <button
-              onClick={() => showToast("Please wait, the waiter will collect the cash shortly.", "info")}
-              disabled={isProcessingPayment || isVerifyingPayment}
-              className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 rounded-2xl font-bold transition-all active:scale-[0.98]"
+              onClick={requestCashCollection}
+              disabled={isProcessingPayment || isVerifyingPayment || cashRequested}
+              className={`w-full h-12 rounded-2xl font-bold transition-all active:scale-[0.98] ${
+                cashRequested 
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-not-allowed" 
+                  : "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200"
+              }`}
             >
-              Pay with Cash
+              {cashRequested ? "Waiter is coming..." : "Pay with Cash"}
             </button>
           </div>
 

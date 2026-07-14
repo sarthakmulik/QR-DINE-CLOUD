@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ui/client-date";
 import { formatINR, formatDateTime } from "@/lib/utils";
-import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search, ShieldAlert, QrCode } from "lucide-react";
+import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search, ShieldAlert, QrCode, Banknote } from "lucide-react";
 import { Camera } from "@capacitor/camera";
 
 interface TableItem {
@@ -42,6 +42,8 @@ interface WaiterRequest {
   table_number: number;
   status: "pending" | "completed";
   created_at: string;
+  reason?: "assistance" | "cash_collection" | string;
+  session_id?: string | null;
 }
 
 export default function StaffPanelPage() {
@@ -482,6 +484,29 @@ export default function StaffPanelPage() {
     }
   }
 
+  async function handleCompleteCashRequest(id: string, sessionId: string) {
+    setPerformingAction(true);
+    try {
+      // Mark as paid with Cash
+      await authFetch(`/api/hotel/sessions/${sessionId}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentMethod: "Cash" }),
+      });
+      // Resolve the waiter request
+      await authFetch(`/api/staff/requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      loadData();
+    } catch (err) {
+      console.error("Error completing cash request:", err);
+    } finally {
+      setPerformingAction(false);
+    }
+  }
+
   async function handleMarkServed(itemId: string) {
     try {
       await authFetch(`/api/staff/items/${itemId}/serve`, {
@@ -688,17 +713,27 @@ export default function StaffPanelPage() {
               </p>
             </div>
             <div className="space-y-2">
-              {pendingRequests.map((req) => (
-                <div key={req.id} className="bg-[#111113] border border-white/[0.06] rounded-lg p-3 flex justify-between items-center">
+              {pendingRequests.map((req) => {
+                const isCash = req.reason === "cash_collection";
+                return (
+                <div key={req.id} className={`${isCash ? "bg-emerald-950/40 border-emerald-500/30" : "bg-[#111113] border-white/[0.06]"} border rounded-lg p-3 flex justify-between items-center`}>
                   <div>
-                    <p className="font-semibold text-sm text-white">Table {req.table_number}</p>
+                    <p className={`font-semibold text-sm ${isCash ? "text-emerald-400" : "text-white"}`}>
+                      Table {req.table_number} {isCash && " - Cash Collection"}
+                    </p>
                     <p className="text-[11px] text-gray-500 mt-0.5">Called at <ClientDate date={req.created_at} timeOnly /></p>
                   </div>
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs px-3 font-semibold" onClick={() => handleCompleteRequest(req.id)}>
-                    <Check size={12} /> Resolve
-                  </Button>
+                  {isCash && req.session_id ? (
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1 text-xs px-3 font-semibold" onClick={() => handleCompleteCashRequest(req.id, req.session_id!)}>
+                      <Banknote size={14} /> Collect & Resolve
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs px-3 font-semibold" onClick={() => handleCompleteRequest(req.id)}>
+                      <Check size={12} /> Resolve
+                    </Button>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         )}

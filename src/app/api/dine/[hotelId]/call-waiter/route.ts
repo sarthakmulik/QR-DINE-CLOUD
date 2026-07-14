@@ -25,7 +25,7 @@ export async function POST(
   try {
     const { hotelId } = await props.params;
     const body = await req.json();
-    const { tableNumber, signature } = body;
+    const { tableNumber, signature, reason = "assistance", sessionId } = body;
 
     const parsedTableNum = parseInt(tableNumber);
     if (isNaN(parsedTableNum) || parsedTableNum < 1) {
@@ -77,16 +77,26 @@ export async function POST(
         hotel_id: hotelId,
         table_number: parsedTableNum,
         status: "pending",
+        reason,
+        session_id: sessionId || null
       })
       .select("*")
       .single();
 
     if (error) throw error;
 
+    const pushTitle = reason === "cash_collection" 
+      ? `💵 Cash Collection: Table ${parsedTableNum}`
+      : `🔔 Table ${parsedTableNum} — Waiter Needed!`;
+      
+    const pushBody = reason === "cash_collection"
+      ? `Table ${parsedTableNum} is ready to pay with Cash.`
+      : `Table ${parsedTableNum} is calling for assistance.`;
+
     // MUST await this so serverless environments (Vercel) don't kill the Firebase JWT handshake!
     const assignedStaffId = await sendStaffPushSequential(hotelId, {
-      title: `🔔 Table ${parsedTableNum} — Waiter Needed!`,
-      body: `Table ${parsedTableNum} is calling for assistance.`,
+      title: pushTitle,
+      body: pushBody,
       tag: `waiter-${hotelId}-${parsedTableNum}`,
       url: "/staff",
       channelId: "waiter_alerts"

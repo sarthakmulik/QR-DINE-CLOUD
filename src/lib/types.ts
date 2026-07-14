@@ -119,6 +119,8 @@ export interface WaiterRequest {
   hotel_id: string;
   table_number: number;
   status: "pending" | "completed";
+  reason?: "assistance" | "cash_collection" | string;
+  session_id?: string | null;
   created_at: string;
   updated_at?: string;
   assigned_staff_id?: string | null;
