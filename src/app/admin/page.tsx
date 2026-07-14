@@ -106,13 +106,17 @@ export default function AdminPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [newPayment, setNewPayment] = useState({ amount: "", method: "upi", notes: "" });
   const [whatsappUsage, setWhatsappUsage] = useState<Record<string, { platform: number, custom: number }>>({});
+  const [platformSettings, setPlatformSettings] = useState<{ whatsapp_api_key: string | null }>({ whatsapp_api_key: null });
+  const [showPlatformModal, setShowPlatformModal] = useState(false);
+  const [platformForm, setPlatformForm] = useState({ whatsapp_api_key: "", password: "" });
 
   async function loadData() {
-    const [hotelsRes, statsRes, broadcastsRes, whatsappRes] = await Promise.all([
+    const [hotelsRes, statsRes, broadcastsRes, whatsappRes, platformRes] = await Promise.all([
       fetch("/api/admin/hotels"),
       fetch("/api/admin/stats"),
       fetch("/api/admin/broadcasts"),
       fetch("/api/admin/whatsapp-usage"),
+      fetch("/api/admin/platform-settings"),
     ]);
     setHotels(await hotelsRes.json());
     setStats(await statsRes.json());
@@ -121,6 +125,11 @@ export default function AdminPage() {
     }
     if (whatsappRes.ok) {
       setWhatsappUsage(await whatsappRes.json());
+    }
+    if (platformRes.ok) {
+      const data = await platformRes.json();
+      setPlatformSettings(data);
+      setPlatformForm({ whatsapp_api_key: data?.whatsapp_api_key || "", password: "" });
     }
     setLoading(false);
   }
@@ -252,6 +261,24 @@ export default function AdminPage() {
     if (!confirm("Delete broadcast?")) return;
     await fetch(`/api/admin/broadcasts/${id}`, { method: "DELETE" });
     loadData();
+  }
+
+  async function handleSavePlatformSettings(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await fetch("/api/admin/platform-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(platformForm),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert("Platform settings saved securely!");
+      setShowPlatformModal(false);
+      setPlatformForm({ ...platformForm, password: "" });
+      loadData();
+    } else {
+      alert(data.error || "Failed to save settings");
+    }
   }
 
   if (loading) {
@@ -581,6 +608,28 @@ export default function AdminPage() {
         </div>
       </div>
 
+      <div className="mt-12 space-y-6">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-purple-600" />
+          <h2 className="text-xl font-semibold">Platform API Integrations</h2>
+        </div>
+        
+        <div className="bg-white dark:bg-[#16161A] p-5 rounded-xl border border-gray-200 dark:border-zinc-800 flex justify-between items-center">
+          <div>
+            <h3 className="font-medium text-lg mb-1">WhatsApp API Key</h3>
+            <p className="text-sm text-gray-500 mb-2">
+              Global Interakt API Key used as a fallback if a hotel doesn&apos;t provide their own.
+            </p>
+            {platformSettings?.whatsapp_api_key ? (
+              <Badge variant="active">Configured securely</Badge>
+            ) : (
+              <Badge variant="suspended">Not configured</Badge>
+            )}
+          </div>
+          <Button onClick={() => setShowPlatformModal(true)}>Manage API Keys</Button>
+        </div>
+      </div>
+
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Hotel Account">
         <form onSubmit={handleCreate} className="space-y-4">
           <Input label="Hotel Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
@@ -731,6 +780,33 @@ export default function AdminPage() {
           <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancel</Button>
           <Button variant="danger" onClick={handleDelete}>Delete Hotel</Button>
         </div>
+      </Modal>
+
+      <Modal open={showPlatformModal} onClose={() => { setShowPlatformModal(false); setPlatformForm({ ...platformForm, password: "" }); }} title="Secure Platform Settings">
+        <form onSubmit={handleSavePlatformSettings} className="space-y-4">
+          <p className="text-sm text-gray-500 mb-4">
+            These are global platform API keys. Enter your Super Admin password to verify your identity and save changes.
+          </p>
+          <div>
+            <label className="block text-sm font-medium mb-1">WhatsApp Interakt API Key</label>
+            <input
+              type="text"
+              value={platformForm.whatsapp_api_key}
+              onChange={(e) => setPlatformForm({ ...platformForm, whatsapp_api_key: e.target.value })}
+              placeholder="Base64 Encoded Interakt Key"
+              className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80 font-mono text-sm"
+            />
+          </div>
+          <hr className="border-gray-100 dark:border-zinc-800 my-4" />
+          <Input 
+            label="Super Admin Password" 
+            type="password" 
+            value={platformForm.password} 
+            onChange={(v) => setPlatformForm({ ...platformForm, password: v })} 
+            required 
+          />
+          <Button type="submit" className="w-full">Save API Keys securely</Button>
+        </form>
       </Modal>
     </div>
   );

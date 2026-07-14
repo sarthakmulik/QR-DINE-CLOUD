@@ -312,3 +312,9 @@ export interface Customer {
   last_visit_date: string | null;
   created_at: string;
 }
+
+export interface PlatformSettings {
+  id: string;
+  whatsapp_api_key: string | null;
+  updated_at: string;
+}

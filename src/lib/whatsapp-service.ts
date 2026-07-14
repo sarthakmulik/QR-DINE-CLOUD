@@ -21,6 +21,14 @@ export async function sendWhatsappBill(
   const providerType = hotel?.whatsapp_provider_type || "platform";
   let apiKey = process.env.INTERAKT_API_KEY;
 
+  if (providerType === "platform" && !apiKey) {
+    const sb = createAdminClient();
+    const { data: settings } = await sb.from("platform_settings").select("whatsapp_api_key").eq("id", "00000000-0000-0000-0000-000000000001").maybeSingle();
+    if (settings?.whatsapp_api_key) {
+      apiKey = settings.whatsapp_api_key;
+    }
+  }
+
   if (providerType === "custom") {
     if (!hotel?.whatsapp_custom_api_key) {
       console.warn(`[WhatsApp Service] Hotel ${hotel?.id} uses 'custom' provider but has no API key configured. Fallback to platform key.`);
