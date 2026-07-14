@@ -618,7 +618,7 @@ export default function AdminPage() {
           <div>
             <h3 className="font-medium text-lg mb-1">WhatsApp API Key</h3>
             <p className="text-sm text-gray-500 mb-2">
-              Global Interakt API Key used as a fallback if a hotel doesn&apos;t provide their own.
+              Global API Key used as a fallback. Format for Twilio: `AccountSID:AuthToken`
             </p>
             {platformSettings?.whatsapp_api_key ? (
               <Badge variant="active">Configured securely</Badge>
@@ -788,12 +788,12 @@ export default function AdminPage() {
             These are global platform API keys. Enter your Super Admin password to verify your identity and save changes.
           </p>
           <div>
-            <label className="block text-sm font-medium mb-1">WhatsApp Interakt API Key</label>
+            <label className="block text-sm font-medium mb-1">WhatsApp API Key</label>
             <input
               type="text"
               value={platformForm.whatsapp_api_key}
               onChange={(e) => setPlatformForm({ ...platformForm, whatsapp_api_key: e.target.value })}
-              placeholder="Base64 Encoded Interakt Key"
+              placeholder="Twilio SID:Token OR Interakt Base64"
               className="w-full border rounded-lg px-3 py-2 dark:bg-zinc-900 dark:border-zinc-700/80 font-mono text-sm"
             />
           </div>

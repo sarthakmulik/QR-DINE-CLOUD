@@ -38,9 +38,11 @@ export async function sendWhatsappBill(
   }
 
   if (!apiKey) {
-    console.log("[WhatsApp Service] No Interakt API Key available. Skipping.");
+    console.log("[WhatsApp Service] No API Key available. Skipping.");
     return;
   }
+
+  const isTwilio = apiKey.includes(":") || (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
 
   // Format the bill text
   let message = `*🧾 Bill Receipt from ${hotelName}*\n\n`;
@@ -74,32 +76,71 @@ export async function sendWhatsappBill(
     console.log(`====================================================\n`);
 
     // --- REAL API LOGIC PLACEHOLDER ---
-    // In production, uncomment the fetch block below when you configure an Interakt Template.
-    /*
-    const response = await fetch("https://api.interakt.ai/v1/public/message/", {
-      method: "POST",
-      headers: {
-        "Authorization": `Basic ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        countryCode: "+91", // Ensure you parse this properly based on your input
-        phoneNumber: phoneNumber.replace("+91", ""),
-        callbackData: "some_callback_data",
-        type: "Template",
-        template: {
-          name: "bill_receipt",
-          languageCode: "en",
-          bodyValues: [hotelName, String(session.total)]
-        }
-      })
-    });
-    
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Interakt API Error: ${errBody}`);
+    // In production, uncomment the blocks below when you configure Twilio or Interakt.
+
+    if (isTwilio) {
+      /*
+      // Twilio Sandbox Implementation
+      let accountSid = process.env.TWILIO_ACCOUNT_SID;
+      let authToken = process.env.TWILIO_AUTH_TOKEN;
+      
+      // If the API key is passed as "AccountSID:AuthToken" from the custom settings
+      if (apiKey.includes(":")) {
+        const parts = apiKey.split(":");
+        accountSid = parts[0];
+        authToken = parts[1];
+      }
+
+      const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER || "+14155238886"; // Default Twilio Sandbox Number
+      const formattedTo = phoneNumber.startsWith("+") ? phoneNumber : `+91${phoneNumber}`;
+
+      const params = new URLSearchParams();
+      params.append("To", `whatsapp:${formattedTo}`);
+      params.append("From", `whatsapp:${twilioNumber}`);
+      params.append("Body", message);
+
+      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Twilio API Error: ${errBody}`);
+      }
+      */
+    } else {
+      /*
+      // Interakt Implementation
+      const response = await fetch("https://api.interakt.ai/v1/public/message/", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          countryCode: "+91",
+          phoneNumber: phoneNumber.replace("+91", ""),
+          callbackData: "some_callback_data",
+          type: "Template",
+          template: {
+            name: "bill_receipt",
+            languageCode: "en",
+            bodyValues: [hotelName, String(session.total)]
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Interakt API Error: ${errBody}`);
+      }
+      */
     }
-    */
 
     // Simulate success
     status = "sent";
