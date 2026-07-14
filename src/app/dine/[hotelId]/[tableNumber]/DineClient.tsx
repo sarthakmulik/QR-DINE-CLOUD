@@ -1764,7 +1764,7 @@ export default function DineClient({
           }
         } as any;
 
-        if (isMobile) {
+        if (isMobile && !initData.key_id.startsWith("rzp_test_")) {
           options.prefill.method = 'upi';
         }
 
