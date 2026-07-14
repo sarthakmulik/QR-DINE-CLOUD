@@ -659,6 +659,9 @@ export default function DineClient({
   const [upsellsMap, setUpsellsMap] = useState<Record<string, string>>({});
   const [trendingItemIds, setTrendingItemIds] = useState<string[]>([]);
 
+  const layout = customizations?.layout || "default";
+  const isDark = layout === "dark_slider";
+
   // Native UPI States
   const [nativePaymentData, setNativePaymentData] = useState<{ qr_data: string, sessionId: string, gateway: string } | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
@@ -2213,9 +2216,6 @@ export default function DineClient({
       </div>
     );
   }
-
-  const layout = customizations?.layout || "default";
-  const isDark = layout === "dark_slider";
 
   return (
     <div style={customStyles}>

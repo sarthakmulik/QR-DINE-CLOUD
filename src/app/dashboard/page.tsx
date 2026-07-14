@@ -360,7 +360,8 @@ export default function TablesDashboardPage() {
         if (!res.ok) {
           delete checkoutPendingRef.current[sessionId];
           pollTables();
-          alert("Failed to initiate checkout");
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.error || "Failed to initiate checkout");
         } else {
           pollTables();
         }
