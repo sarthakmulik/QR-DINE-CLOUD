@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, use, useCallback } from "react";
 import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface SessionItem {
   id: string;
@@ -131,8 +132,19 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     }
 
     fetchOrders();
-    const interval = setInterval(fetchOrders, 8000);
-    return () => clearInterval(interval);
+    fetchOrders();
+    
+    // Replace 8-second polling with Supabase Realtime WebSockets
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`kitchen_orders_${hotelId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `hotel_id=eq.${hotelId}` }, fetchOrders)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_items' }, fetchOrders)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [hotelId, pinEntered, hotelPlan]);
 
   // 3. Keep current time fresh
