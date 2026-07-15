@@ -488,13 +488,17 @@ export default function StaffPanelPage() {
     const supabase = createClient();
     const channel = supabase
       .channel(`staff_overview_${hotelId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelId}` }, loadData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_items' }, loadData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_requests', filter: `hotel_id=eq.${hotelId}` }, loadData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelId}` }, () => loadData())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'session_items' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_requests', filter: `hotel_id=eq.${hotelId}` }, () => loadData())
       .subscribe();
+
+    // 30s fallback in case a WebSocket event is missed during reconnection
+    const fallbackInterval = setInterval(loadData, 30000);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(fallbackInterval);
     };
   }, [loadData]);
 

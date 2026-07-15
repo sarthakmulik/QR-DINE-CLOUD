@@ -132,18 +132,31 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     }
 
     fetchOrders();
-    fetchOrders();
     
-    // Replace 8-second polling with Supabase Realtime WebSockets
+    // Supabase Realtime WebSockets for instant updates
+    // We also keep a 30s fallback polling interval for network resilience
+    // (e.g. if a WebSocket event is missed during reconnection)
     const supabase = createClient();
     const channel = supabase
       .channel(`kitchen_orders_${hotelId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelId}` }, fetchOrders)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_items' }, fetchOrders)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'table_sessions',
+        filter: `hotel_id=eq.${hotelId}`
+      }, () => fetchOrders())
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'session_items'
+      }, () => fetchOrders())
       .subscribe();
+
+    const fallbackInterval = setInterval(fetchOrders, 30000);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(fallbackInterval);
     };
   }, [hotelId, pinEntered, hotelPlan]);
 
