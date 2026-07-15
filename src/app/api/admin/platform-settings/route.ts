@@ -2,20 +2,29 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    await requireSuperAdmin();
+const getPlatformSettings = unstable_cache(
+  async () => {
     const sb = createAdminClient();
-    
-    // We get the singular platform settings row
     const { data: settings } = await sb
       .from("platform_settings")
       .select("*")
       .eq("id", "00000000-0000-0000-0000-000000000001")
       .single();
+    return settings;
+  },
+  ['platform-settings-cache'],
+  { revalidate: 3600, tags: ['platform-settings-cache'] }
+);
+
+export async function GET() {
+  try {
+    await requireSuperAdmin();
+    // We get the singular platform settings row from cache
+    const settings = await getPlatformSettings();
 
     return NextResponse.json(settings || {});
   } catch (err: any) {
@@ -59,6 +68,8 @@ export async function POST(req: Request) {
       .single();
 
     if (error) throw error;
+
+    revalidateTag('platform-settings-cache');
 
     return NextResponse.json(updated);
   } catch (err: any) {

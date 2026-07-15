@@ -100,7 +100,7 @@ export default function AdminPage() {
     useGoogleOAuth: false,
   });
   const [createResult, setCreateResult] = useState<string | null>(null);
-  const [newBroadcast, setNewBroadcast] = useState({ message: "", type: "info" });
+  const [newBroadcast, setNewBroadcast] = useState({ message: "", type: "info", sendViaWhatsapp: false });
 
   const [billingHotel, setBillingHotel] = useState<Hotel | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -241,13 +241,25 @@ export default function AdminPage() {
 
   async function handleCreateBroadcast(e: React.FormEvent) {
     e.preventDefault();
+    
+    const payload = { message: newBroadcast.message, type: newBroadcast.type };
+    
     const res = await fetch("/api/admin/broadcasts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newBroadcast),
+      body: JSON.stringify(payload),
     });
+
+    if (newBroadcast.sendViaWhatsapp) {
+      await fetch("/api/admin/broadcast-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: newBroadcast.message }),
+      });
+    }
+
     if (res.ok) {
-      setNewBroadcast({ message: "", type: "info" });
+      setNewBroadcast({ message: "", type: "info", sendViaWhatsapp: false });
       loadData();
     }
   }
@@ -557,6 +569,16 @@ export default function AdminPage() {
                   <option value="success">Success (Green)</option>
                   <option value="error">Error (Red)</option>
                 </select>
+              </div>
+              <div className="flex items-center gap-2 pb-2">
+                <input 
+                  type="checkbox" 
+                  id="waBroadcast" 
+                  checked={newBroadcast.sendViaWhatsapp}
+                  onChange={(e) => setNewBroadcast({ ...newBroadcast, sendViaWhatsapp: e.target.checked })}
+                  className="rounded border-gray-300 dark:border-zinc-700"
+                />
+                <label htmlFor="waBroadcast" className="text-sm font-medium">Send via WhatsApp</label>
               </div>
               <Button type="submit" className="w-full">Publish</Button>
             </form>

@@ -164,3 +164,104 @@ export async function sendWhatsappBill(
     console.error("[WhatsApp Service] Failed to log usage to database:", dbError);
   }
 }
+
+/**
+ * Sends a raw text message via WhatsApp using the global platform API Key.
+ * Useful for automated reminders and broadcasts.
+ */
+export async function sendWhatsappMessage(
+  phoneNumber: string,
+  message: string,
+  hotelId?: string
+) {
+  if (!phoneNumber) return false;
+
+  let apiKey = process.env.INTERAKT_API_KEY;
+  const sb = createAdminClient();
+
+  if (!apiKey) {
+    const { data: settings } = await sb.from("platform_settings").select("whatsapp_api_key").eq("id", "00000000-0000-0000-0000-000000000001").maybeSingle();
+    if (settings?.whatsapp_api_key) {
+      apiKey = settings.whatsapp_api_key;
+    }
+  }
+
+  if (!apiKey) {
+    console.error("[WhatsApp Service] No Platform API Key available for broadcast/reminder.");
+    return false;
+  }
+
+  const isTwilio = apiKey.includes(":") || (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+  let status = "failed";
+
+  try {
+    if (isTwilio) {
+      let accountSid = process.env.TWILIO_ACCOUNT_SID;
+      let authToken = process.env.TWILIO_AUTH_TOKEN;
+      
+      if (apiKey.includes(":")) {
+        const parts = apiKey.split(":");
+        accountSid = parts[0];
+        authToken = parts[1];
+      }
+
+      if (!accountSid || !authToken) throw new Error("Missing Twilio credentials");
+
+      const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER || "+14155238886";
+      const formattedTo = phoneNumber.startsWith("+") ? phoneNumber : `+91${phoneNumber}`;
+
+      const params = new URLSearchParams();
+      params.append("To", `whatsapp:${formattedTo}`);
+      params.append("From", `whatsapp:${twilioNumber}`);
+      params.append("Body", message);
+
+      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Twilio API Error: ${errBody}`);
+      }
+    } else {
+      // Assuming Interakt raw text message sending payload
+      const response = await fetch("https://api.interakt.ai/v1/public/message/", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          countryCode: "+91",
+          phoneNumber: phoneNumber.replace("+91", ""),
+          type: "Text",
+          text: {
+            body: message
+          }
+        })
+      });
+      if (!response.ok) throw new Error(`Interakt API Error`);
+    }
+
+    status = "sent";
+  } catch (err) {
+    console.error("[WhatsApp Service] Message send failed:", err);
+  }
+
+  // Log usage
+  try {
+    await sb.from("whatsapp_logs").insert({
+      hotel_id: hotelId || null,
+      provider_type: "platform",
+      customer_phone: phoneNumber,
+      status: status
+    });
+  } catch (dbError) {}
+
+  return status === "sent";
+}
