@@ -488,7 +488,7 @@ export default function StaffPanelPage() {
     const supabase = createClient();
     const channel = supabase
       .channel(`staff_overview_${hotelId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `hotel_id=eq.${hotelId}` }, loadData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelId}` }, loadData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_items' }, loadData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_requests', filter: `hotel_id=eq.${hotelId}` }, loadData)
       .subscribe();

@@ -138,7 +138,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     const supabase = createClient();
     const channel = supabase
       .channel(`kitchen_orders_${hotelId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions', filter: `hotel_id=eq.${hotelId}` }, fetchOrders)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelId}` }, fetchOrders)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_items' }, fetchOrders)
       .subscribe();
 
