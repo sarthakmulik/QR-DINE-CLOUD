@@ -12,7 +12,6 @@ import { ClientDate } from "@/components/ui/client-date";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { Bell, LogOut, Check, ShoppingBag, Loader2, User, HelpCircle, Utensils, BellRing, BellOff, Plus, Minus, Search, ShieldAlert, QrCode, Banknote } from "lucide-react";
 import { Camera } from "@capacitor/camera";
-import { createClient } from "@/lib/supabase/client";
 
 interface TableItem {
   id: string;
@@ -481,25 +480,8 @@ export default function StaffPanelPage() {
       }
     }
     loadData();
-
-    const hotelId = localStorage.getItem("staff_hotel_id");
-    if (!hotelId) return;
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`staff_overview_${hotelId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelId}` }, () => loadData())
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'session_items' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_requests', filter: `hotel_id=eq.${hotelId}` }, () => loadData())
-      .subscribe();
-
-    // 30s fallback in case a WebSocket event is missed during reconnection
-    const fallbackInterval = setInterval(loadData, 30000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(fallbackInterval);
-    };
+    const interval = setInterval(loadData, 6000);
+    return () => clearInterval(interval);
   }, [loadData]);
 
   async function handleCompleteRequest(id: string) {

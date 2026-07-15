@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, use, useCallback } from "react";
 import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 interface SessionItem {
   id: string;
@@ -132,32 +131,8 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     }
 
     fetchOrders();
-    
-    // Supabase Realtime WebSockets for instant updates
-    // We also keep a 30s fallback polling interval for network resilience
-    // (e.g. if a WebSocket event is missed during reconnection)
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`kitchen_orders_${hotelId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'table_sessions',
-        filter: `hotel_id=eq.${hotelId}`
-      }, () => fetchOrders())
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'session_items'
-      }, () => fetchOrders())
-      .subscribe();
-
-    const fallbackInterval = setInterval(fetchOrders, 30000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(fallbackInterval);
-    };
+    const interval = setInterval(fetchOrders, 8000);
+    return () => clearInterval(interval);
   }, [hotelId, pinEntered, hotelPlan]);
 
   // 3. Keep current time fresh
