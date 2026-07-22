@@ -208,7 +208,7 @@ export function mapHotel(h: Hotel) {
     address: h.address,
     taxRate: Number(h.tax_rate),
     createdAt: h.created_at,
-    kitchenPin: h.kitchen_pin ?? null,
+    kitchenPinSet: Boolean(h.kitchen_pin),
     upiId: h.upi_id ?? null,
     secureQr: !!h.secure_qr,
     whatsappBillEnabled: !!h.whatsapp_bill_enabled,

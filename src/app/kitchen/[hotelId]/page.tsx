@@ -57,7 +57,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
         setHotelPlan(data.plan || "basic");
         
         // Auto-login if token exists
-        const token = sessionStorage.getItem(`kitchen_token_${hotelId}`);
+        const token = localStorage.getItem(`kitchen_token_${hotelId}`);
         if (token) {
           setPinEntered(true);
         }
@@ -75,7 +75,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
 
     function fetchOrders() {
-      const token = sessionStorage.getItem(`kitchen_token_${hotelId}`) || "";
+      const token = localStorage.getItem(`kitchen_token_${hotelId}`) || "";
       fetch(`/api/kitchen/${hotelId}/orders?t=${Date.now()}`, {
         cache: "no-store",
         headers: {
@@ -85,7 +85,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
         .then((res) => {
           if (res.status === 401 || res.status === 403) {
             setPinEntered(false);
-            sessionStorage.removeItem(`kitchen_token_${hotelId}`);
+            localStorage.removeItem(`kitchen_token_${hotelId}`);
             throw new Error("KDS session expired");
           }
           return res.json();
@@ -293,7 +293,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     });
 
     try {
-      const token = sessionStorage.getItem(`kitchen_token_${hotelId}`) || "";
+      const token = localStorage.getItem(`kitchen_token_${hotelId}`) || "";
       const res = await fetch(`/api/kitchen/${hotelId}/order-items/${itemId}/status`, {
         method: "PATCH",
         headers: { 
@@ -304,7 +304,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
       });
       if (res.status === 401 || res.status === 403) {
         setPinEntered(false);
-        sessionStorage.removeItem(`kitchen_token_${hotelId}`);
+        localStorage.removeItem(`kitchen_token_${hotelId}`);
       }
     } catch (err) {
       console.error("Failed to update status on server:", err);
@@ -334,7 +334,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
               throw new Error("Invalid PIN");
             })
             .then((data) => {
-              sessionStorage.setItem(`kitchen_token_${hotelId}`, data.token);
+              localStorage.setItem(`kitchen_token_${hotelId}`, data.token);
               setPinEntered(true);
               // Initialize sound context on user action
               playBeep();
@@ -738,7 +738,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                           try {
                             const res = await fetch(`/api/kitchen/${hotelId}/orders/${session.id}/confirm-payment`, {
                               method: "POST",
-                              headers: { "x-kitchen-token": sessionStorage.getItem(`kitchen_token_${hotelId}`) || "" }
+                              headers: { "x-kitchen-token": localStorage.getItem(`kitchen_token_${hotelId}`) || "" }
                             });
                             if (res.ok) {
                               setSessions(prev => prev.map(s => s.id === session.id ? { ...s, status: "open" } : s));

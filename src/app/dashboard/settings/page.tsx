@@ -166,7 +166,7 @@ export default function SettingsPage() {
           gstNumber: data.gstNumber || "",
           logo: data.logo || "",
           taxRate: String(data.taxRate ?? 5),
-          kitchenPin: data.kitchenPin || "",
+          kitchenPin: "",
           upiId: data.upiId || "",
           email: data.ownerEmail || data.loginEmail || "",
           password: "",
@@ -216,7 +216,7 @@ export default function SettingsPage() {
           gstNumber: data.gstNumber || "",
           logo: data.logo || "",
           taxRate: String(data.taxRate ?? 5),
-          kitchenPin: data.kitchenPin || "",
+          kitchenPin: "",
           upiId: data.upiId || "",
           email: data.ownerEmail || data.loginEmail || "",
           password: "",
@@ -285,10 +285,13 @@ export default function SettingsPage() {
     setSaveError("");
     setSaved(false);
     try {
+      const profilePayload = { ...form };
+      if (!profilePayload.kitchenPin) delete profilePayload.kitchenPin;
+
       const res = await fetch("/api/hotel/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(profilePayload),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -315,7 +318,7 @@ export default function SettingsPage() {
         gstNumber: form.gstNumber,
         logo: form.logo,
         taxRate: parseFloat(form.taxRate),
-        kitchenPin: form.kitchenPin,
+        kitchenPinSet: Boolean(form.kitchenPin),
         upiId: form.upiId,
         ownerEmail: form.email,
         status: form.status,

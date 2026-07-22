@@ -42,7 +42,7 @@ export async function sendWhatsappBill(
     return;
   }
 
-  const isTwilio = apiKey.includes(":") || (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+  const isTwilio = (apiKey.startsWith("AC") && apiKey.includes(":")) || (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
 
   // Format the bill text
   let message = `*🧾 Bill Receipt from ${hotelName}*\n\n`;
@@ -71,8 +71,8 @@ export async function sendWhatsappBill(
 
   try {
     console.log(`\n================= WHATSAPP SERVICE (${providerType.toUpperCase()}) =================`);
-    console.log(`[SIMULATION] Sending bill to WhatsApp number: ${phoneNumber}`);
-    console.log(`[SIMULATION] Payload:\n${message}`);
+    console.log(`Sending bill to WhatsApp number: ${phoneNumber}`);
+    console.log(`Payload:\n${message}`);
     console.log(`====================================================\n`);
 
     // --- REAL API LOGIC PLACEHOLDER ---
@@ -142,7 +142,6 @@ export async function sendWhatsappBill(
       }
     }
 
-    // Simulate success
     status = "sent";
 
   } catch (error) {

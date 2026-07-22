@@ -763,7 +763,8 @@ export default function DineClient({
   }, [customerPhone, hotelId]);
 
   useEffect(() => {
-    fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    fetch(`/api/hotel/menu/upsells${search ? search + '&' : '?'}hotelId=${hotelId}`)
       .then(res => res.json())
       .then(data => {
         if (data.upsellsMap) setUpsellsMap(data.upsellsMap);

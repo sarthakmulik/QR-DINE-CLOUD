@@ -7,20 +7,9 @@ import { verifyTableSignature } from "@/lib/crypto";
 import { sendStaffPush, sendStaffPushSequential } from "@/lib/push";
 import crypto from "crypto";
 import { revalidateTag } from "next/cache";
+import { checkDuplicateOrder } from "@/lib/rate-limit";
 
-const lastOrderHash = new Map<string, { hash: string; timestamp: number }>();
 
-// Clean up old order fingerprints to avoid memory leaks
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of lastOrderHash.entries()) {
-      if (now - value.timestamp > 60000) {
-        lastOrderHash.delete(key);
-      }
-    }
-  }, 60000);
-}
 
 export async function POST(
   req: NextRequest,
@@ -78,15 +67,14 @@ export async function POST(
       .update(`${hotelId}:${tableNumber}:${payloadString}`)
       .digest("hex");
 
-    const tableKey = `${hotelId}:${tableNumber}`;
-    const lastOrder = lastOrderHash.get(tableKey);
-    if (lastOrder && lastOrder.hash === fingerprint && Date.now() - lastOrder.timestamp < 5000) {
+    const tableKey = `order_limit:${hotelId}:${tableNumber}`;
+    const isDuplicate = await checkDuplicateOrder(tableKey, fingerprint);
+    if (isDuplicate) {
       return NextResponse.json(
         { error: "Duplicate order submission blocked. Please wait a few seconds." },
-        { status: 409 }
+        { status: 429 }
       );
     }
-    lastOrderHash.set(tableKey, { hash: fingerprint, timestamp: Date.now() });
 
     const sb = createAdminClient();
 

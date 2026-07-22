@@ -4,6 +4,7 @@ import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapHotel } from "@/lib/types";
 import type { Hotel } from "@/lib/types";
+import { hashKitchenPin } from "@/lib/kitchen-auth";
 
 export async function GET() {
   try {
@@ -145,7 +146,7 @@ export async function PATCH(req: NextRequest) {
       if (pin && pin.length !== 4) {
         return NextResponse.json({ error: "Kitchen PIN must be exactly 4 digits" }, { status: 400 });
       }
-      updates.kitchen_pin = pin || null;
+      updates.kitchen_pin = pin ? await hashKitchenPin(pin) : null;
     }
 
     if (body.upiId !== undefined) {

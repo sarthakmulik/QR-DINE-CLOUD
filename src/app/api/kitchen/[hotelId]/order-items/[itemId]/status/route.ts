@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import crypto from "crypto";
 import { revalidateTag } from "next/cache";
+import { verifyKitchenToken } from "@/lib/kitchen-auth";
 
 // Removed local webpush configuration since we will use centralized push logic
 
@@ -31,13 +31,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Kitchen PIN is not configured" }, { status: 400 });
     }
 
-    const salt = process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback_salt";
-    const expectedToken = crypto
-      .createHash("sha256")
-      .update(`${hotel.kitchen_pin}-${hotelId}-${salt}`)
-      .digest("hex");
-
-    if (token !== expectedToken) {
+    if (!verifyKitchenToken(token, hotelId, hotel.kitchen_pin)) {
       return NextResponse.json({ error: "Forbidden: Invalid token" }, { status: 403 });
     }
     const { status } = body as { status: "preparing" | "ready" | "served" };

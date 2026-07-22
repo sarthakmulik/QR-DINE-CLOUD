@@ -15,6 +15,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing hotelId" }, { status: 400 });
     }
 
+    const referer = req.headers.get("referer");
+    const host = req.headers.get("host");
+    if (referer && host && !referer.includes(host)) {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
+    }
+
     const sb = createAdminClient();
 
     // Fetch the last 30 days of session items for this hotel to calculate AI Upsells

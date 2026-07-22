@@ -13,10 +13,166 @@ export function generateAdvancedInsights(
 ): AIInsight[] {
   const insights: AIInsight[] = [];
 
-  if (sessions.length < 10 || items.length < 10) {
+  if (sessions.length < 5 || items.length < 5) {
     return [
       { type: 'info', message: 'Gathering more data to unlock deeper AI insights.' }
     ];
+  }
+
+  // -------------------------------------------------------------
+  // NEW: MENU ENGINEERING (BCG MATRIX)
+  // -------------------------------------------------------------
+  const itemVolume: Record<string, number> = {};
+  const itemRevenue: Record<string, number> = {};
+  let totalMenuVolume = 0;
+  let totalMenuRevenue = 0;
+  let uniqueItemsCount = 0;
+
+  items.forEach(i => {
+    if (!i.name) return;
+    if (!itemVolume[i.name]) {
+      itemVolume[i.name] = 0;
+      itemRevenue[i.name] = 0;
+      uniqueItemsCount++;
+    }
+    const qty = i.quantity || 1;
+    const price = Number(i.price || 0);
+    itemVolume[i.name] += qty;
+    itemRevenue[i.name] += (qty * price);
+    totalMenuVolume += qty;
+    totalMenuRevenue += (qty * price);
+  });
+
+  if (uniqueItemsCount > 3) {
+    const avgVolume = totalMenuVolume / uniqueItemsCount;
+    // We use average price conceptually, but AOV of the item works better.
+    // Instead, we just check if it generates higher than average revenue per portion
+    const avgPrice = totalMenuRevenue / totalMenuVolume;
+
+    let star = { name: '', vol: 0, rev: 0 };
+    let cow = { name: '', vol: 0, price: 0 };
+    let dog = { name: '', vol: Infinity };
+
+    Object.entries(itemVolume).forEach(([name, vol]) => {
+      const rev = itemRevenue[name];
+      const price = rev / vol;
+
+      if (vol > avgVolume && price >= avgPrice) {
+        if (rev > star.rev) star = { name, vol, rev }; // Best Star
+      } else if (vol > avgVolume && price < avgPrice) {
+        if (vol > cow.vol) cow = { name, vol, price }; // Best Cash Cow
+      } else if (vol < (avgVolume * 0.1)) {
+        // Less than 10% of average volume
+        if (vol < dog.vol) dog = { name, vol }; // Worst Dog
+      }
+    });
+
+    if (star.name) {
+      insights.push({
+        type: 'growth',
+        message: `🌟 Star Item: "${star.name}" is a high-volume, high-margin winner. Consider featuring it as a 'Chef's Special' on the menu to drive even more profit.`
+      });
+    }
+    if (cow.name) {
+      insights.push({
+        type: 'opportunity',
+        message: `🐄 Cash Cow: You sell a massive volume of "${cow.name}". Increasing its price by just ₹5-10 will generate pure profit without noticeably affecting sales.`
+      });
+    }
+    if (dog.name && dog.name !== '') {
+      insights.push({
+        type: 'warning',
+        message: `🐕 Menu Dog: "${dog.name}" is barely ordered. Consider removing it from the menu to reduce raw ingredient inventory and prep wastage.`
+      });
+    }
+  }
+
+  // -------------------------------------------------------------
+  // NEW: DEAD ZONE PREDICTOR (Waste & Labor Reduction)
+  // -------------------------------------------------------------
+  const hourBuckets: Record<number, number> = {};
+  let totalHoursTracked = 0;
+
+  sessions.forEach(s => {
+    const hour = new Date(s.start_time).getHours();
+    hourBuckets[hour] = (hourBuckets[hour] || 0) + Number(s.total || 0);
+  });
+
+  totalHoursTracked = Object.keys(hourBuckets).length;
+  if (totalHoursTracked >= 4) {
+    const avgHourlyRev = Object.values(hourBuckets).reduce((a, b) => a + b, 0) / totalHoursTracked;
+    let deadHour = -1;
+    let deadRev = Infinity;
+
+    Object.entries(hourBuckets).forEach(([hStr, rev]) => {
+      const h = parseInt(hStr);
+      // We only flag hours during normal operating times (e.g. 11 AM to 10 PM)
+      if (h >= 11 && h <= 22) {
+        if (rev < avgHourlyRev * 0.2 && rev < deadRev) { // Less than 20% of avg
+          deadHour = h;
+          deadRev = rev;
+        }
+      }
+    });
+
+    if (deadHour !== -1) {
+      const ampm = deadHour >= 12 ? 'PM' : 'AM';
+      const displayHour = deadHour % 12 || 12;
+      insights.push({
+        type: 'warning',
+        message: `📉 Dead Zone Alert: Revenue between ${displayHour}:00 ${ampm} and ${displayHour + 1}:00 ${ampm} drops 80% below average. Consider sending 1-2 staff members on break and reducing food prep to save costs.`
+      });
+    }
+  }
+
+  // -------------------------------------------------------------
+  // NEW: CRM & VIP CHURN PREDICTOR
+  // -------------------------------------------------------------
+  const customerStats: Record<string, { visits: number, spent: number, lastVisit: number }> = {};
+  sessions.forEach(s => {
+    if (s.customer_phone) {
+      if (!customerStats[s.customer_phone]) {
+        customerStats[s.customer_phone] = { visits: 0, spent: 0, lastVisit: 0 };
+      }
+      customerStats[s.customer_phone].visits++;
+      customerStats[s.customer_phone].spent += Number(s.total || 0);
+      
+      const vTime = new Date(s.start_time).getTime();
+      if (vTime > customerStats[s.customer_phone].lastVisit) {
+        customerStats[s.customer_phone].lastVisit = vTime;
+      }
+    }
+  });
+
+  let topVip = { phone: '', spent: 0 };
+  let churnRisk = { phone: '', visits: 0, daysSince: 0 };
+  const nowMs = Date.now();
+
+  Object.entries(customerStats).forEach(([phone, stats]) => {
+    if (stats.spent > topVip.spent && stats.visits >= 3) {
+      topVip = { phone, spent: stats.spent };
+    }
+    
+    // Churn logic: Visited multiple times, but hasn't been back in 30+ days
+    const daysSince = (nowMs - stats.lastVisit) / (1000 * 60 * 60 * 24);
+    if (stats.visits >= 2 && daysSince > 30 && daysSince < 90) {
+      if (stats.visits > churnRisk.visits) {
+        churnRisk = { phone, visits: stats.visits, daysSince };
+      }
+    }
+  });
+
+  if (topVip.phone) {
+    insights.push({
+      type: 'growth',
+      message: `👑 VIP Alert: Customer ${topVip.phone} has spent ₹${Math.round(topVip.spent)} across multiple visits! Consider offering them a complimentary dessert to lock in loyalty.`
+    });
+  }
+  if (churnRisk.phone) {
+    insights.push({
+      type: 'opportunity',
+      message: `⚠️ Churn Warning: A loyal customer (${churnRisk.phone}, ${churnRisk.visits} visits) hasn't visited in ${Math.round(churnRisk.daysSince)} days. Send them a promotional SMS to win them back.`
+    });
   }
 
   // -------------------------------------------------------------
@@ -332,7 +488,7 @@ export function generateAdvancedInsights(
     const name = staffMap[mvpStaff.id] || `Staff #${mvpStaff.id.slice(0,4)}`;
     insights.push({
       type: 'growth',
-      message: `Staff Performance: ${name} is your MVP! They average an ₹${Math.round(mvpStaff.aov)} AOV (vs global ₹${Math.round(globalAOV)}), resolve requests in ${Math.round(mvpStaff.avgResolutionSecs)}s, and handle the highest volume.`
+      message: `🏅 The Upsell King: ${name} is your MVP! They drive an Average Order Value of ₹${Math.round(mvpStaff.aov)} (vs global ₹${Math.round(globalAOV)}). Have them train the rest of the floor staff on cross-selling.`
     });
   }
 

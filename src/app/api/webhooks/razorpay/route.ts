@@ -3,13 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import Razorpay from "razorpay";
 import { assignOrderNumber } from "@/lib/session-service";
 import type { Hotel } from "@/lib/types";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
-    // ── Signature Verification ────────────────────────────────────────────────
-    // CRITICAL: Verify the X-Razorpay-Signature header BEFORE processing the
-    // webhook body. Without this anyone can POST a fake "payment.captured"
-    // event to mark orders as paid without actually paying.
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
 
@@ -31,22 +28,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: "ignored" });
     }
 
-    const orderId = body.payload?.payment?.entity?.order_id || body.payload?.order?.entity?.id;
+    const entity = body.payload?.payment?.entity || body.payload?.order?.entity;
+    if (!entity) {
+      return NextResponse.json({ error: "Missing entity in payload" }, { status: 400 });
+    }
+
+    const orderId = entity.order_id || entity.id;
     if (!orderId) {
       return NextResponse.json({ error: "Missing order_id in payload" }, { status: 400 });
     }
 
-    const sb = createAdminClient();
-
-    const entity = body.payload?.payment?.entity || body.payload?.order?.entity;
-    const hotelId = entity?.notes?.hotelId;
-    const sessionId = entity?.notes?.sessionId;
+    const hotelId = entity.notes?.hotelId;
+    const sessionId = entity.notes?.sessionId;
 
     if (!hotelId || !sessionId) {
       console.warn("Webhook received without hotelId/sessionId notes", orderId);
       return NextResponse.json({ error: "Missing notes" }, { status: 400 });
     }
 
+    const sb = createAdminClient();
+
+    // In this architecture, each hotel brings their own Razorpay account API keys.
+    // We MUST fetch the hotel from the DB first to get their specific key_secret
+    // in order to verify the webhook signature. (Read-only DB op, safe from mutation attacks).
     const { data: hotel } = await sb
       .from("hotels")
       .select("payment_settings")
@@ -59,21 +63,16 @@ export async function POST(req: NextRequest) {
 
     const { key_id, key_secret } = hotel.payment_settings.razorpay;
 
-    // Verify signature using the webhook secret.
-    // Razorpay signs with a dedicated webhook secret (separate from key_secret).
-    // Prefer RAZORPAY_WEBHOOK_SECRET env var; fall back to key_secret for
-    // setups that haven't configured a dedicated webhook secret yet.
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || key_secret;
-    const expectedSig = require("crypto")
-      .createHmac("sha256", webhookSecret)
+    // Verify signature using the hotel's key_secret
+    const expectedSig = crypto
+      .createHmac("sha256", key_secret)
       .update(rawBody)
       .digest("hex");
 
     if (signature !== expectedSig) {
-      console.warn("[Razorpay Webhook] Signature mismatch — possible forged request");
+      console.warn(`[Razorpay Webhook] Signature mismatch for hotel ${hotelId} — possible forged request`);
       return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
     // Verify order status via the Razorpay API (double-check)
     const instance = new Razorpay({ key_id, key_secret });
@@ -104,12 +103,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Dine-in order marked as paid" });
     }
 
+    // Protect against cancelled or closed sessions being re-opened as QS
+    if (session.status !== "payment_pending" && session.status !== "draft") {
+       return NextResponse.json({ status: "ignored, session is not in a payable state", current_status: session.status });
+    }
+
     await assignOrderNumber(sessionId);
 
     // Atomic update to ensure idempotency for Quick Service
     const { data: updated, error: updateError } = await sb.from("table_sessions").update({ 
       status: "open", 
-      // Preserve the payment_method set at checkout (UPI or Card)
       payment_method: session.payment_method ?? "UPI",
       payment_reference: entity.id
     })

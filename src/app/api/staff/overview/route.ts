@@ -8,11 +8,8 @@ import { getTableStatus } from "@/lib/session-service";
 
 import { unstable_cache } from "next/cache";
 
-// We need a wrapper to pass dynamic tags properly
-const getOverviewForHotel = (hotelId: string) => {
-  return unstable_cache(
-    async () => {
-      const sb = createAdminClient();
+const getOverviewForHotel = async (hotelId: string) => {
+  const sb = createAdminClient();
 
       const [hotelRes, tablesRes, sessionsRes, requestsRes] = await Promise.all([
         sb.from("hotels").select("name, plan, status").eq("id", hotelId).single(),
@@ -76,10 +73,6 @@ const getOverviewForHotel = (hotelId: string) => {
         tables: enrichedTables,
         waiterRequests: waiterRequests,
       };
-    },
-    [`staff-overview-${hotelId}`],
-    { tags: [`staff-overview-${hotelId}`], revalidate: 3600 }
-  )();
 };
 
 export async function GET() {

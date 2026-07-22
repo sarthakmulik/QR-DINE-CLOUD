@@ -11,8 +11,18 @@ function verifyStaffToken(signedToken: string | undefined): string | null {
   const parts = signedToken.split("|");
   if (parts.length < 3) return null;
   const [staffId, timestamp, signature] = parts;
+  
+  // Enforce 24-hour expiry on staff tokens
+  if (Date.now() - parseInt(timestamp, 10) > 86400000) {
+    return null;
+  }
+
   const tokenPayload = `${staffId}|${timestamp}`;
-  const salt = process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback_salt";
+  const salt = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!salt) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for authentication");
+  }
+
   const expectedSignature = crypto.createHmac("sha256", salt).update(tokenPayload).digest("hex");
   if (signature === expectedSignature) return staffId;
   return null;

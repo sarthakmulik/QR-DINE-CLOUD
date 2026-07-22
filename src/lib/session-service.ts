@@ -154,8 +154,7 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
     if (currentSession.status === "checkout_initiated" || currentSession.status === "bill_printed") {
       return { error: "checkout" as const, session: mapTableSession(currentSession, currentSession.items), hotel, table };
     }
-    // Update existing session with customer info if it wasn't provided yet
-    const updates: any = { customer_count: currentSession.customer_count + 1 };
+    const updates: any = {};
     if (customerName && !currentSession.customer_name) updates.customer_name = customerName;
     if (customerPhone && !currentSession.customer_phone) updates.customer_phone = customerPhone;
     
@@ -441,15 +440,27 @@ export async function markAsPaid(
     updatePayload.customer_phone = customerPhone;
   }
 
-  const [updateSessionRes] = await Promise.all([
-    sb.from("table_sessions")
-      .update(updatePayload)
-      .eq("id", sessionId).select("*").single<TableSession>(),
-    sb.from("restaurant_tables").update({ current_session_id: null }).eq("id", session.table_id),
-  ]);
+  const updateSessionRes = await sb.from("table_sessions")
+    .update(updatePayload)
+    .eq("id", sessionId)
+    .neq("status", "closed")
+    .select("*")
+    .maybeSingle<TableSession>();
 
+  if (updateSessionRes.error) throw new Error(updateSessionRes.error.message);
+  
   const closed = updateSessionRes.data;
-  if (updateSessionRes.error || !closed) throw new Error(updateSessionRes.error?.message || "Failed to close session");
+  
+  if (!closed) {
+    // Session was already closed by a concurrent webhook or checkout call
+    console.log(`[markAsPaid] Session ${sessionId} already closed or not found.`);
+    const { data: existing } = await sb.from("table_sessions").select("*").eq("id", sessionId).single<TableSession>();
+    if (!existing) throw new Error("Session not found during checkout");
+    return mapTableSession(existing, items, hotel || undefined, table || undefined);
+  }
+
+  // Only clear the table if WE were the ones to successfully close it
+  await sb.from("restaurant_tables").update({ current_session_id: null }).eq("id", session.table_id);
 
   // Process Loyalty Points
   const finalPhone = closed.customer_phone || session.customer_phone;

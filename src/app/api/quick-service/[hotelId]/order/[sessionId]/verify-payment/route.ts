@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import { assignOrderNumber } from "@/lib/session-service";
 import type { Hotel } from "@/lib/types";
 
@@ -10,7 +11,18 @@ export async function POST(
 ) {
   try {
     const { hotelId, sessionId } = await params;
-    const body = await req.json();
+    
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    if (!body || !body.gateway) {
+       return NextResponse.json({ error: "Missing gateway in request body" }, { status: 400 });
+    }
+
     const sb = createAdminClient();
 
     const { data: hotel } = await sb
@@ -29,6 +41,10 @@ export async function POST(
     if (active_pg === "razorpay" && razorpay && body.gateway === "razorpay") {
       const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
       
+      if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+        return NextResponse.json({ error: "Missing Razorpay verification parameters" }, { status: 400 });
+      }
+
       const generated_signature = crypto
         .createHmac("sha256", razorpay.key_secret)
         .update(razorpay_order_id + "|" + razorpay_payment_id)
@@ -38,25 +54,51 @@ export async function POST(
         return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
       }
 
-      // Fetch the session to get the actual payment_method (UPI or Card)
-      // so we don't accidentally overwrite a Card payment as UPI
       const { data: session } = await sb
         .from("table_sessions")
-        .select("payment_method")
+        .select("payment_method, total, status")
         .eq("id", sessionId)
+        .eq("hotel_id", hotelId) // Security Fix: Guard with hotelId
+        .eq("status", "payment_pending")
         .single();
 
-      // Assign the order number strictly upon successful verification
-      const orderNumber = await assignOrderNumber(sessionId);
+      if (!session) {
+         return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      }
 
-      // Mark session as open — preserve the original payment_method set at checkout
-      await sb.from("table_sessions").update({ 
+      const razorpayOrder = await new Razorpay({ key_id: razorpay.key_id, key_secret: razorpay.key_secret })
+        .orders.fetch(razorpay_order_id);
+      if (
+        razorpayOrder.status !== "paid" ||
+        razorpayOrder.notes?.hotelId !== hotelId ||
+        razorpayOrder.notes?.sessionId !== sessionId ||
+        Number(razorpayOrder.amount) !== Math.round(Number(session.total) * 100)
+      ) {
+        return NextResponse.json({ error: "Payment does not match this order" }, { status: 400 });
+      }
+
+      // Mark session as open FIRST
+      const { data: updated, error: updateError } = await sb.from("table_sessions").update({ 
         status: "open", 
-        // Preserve whichever method the customer chose (UPI or Card).
-        // Only update if the session doesn't already have one (safety fallback).
-        payment_method: session?.payment_method ?? "UPI",
+        payment_method: session.payment_method ?? "UPI",
         payment_reference: razorpay_payment_id
-      }).eq("id", sessionId);
+      })
+      .eq("id", sessionId)
+      .neq("status", "open")
+      .select("id")
+      .maybeSingle();
+
+      if (updateError) throw updateError;
+
+      // Only assign order number if WE actually opened it
+      let orderNumber;
+      if (updated) {
+        orderNumber = await assignOrderNumber(sessionId);
+      } else {
+        // Find existing order number if already processed
+        const { data: existing } = await sb.from("table_sessions").select("order_number").eq("id", sessionId).single();
+        orderNumber = existing?.order_number;
+      }
 
       return NextResponse.json({ success: true, order_number: orderNumber });
     }
@@ -65,11 +107,12 @@ export async function POST(
     if (active_pg === "phonepe" && phonepe && body.gateway === "phonepe") {
       const { merchant_id, salt_key, salt_index, env } = phonepe;
       
-      // We need the transaction ID from the session to check its status
       const { data: session } = await sb
         .from("table_sessions")
-        .select("payment_reference, payment_method")
+        .select("payment_reference, payment_method, status")
         .eq("id", sessionId)
+        .eq("hotel_id", hotelId) // Security Fix: Guard with hotelId
+        .eq("status", "payment_pending")
         .single();
         
       if (!session || !session.payment_reference) {
@@ -97,14 +140,33 @@ export async function POST(
 
       const phonePeData = await phonePeRes.json();
 
-      if (phonePeData.success && phonePeData.code === "PAYMENT_SUCCESS") {
-        const orderNumber = await assignOrderNumber(sessionId);
-        
-        await sb.from("table_sessions").update({ 
+      if (
+        phonePeData.success &&
+        phonePeData.code === "PAYMENT_SUCCESS" &&
+        phonePeData.data?.merchantTransactionId === transactionId
+      ) {
+        const phonePeActualTransactionId = phonePeData.data?.transactionId || transactionId;
+
+        // Mark session as open FIRST
+        const { data: updated, error: updateError } = await sb.from("table_sessions").update({ 
           status: "open", 
-          // Preserve the original payment_method (UPI or Card) set at checkout
           payment_method: session.payment_method ?? "UPI",
-        }).eq("id", sessionId);
+          payment_reference: phonePeActualTransactionId
+        })
+        .eq("id", sessionId)
+        .neq("status", "open")
+        .select("id")
+        .maybeSingle();
+
+        if (updateError) throw updateError;
+
+        let orderNumber;
+        if (updated) {
+          orderNumber = await assignOrderNumber(sessionId);
+        } else {
+          const { data: existing } = await sb.from("table_sessions").select("order_number").eq("id", sessionId).single();
+          orderNumber = existing?.order_number;
+        }
         
         return NextResponse.json({ success: true, order_number: orderNumber });
       } else {

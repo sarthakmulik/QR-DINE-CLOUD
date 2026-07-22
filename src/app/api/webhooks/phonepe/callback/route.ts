@@ -8,14 +8,13 @@ export async function POST(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const hotelId = url.searchParams.get("hotelId");
-    const sessionId = url.searchParams.get("sessionId");
+    const sessionIdUrl = url.searchParams.get("sessionId");
 
-    if (!hotelId || !sessionId) {
+    if (!hotelId || !sessionIdUrl) {
       console.warn("PhonePe S2S callback missing hotelId/sessionId");
       return NextResponse.json({ error: "Missing context" }, { status: 400 });
     }
 
-    // PhonePe sends the base64 encoded JSON in the 'response' key
     const rawBody = await req.json();
     const encodedResponse = rawBody.response;
     
@@ -25,7 +24,6 @@ export async function POST(req: NextRequest) {
 
     const sb = createAdminClient();
 
-    // 1. Fetch hotel credentials
     const { data: hotel } = await sb.from("hotels").select("payment_settings").eq("id", hotelId).single<Hotel>();
     if (!hotel || !hotel.payment_settings?.phonepe) {
       return NextResponse.json({ error: "Hotel not found or no phonepe config" }, { status: 404 });
@@ -33,15 +31,18 @@ export async function POST(req: NextRequest) {
 
     const { salt_key, salt_index } = hotel.payment_settings.phonepe;
 
-    // 2. Verify signature
     const xVerifyHeader = req.headers.get("x-verify");
+    if (!xVerifyHeader) {
+      console.warn("PhonePe S2S callback missing x-verify header");
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+    }
+
     const calculatedVerify = crypto.createHash("sha256").update(encodedResponse + salt_key).digest("hex") + "###" + salt_index;
     
     if (xVerifyHeader !== calculatedVerify) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // 3. Decode response
     const decodedStr = Buffer.from(encodedResponse, "base64").toString("utf-8");
     const responsePayload = JSON.parse(decodedStr);
 
@@ -49,10 +50,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: "ignored, payment not successful" });
     }
 
-    // 4. Process payment
-    const { data: session } = await sb.from("table_sessions").select("status, payment_reference, payment_method").eq("id", sessionId).single();
+    const transactionId = responsePayload.data?.merchantTransactionId;
+    if (!transactionId) {
+      return NextResponse.json({ error: "Missing merchant transaction ID" }, { status: 400 });
+    }
+
+    // Use sessionId from URL, but verify it matches the transactionId we initiated
+    const sessionId = sessionIdUrl;
+
+    const { data: session } = await sb.from("table_sessions").select("status, payment_reference, payment_method, hotel_id").eq("id", sessionId).single();
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    if (session.hotel_id !== hotelId) {
+      return NextResponse.json({ error: "Hotel ID mismatch" }, { status: 403 });
+    }
+
+    // Security Check: The PhonePe payload must correspond to the transaction we initiated for this session
+    if (session.payment_reference !== transactionId) {
+       console.warn(`Transaction ID mismatch for session ${sessionId}`);
+       return NextResponse.json({ error: "Payment does not match this session" }, { status: 400 });
     }
 
     if (session.status === "open") {
@@ -60,19 +78,34 @@ export async function POST(req: NextRequest) {
     }
 
     if (session.status === "checkout_initiated" || session.status === "bill_printed") {
-      // Dine-in: Mark session as paid (closes it)
       const { markAsPaid } = await import("@/lib/session-service");
       await markAsPaid(sessionId, session.payment_method ?? "UPI");
       return NextResponse.json({ success: true, message: "Dine-in order marked as paid" });
     }
 
+    if (session.status !== "payment_pending" && session.status !== "draft") {
+       return NextResponse.json({ status: "ignored, session is not in a payable state", current_status: session.status });
+    }
+
     await assignOrderNumber(sessionId);
 
-    await sb.from("table_sessions").update({ 
+    const { data: updated, error: updateError } = await sb.from("table_sessions").update({ 
       status: "open", 
       payment_method: session.payment_method ?? "UPI",
       payment_reference: responsePayload.data?.transactionId || session.payment_reference
-    }).eq("id", sessionId);
+    })
+    .eq("id", sessionId)
+    .neq("status", "open")
+    .select("id")
+    .maybeSingle();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    if (!updated) {
+       return NextResponse.json({ success: true, message: "Already processed" });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

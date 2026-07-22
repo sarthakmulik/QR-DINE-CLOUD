@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import { markAsPaid } from "@/lib/session-service";
 import type { Hotel } from "@/lib/types";
 
@@ -34,6 +35,9 @@ export async function POST(
     // --- RAZORPAY VERIFICATION ---
     if (active_pg === "razorpay" && razorpay && body.gateway === "razorpay") {
       const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = body;
+      if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+        return NextResponse.json({ error: "Missing Razorpay verification parameters" }, { status: 400 });
+      }
       
       const generated_signature = crypto
         .createHmac("sha256", razorpay.key_secret)
@@ -50,10 +54,24 @@ export async function POST(
         .from("table_sessions")
         .select("*")
         .eq("id", sessionId)
+        .eq("hotel_id", hotelId)
+        .eq("table_number", Number(tableNumber))
+        .in("status", ["checkout_initiated", "bill_printed"])
         .single();
 
       if (!session) {
         return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      }
+
+      const razorpayOrder = await new Razorpay({ key_id: razorpay.key_id, key_secret: razorpay.key_secret })
+        .orders.fetch(razorpay_order_id);
+      if (
+        razorpayOrder.status !== "paid" ||
+        razorpayOrder.notes?.hotelId !== hotelId ||
+        razorpayOrder.notes?.sessionId !== sessionId ||
+        Number(razorpayOrder.amount) !== Math.round(Number(session.total) * 100)
+      ) {
+        return NextResponse.json({ error: "Payment does not match this order" }, { status: 400 });
       }
 
       // Mark session as paid
@@ -76,6 +94,9 @@ export async function POST(
         .from("table_sessions")
         .select("*")
         .eq("id", sessionId)
+        .eq("hotel_id", hotelId)
+        .eq("table_number", Number(tableNumber))
+        .in("status", ["checkout_initiated", "bill_printed"])
         .single();
         
       if (!session || !session.payment_reference) {
@@ -103,7 +124,11 @@ export async function POST(
 
       const phonePeData = await phonePeRes.json();
 
-      if (phonePeData.success && phonePeData.code === "PAYMENT_SUCCESS") {
+      if (
+        phonePeData.success &&
+        phonePeData.code === "PAYMENT_SUCCESS" &&
+        phonePeData.data?.merchantTransactionId === transactionId
+      ) {
         await markAsPaid(sessionId, session.payment_method ?? "UPI", session);
         return NextResponse.json({ success: true });
       } else {

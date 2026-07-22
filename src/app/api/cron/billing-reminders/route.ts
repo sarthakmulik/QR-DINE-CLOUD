@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -55,10 +55,11 @@ export async function GET(req: Request) {
         
         const { count } = await sb
           .from("whatsapp_logs")
-          .select("*", { count: "exact", head: true })
+          .select("id", { count: "exact", head: true })
           .eq("hotel_id", hotel.id)
           .eq("provider_type", "platform")
-          .gte("created_at", paymentDate.toISOString());
+          .gte("created_at", paymentDate.toISOString())
+          .lte("created_at", new Date().toISOString());
           
         waCost = (count || 0) * rate;
       }
