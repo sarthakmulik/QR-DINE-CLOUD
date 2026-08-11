@@ -656,6 +656,33 @@ export default function DineClient({
   const [ordering, setOrdering] = useState(false);
   const [bounceId, setBounceId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = useCallback((msg: string, type: "success" | "error" | "info" = "info", duration = 3500) => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), duration);
+  }, []);
+
+  const renderToast = useCallback(() => {
+    if (!toast) return null;
+    
+    let bgClass = "bg-brand-600"; 
+    let Icon = AlertCircle;
+    
+    if (toast.type === "success") {
+      bgClass = "bg-emerald-600";
+      Icon = CheckCircle;
+    } else if (toast.type === "error") {
+      bgClass = "bg-rose-600";
+      Icon = AlertCircle;
+    }
+
+    return (
+      <div className={`fixed top-4 left-4 right-4 z-[100] ${bgClass} text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 max-w-md mx-auto border border-white/10 backdrop-blur-md animate-fade-in`}>
+        <Icon className="w-5 h-5 flex-shrink-0 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]" />
+        <span className="text-xs font-bold tracking-wide leading-tight">{toast.message}</span>
+      </div>
+    );
+  }, [toast]);
   const [customizations, setCustomizations] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [upsellsMap, setUpsellsMap] = useState<Record<string, string>>({});
@@ -798,32 +825,6 @@ export default function DineClient({
     }
   }, []);
 
-  const showToast = useCallback((msg: string, type: "success" | "error" | "info" = "info", duration = 3500) => {
-    setToast({ message: msg, type });
-    setTimeout(() => setToast(null), duration);
-  }, []);
-
-  const renderToast = useCallback(() => {
-    if (!toast) return null;
-    
-    let bgClass = "bg-brand-600"; 
-    let Icon = AlertCircle;
-    
-    if (toast.type === "success") {
-      bgClass = "bg-emerald-600";
-      Icon = CheckCircle;
-    } else if (toast.type === "error") {
-      bgClass = "bg-rose-600";
-      Icon = AlertCircle;
-    }
-
-    return (
-      <div className={`fixed top-4 left-4 right-4 z-[100] ${bgClass} text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 max-w-md mx-auto border border-white/10 backdrop-blur-md animate-fade-in`}>
-        <Icon className="w-5 h-5 flex-shrink-0 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]" />
-        <span className="text-xs font-bold tracking-wide leading-tight">{toast.message}</span>
-      </div>
-    );
-  }, [toast]);
 
   const load = useCallback(async (sessionOnly = false) => {
     let sign = "";
