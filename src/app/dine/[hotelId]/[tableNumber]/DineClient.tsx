@@ -19,6 +19,7 @@ interface MenuItem {
   containsNuts?: boolean;
   isGlutenFree?: boolean;
   isRecommended?: boolean;
+  parentItemId?: string | null;
 }
 
 interface Category {
