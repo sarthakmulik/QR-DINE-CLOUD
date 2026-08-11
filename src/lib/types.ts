@@ -72,6 +72,7 @@ export interface Hotel {
   } | null;
   welcome_animation_enabled?: boolean | null;
   welcome_animation_preset?: string | null;
+  is_repeating_customer_discount_enabled?: boolean;
 }
 
 export interface RestaurantTable {
@@ -215,6 +216,7 @@ export function mapHotel(h: Hotel) {
     whatsappProviderType: h.whatsapp_provider_type ?? "platform",
     welcomeAnimationEnabled: h.welcome_animation_enabled ?? true,
     welcomeAnimationPreset: h.welcome_animation_preset || "elegant",
+    isRepeatingCustomerDiscountEnabled: h.is_repeating_customer_discount_enabled ?? true,
     quickServiceToken: h.quick_service_token ?? null,
     attendanceQrToken: h.attendance_qr_token ?? null,
     customizations,

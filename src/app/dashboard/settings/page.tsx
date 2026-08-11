@@ -27,6 +27,7 @@ export default function SettingsPage() {
     password: "",
     status: "active",
     secureQr: false,
+    isRepeatingCustomerDiscountEnabled: true,
     whatsappBillEnabled: false,
     whatsappProviderType: "platform",
     whatsappCustomApiKey: "",
@@ -172,6 +173,7 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
+          isRepeatingCustomerDiscountEnabled: data.isRepeatingCustomerDiscountEnabled ?? true,
           whatsappBillEnabled: !!data.whatsappBillEnabled || !!data.whatsapp_bill_enabled,
           whatsappProviderType: data.whatsappProviderType || data.whatsapp_provider_type || "platform",
           whatsappCustomApiKey: data.whatsappCustomApiKey || data.whatsapp_custom_api_key || "",
@@ -222,6 +224,7 @@ export default function SettingsPage() {
           password: "",
           status: data.status || "active",
           secureQr: !!data.secureQr,
+          isRepeatingCustomerDiscountEnabled: data.isRepeatingCustomerDiscountEnabled ?? true,
           whatsappBillEnabled: !!data.whatsappBillEnabled || !!data.whatsapp_bill_enabled,
           whatsappProviderType: data.whatsappProviderType || data.whatsapp_provider_type || "platform",
           whatsappCustomApiKey: data.whatsappCustomApiKey || data.whatsapp_custom_api_key || "",
@@ -320,6 +323,7 @@ export default function SettingsPage() {
         ownerEmail: form.email,
         status: form.status,
         secureQr: form.secureQr,
+        isRepeatingCustomerDiscountEnabled: form.isRepeatingCustomerDiscountEnabled,
         customizations: form.customizations,
       };
       sessionStorage.setItem("admin_profile", JSON.stringify(updatedProfile));
@@ -491,6 +495,24 @@ export default function SettingsPage() {
                 <span className="text-[10px] text-amber-800 font-semibold block bg-amber-100/50 px-2 py-1 rounded-lg">
                   ⚠️ Note: Activating this immediately invalidates legacy QR scans. You will need to regenerate and reprint your table QRs.
                 </span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-brand-50/40 border border-brand-200/50 rounded-2xl p-4">
+              <input
+                type="checkbox"
+                id="isRepeatingCustomerDiscountEnabled"
+                checked={form.isRepeatingCustomerDiscountEnabled ?? true}
+                onChange={(e) => setForm({ ...form, isRepeatingCustomerDiscountEnabled: e.target.checked })}
+                className="mt-1.5 h-4 w-4 rounded border-gray-300 dark:border-zinc-700 text-brand-600 focus:ring-brand-500 cursor-pointer"
+              />
+              <div className="space-y-1">
+                <label htmlFor="isRepeatingCustomerDiscountEnabled" className="block text-sm font-bold text-gray-800 dark:text-zinc-200 cursor-pointer">
+                  Repeating Customer Discount (Mandatory Phone Number)
+                </label>
+                <p className="text-xs text-gray-500 dark:text-zinc-400 dark:text-zinc-500 leading-relaxed">
+                  If enabled, dine-in customers will be required to provide their phone number before placing their first order, allowing you to track loyalty and offer discounts.
+                </p>
               </div>
             </div>
 

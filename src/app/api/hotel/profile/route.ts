@@ -207,6 +207,10 @@ export async function PATCH(req: NextRequest) {
       updates.welcome_animation_enabled = Boolean(body.welcomeAnimationEnabled);
     }
 
+    if (body.isRepeatingCustomerDiscountEnabled !== undefined) {
+      updates.is_repeating_customer_discount_enabled = Boolean(body.isRepeatingCustomerDiscountEnabled);
+    }
+
     if (body.welcomeAnimationPreset !== undefined) {
       const preset = String(body.welcomeAnimationPreset);
       if (['elegant', 'vibrant', 'minimal'].includes(preset)) {

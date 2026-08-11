@@ -56,6 +56,7 @@ type PageState =
       hotelLogo: string | null;
       hotelPlan: string;
       taxRate: number;
+      isPhoneMandatory: boolean;
       sessionId: string | null;
       categories: Category[];
       runningItems: CartItem[];
@@ -865,6 +866,7 @@ export default function DineClient({
         sessionStorage.setItem(`hotel_logo_${hotelId}`, data.hotel.logo || "");
         sessionStorage.setItem(`hotel_plan_${hotelId}`, data.hotel.plan);
         sessionStorage.setItem(`hotel_tax_rate_${hotelId}`, String(data.hotel.taxRate));
+        sessionStorage.setItem(`hotel_phone_mandatory_${hotelId}`, String(data.hotel.isRepeatingCustomerDiscountEnabled));
       }
       setState((prev) => {
         return {
@@ -943,6 +945,7 @@ export default function DineClient({
       sessionStorage.setItem(`hotel_logo_${hotelId}`, data.hotel.logo || "");
       sessionStorage.setItem(`hotel_plan_${hotelId}`, data.hotel.plan);
       sessionStorage.setItem(`hotel_tax_rate_${hotelId}`, String(data.hotel.taxRate));
+      sessionStorage.setItem(`hotel_phone_mandatory_${hotelId}`, String(data.hotel.isRepeatingCustomerDiscountEnabled));
     }
     if (data.categories && !sessionOnly) {
       sessionStorage.setItem(`menu_${hotelId}`, JSON.stringify(data.categories));
@@ -972,6 +975,7 @@ export default function DineClient({
         hotelLogo: data.hotel.logo,
         hotelPlan: data.hotel.plan,
         taxRate: data.hotel.taxRate !== undefined && data.hotel.taxRate !== null ? data.hotel.taxRate : 5,
+        isPhoneMandatory: data.hotel.isRepeatingCustomerDiscountEnabled ?? true,
         sessionId: data.session ? data.session.id : null,
         categories,
         runningItems: data.session ? data.session.items : [],
@@ -1209,6 +1213,7 @@ export default function DineClient({
           hotelLogo: sessionStorage.getItem(`hotel_logo_${hotelId}`) || null,
           hotelPlan: sessionStorage.getItem(`hotel_plan_${hotelId}`) || "basic",
           taxRate: Number(sessionStorage.getItem(`hotel_tax_rate_${hotelId}`) || 5),
+          isPhoneMandatory: sessionStorage.getItem(`hotel_phone_mandatory_${hotelId}`) !== "false",
           sessionId: null,
           categories,
           runningItems: [],
@@ -1455,7 +1460,7 @@ export default function DineClient({
   async function placeOrder() {
     if (cart.length === 0) return;
 
-    if (state.type === "menu" && !state.sessionId && (!customerName || customerPhone.length !== 10)) {
+    if (state.type === "menu" && state.isPhoneMandatory && !state.sessionId && (!customerName || customerPhone.length !== 10)) {
       setShowIdentityModal(true);
       setShowCart(false);
       return;
