@@ -56,6 +56,10 @@ export interface Hotel {
     announcementText?: string;
     welcomeMessage?: string;
     layout?: string;
+    printerSize?: string;
+    printerType?: "html" | "raw";
+    desktopPrinter?: string;
+    bluetoothPrinterMac?: string;
   } | null;
   payment_settings?: {
     active_pg?: "none" | "razorpay" | "phonepe";
@@ -220,7 +224,13 @@ export function mapHotel(h: Hotel) {
     isRepeatingCustomerDiscountEnabled: h.is_repeating_customer_discount_enabled ?? true,
     quickServiceToken: h.quick_service_token ?? null,
     attendanceQrToken: h.attendance_qr_token ?? null,
-    customizations,
+    customizations: {
+      ...customizations,
+      printerSize: customizations.printerSize || "80mm",
+      printerType: customizations.printerType || "html",
+      desktopPrinter: customizations.desktopPrinter || "",
+      bluetoothPrinterMac: customizations.bluetoothPrinterMac || "",
+    },
     paymentSettings: h.payment_settings ? {
       active_pg: h.payment_settings.active_pg || "none",
       razorpay: h.payment_settings.razorpay ? { key_id: h.payment_settings.razorpay.key_id } : undefined,

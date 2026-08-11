@@ -385,7 +385,7 @@ export default function TablesDashboardPage() {
         (data.hotel?.printerSize as PrinterSize) ||
         "80mm";
       const html = generateBillHTML(data, size, paymentMethod);
-      await silentPrint(html);
+      await silentPrint(html, data, paymentMethod);
     } catch (e) {
       console.error("Silent bill print error:", e);
       alert("Thermal print failed. Please check printer connection or print dialog.");

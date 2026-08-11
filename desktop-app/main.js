@@ -129,8 +129,47 @@ function setupIpcHandlers() {
     }
   });
 
+  ipcMain.handle('get-serial-ports', async () => {
+    try {
+      const { SerialPort } = require('serialport');
+      const ports = await SerialPort.list();
+      return ports;
+    } catch (err) {
+      console.error('Failed to get serial ports:', err);
+      return [];
+    }
+  });
+
   ipcMain.handle('print-html', async (_event, html, printerName) => {
     return printInHiddenWindow(html, printerName);
+  });
+
+  ipcMain.handle('print-raw', async (_event, data, portName) => {
+    return new Promise((resolve) => {
+      if (!portName) return resolve({ success: false, error: 'No COM port specified' });
+      
+      const { SerialPort } = require('serialport');
+      const port = new SerialPort({ path: portName, baudRate: 9600 }, (err) => {
+        if (err) {
+          console.error('Serial port open error:', err);
+          return resolve({ success: false, error: err.message });
+        }
+      });
+      
+      const buffer = Buffer.from(data);
+      port.write(buffer, (err) => {
+        if (err) {
+          console.error('Serial port write error:', err);
+          return resolve({ success: false, error: err.message });
+        }
+        
+        port.drain((drainErr) => {
+          port.close();
+          if (drainErr) return resolve({ success: false, error: drainErr.message });
+          resolve({ success: true });
+        });
+      });
+    });
   });
 
   ipcMain.handle('test-print', async (_event, printerName) => {

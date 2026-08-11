@@ -190,33 +190,70 @@ export function generateBillHTML(
 </html>`;
 }
 
+import { Capacitor } from "@capacitor/core";
+import { generateRawEscPos } from "./esc-pos-encoder";
+
 /**
- * Silently prints an HTML string.
- * If running in Desktop App, it uses electronAPI for native thermal printing.
- * Otherwise, uses a hidden iframe with srcdoc for browser printing.
+ * Silently prints an HTML string or raw ESC/POS data.
+ * If printerType="raw", sends raw bytes to Android Bluetooth or Desktop Serial.
+ * Otherwise, uses electronAPI (Desktop) or hidden iframe (Browser) for HTML printing.
  */
-export async function silentPrint(html: string): Promise<void> {
-  // Check for desktop app printing first
-  if (typeof window !== "undefined" && (window as any).electronAPI) {
+export async function silentPrint(html: string, data?: BillData, paymentMethod?: string): Promise<void> {
+  const cached = typeof window !== "undefined" ? sessionStorage.getItem("admin_profile") : null;
+  let printerType = "html";
+  let desktopPrinter = "";
+  let bluetoothPrinterMac = "";
+  let printerSize: PrinterSize = "80mm";
+
+  if (cached) {
+    const profile = JSON.parse(cached);
+    printerType = profile.customizations?.printerType || "html";
+    desktopPrinter = profile.customizations?.desktopPrinter || "";
+    bluetoothPrinterMac = profile.customizations?.bluetoothPrinterMac || "";
+    printerSize = profile.customizations?.printerSize || "80mm";
+  }
+
+  const isDesktop = typeof window !== "undefined" && !!(window as any).electronAPI;
+  const isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
+
+  if (printerType === "raw" && data) {
     try {
-      const cached = sessionStorage.getItem("admin_profile");
-      let desktopPrinter = "";
-      if (cached) {
-        const profile = JSON.parse(cached);
-        desktopPrinter = profile.customizations?.desktopPrinter || "";
+      const bytes = generateRawEscPos(data, printerSize, paymentMethod);
+
+      if (isDesktop) {
+        if (!desktopPrinter) throw new Error("No COM port configured for raw printing");
+        const res = await (window as any).electronAPI.printRaw(bytes, desktopPrinter);
+        if (!res.success) throw new Error(res.error);
+        return;
+      } else if (isAndroid) {
+        if (!bluetoothPrinterMac) throw new Error("No Bluetooth printer configured");
+        const mod = await import("@ascentio-it/capacitor-bluetooth-serial");
+        const BluetoothSerial = mod.BluetoothSerial;
+        await BluetoothSerial.connect(bluetoothPrinterMac);
+        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+        await BluetoothSerial.write(buffer);
+        await BluetoothSerial.disconnect();
+        return;
       }
-      
-      const res = await (window as any).electronAPI.printHtml(html, desktopPrinter);
-      if (!res.success) {
-        console.error("Desktop printing failed:", res.error);
-        throw new Error(res.error || "Desktop printing failed");
-      }
-      return;
-    } catch (err) {
-      console.error("Electron API print failed, falling back to browser print", err);
+    } catch (err: any) {
+      console.error("Raw print failed:", err);
+      // Fall through to HTML print as backup, or alert?
+      alert(`Raw Print Failed: ${err.message}. Falling back to standard print.`);
     }
   }
 
+  // HTML Print (Fallback or configured)
+  if (isDesktop) {
+    try {
+      const res = await (window as any).electronAPI.printHtml(html, desktopPrinter);
+      if (!res.success) throw new Error(res.error || "Desktop printing failed");
+      return;
+    } catch (err) {
+      console.error("Electron API HTML print failed", err);
+    }
+  }
+
+  // Browser iframe HTML print
   return new Promise((resolve, reject) => {
     const iframe = document.createElement("iframe");
     iframe.style.cssText =

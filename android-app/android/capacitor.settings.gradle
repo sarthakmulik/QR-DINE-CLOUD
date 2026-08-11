@@ -2,6 +2,9 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
+include ':ascentio-it-capacitor-bluetooth-serial'
+project(':ascentio-it-capacitor-bluetooth-serial').projectDir = new File('../node_modules/@ascentio-it/capacitor-bluetooth-serial/android')
+
 include ':capacitor-mlkit-barcode-scanning'
 project(':capacitor-mlkit-barcode-scanning').projectDir = new File('../node_modules/@capacitor-mlkit/barcode-scanning/android')
 

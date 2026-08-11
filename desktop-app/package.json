@@ -9,7 +9,9 @@
   },
   "author": "Sarthak Mulik",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "serialport": "^13.0.0"
+  },
   "devDependencies": {
     "electron": "^34.0.0",
     "electron-builder": "^25.1.8"
