@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Capacitor } from "@capacitor/core";
 
@@ -26,11 +26,7 @@ export function NativePrinterSettings({
   const isDesktop = typeof window !== "undefined" && !!(window as any).electronAPI;
   const isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
 
-  if (!isDesktop && !isAndroid) {
-    return null;
-  }
-
-  async function loadPrinters() {
+  const loadPrinters = useCallback(async () => {
     setLoading(true);
     setPrinters([]);
     try {
@@ -62,11 +58,15 @@ export function NativePrinterSettings({
     } finally {
       setLoading(false);
     }
-  }
+  }, [printerType, isDesktop, isAndroid]);
 
   useEffect(() => {
     loadPrinters();
-  }, [printerType]);
+  }, [loadPrinters]);
+
+  if (!isDesktop && !isAndroid) {
+    return null;
+  }
 
   const currentValue =
     printerType === "raw" && isAndroid

@@ -762,7 +762,7 @@ export default function DineClient({
     } else {
       setLoyaltyDiscount(null);
     }
-  }, [customerPhone, hotelId]);
+  }, [customerPhone, hotelId, customerName, showToast]);
 
   useEffect(() => {
     fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)
@@ -3036,6 +3036,7 @@ export default function DineClient({
             
             {qrImageUrl ? (
               <div className="p-3 bg-white border-2 border-gray-100 rounded-2xl shadow-sm transition-all hover:scale-105 duration-300">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrImageUrl} alt="UPI QR Code" className="w-48 h-48 rounded-xl object-contain" />
               </div>
             ) : (
