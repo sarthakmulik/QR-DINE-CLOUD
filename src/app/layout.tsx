@@ -9,6 +9,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "QR Dine Cloud",
   description: "Multi-tenant QR-based restaurant order management",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "QR Dine Cloud",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
