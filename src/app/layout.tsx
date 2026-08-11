@@ -21,8 +21,7 @@ export default function RootLayout({
       <head>
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;700&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet" />
-        {/* PWA Manifest — enables "Add to Home Screen" on Staff Portal */}
-        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
+        {/* PWA Manifest is now served dynamically via metadata per route */}
         <meta name="theme-color" content="#111827" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>

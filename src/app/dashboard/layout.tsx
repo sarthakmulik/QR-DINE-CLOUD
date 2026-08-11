@@ -8,6 +8,11 @@ import { BroadcastBanner } from "@/components/dashboard/broadcast-banner";
 import { NetworkStatus } from "@/components/dashboard/network-status";
 import type { Hotel } from "@/lib/types";
 import { PlanProvider } from "@/lib/contexts/plan-context";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  manifest: "/manifest-dashboard.json",
+};
 
 export default async function DashboardLayout({
   children,
