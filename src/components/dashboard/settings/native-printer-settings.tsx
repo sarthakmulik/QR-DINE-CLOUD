@@ -114,18 +114,21 @@ export function NativePrinterSettings({
         } else if (isAndroid) {
           if (!currentValue) return alert("Select a Bluetooth printer first.");
           alert("Connecting to printer...");
-          await BluetoothSerial.connect(currentValue);
-          // Convert Uint8Array to ArrayBuffer or string as required by plugin
-          const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-          await BluetoothSerial.write(buffer);
-          await BluetoothSerial.disconnect();
+          await BluetoothSerial.connect({ address: currentValue });
+          // Convert Uint8Array to string for the plugin
+          let strValue = "";
+          for (let i = 0; i < bytes.length; i++) {
+            strValue += String.fromCharCode(bytes[i]);
+          }
+          await BluetoothSerial.write({ address: currentValue, value: strValue });
+          await BluetoothSerial.disconnect({ address: currentValue });
           alert("✅ Raw print sent!");
         }
       }
     } catch (e: any) {
       alert("❌ Test print failed: " + e.message);
-      if (isAndroid && printerType === "raw") {
-        BluetoothSerial?.disconnect().catch(() => {});
+      if (isAndroid && printerType === "raw" && currentValue) {
+        BluetoothSerial?.disconnect({ address: currentValue }).catch(() => {});
       }
     }
   }

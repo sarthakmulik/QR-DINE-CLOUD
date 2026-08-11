@@ -229,10 +229,14 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
         if (!bluetoothPrinterMac) throw new Error("No Bluetooth printer configured");
         const mod = await import("@ascentio-it/capacitor-bluetooth-serial");
         const BluetoothSerial = mod.BluetoothSerial;
-        await BluetoothSerial.connect(bluetoothPrinterMac);
-        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-        await BluetoothSerial.write(buffer);
-        await BluetoothSerial.disconnect();
+        await BluetoothSerial.connect({ address: bluetoothPrinterMac });
+        // Convert Uint8Array to string (Java plugin expects string and uses UTF-8 decoding)
+        let strValue = "";
+        for (let i = 0; i < bytes.length; i++) {
+          strValue += String.fromCharCode(bytes[i]);
+        }
+        await BluetoothSerial.write({ address: bluetoothPrinterMac, value: strValue });
+        await BluetoothSerial.disconnect({ address: bluetoothPrinterMac });
         return;
       }
     } catch (err: any) {
