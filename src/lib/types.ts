@@ -156,6 +156,7 @@ export interface MenuItem {
   contains_nuts?: boolean | null;
   is_gluten_free?: boolean | null;
   is_recommended?: boolean | null;
+  parent_item_id?: string | null;
 }
 
 export interface AuthUser {
@@ -299,6 +300,7 @@ export function mapMenuItem(i: MenuItem) {
     containsNuts: !!i.contains_nuts,
     isGlutenFree: !!i.is_gluten_free,
     isRecommended: !!i.is_recommended,
+    parentItemId: i.parent_item_id ?? null,
   };
 }
 export interface Customer {

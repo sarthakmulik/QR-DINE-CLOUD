@@ -2173,13 +2173,32 @@ export default function DineClient({
   const filteredCategories = useMemo(() => {
     if (state.type !== "menu") return [];
     return state.categories.map((cat) => {
-      const items = cat.items.filter((item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+      let mappedItems = cat.items.map((item) => {
+        if (item.parentItemId) {
+          return { ...item, name: `${item.name} 🔄 Refill` };
+        }
+        return item;
+      });
+
+      const items = mappedItems.filter((item) => {
+        // Search filter
+        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        if (!matchesSearch) return false;
+
+        // Refill logic: if it has a parent, hide it unless the parent is in runningItems or cart
+        if (item.parentItemId) {
+          const inRunning = state.runningItems?.some(i => i.menuItemId === item.parentItemId) ?? false;
+          const inCart = cart?.some(i => i.menuItemId === item.parentItemId) ?? false;
+          if (!inRunning && !inCart) return false;
+        }
+
+        return true;
+      });
       return { ...cat, items };
     }).filter((cat) => cat.items.length > 0);
-  }, [state, searchQuery]);
+  }, [state, searchQuery, cart]);
 
   const brandVariables = customizations?.primaryColor ? generateBrandColors(customizations.primaryColor) : {};
   const customStyles = {

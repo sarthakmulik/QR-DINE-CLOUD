@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
         contains_nuts: !!body.containsNuts,
         is_gluten_free: !!body.isGlutenFree,
         is_recommended: !!body.isRecommended,
+        parent_item_id: body.parentItemId || null,
       })
       .select("*")
       .single<MenuItem>();

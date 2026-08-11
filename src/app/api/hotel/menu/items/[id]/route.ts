@@ -45,6 +45,7 @@ export async function PATCH(
     if (body.containsNuts !== undefined) updates.contains_nuts = Boolean(body.containsNuts);
     if (body.isGlutenFree !== undefined) updates.is_gluten_free = Boolean(body.isGlutenFree);
     if (body.isRecommended !== undefined) updates.is_recommended = Boolean(body.isRecommended);
+    if (body.parentItemId !== undefined) updates.parent_item_id = body.parentItemId || null;
 
 
     const { data: item, error } = await sb

@@ -24,6 +24,7 @@ interface MenuItem {
   containsNuts?: boolean;
   isGlutenFree?: boolean;
   isRecommended?: boolean;
+  parentItemId?: string | null;
 }
 
 interface Category {
@@ -57,6 +58,7 @@ export default function MenuPage() {
     containsNuts: false,
     isGlutenFree: false,
     isRecommended: false,
+    parentItemId: "",
   });
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [imageError, setImageError] = useState("");
@@ -66,6 +68,7 @@ export default function MenuPage() {
   const maxItems = planLimit("max_menu_items");
   const totalItems = categories.reduce((sum, cat) => sum + (cat.items?.length || 0), 0);
   const limitReached = typeof maxItems === "number" && totalItems >= maxItems;
+  const allItems = categories.flatMap(cat => cat.items || []);
 
   async function loadMenu() {
     await mutate();
@@ -221,6 +224,7 @@ export default function MenuPage() {
         containsNuts: false,
         isGlutenFree: false,
         isRecommended: false,
+        parentItemId: "",
       });
       setImageError("");
       loadMenu();
@@ -286,6 +290,7 @@ export default function MenuPage() {
       containsNuts: false,
       isGlutenFree: false,
       isRecommended: false,
+      parentItemId: "",
     });
     setShowItemModal(true);
   }
@@ -306,6 +311,7 @@ export default function MenuPage() {
       containsNuts: !!item.containsNuts,
       isGlutenFree: !!item.isGlutenFree,
       isRecommended: !!item.isRecommended,
+      parentItemId: item.parentItemId || "",
     });
     setShowItemModal(true);
   }
@@ -452,9 +458,16 @@ export default function MenuPage() {
                           </div>
                           
                           <div className="flex flex-col justify-center min-w-0 flex-1">
-                            <h3 className="font-bold text-slate-900 dark:text-white leading-tight truncate" title={item.name}>
-                              {item.name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-slate-900 dark:text-white leading-tight truncate" title={item.name}>
+                                {item.name}
+                              </h3>
+                              {item.parentItemId && (
+                                <span className="px-1.5 py-0.5 bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-400 text-[10px] font-bold uppercase tracking-wider rounded">
+                                  Refill
+                                </span>
+                              )}
+                            </div>
                             <div className="font-black text-brand-600 mt-0.5 text-sm">
                               {formatINR(item.price)}
                             </div>
@@ -616,6 +629,25 @@ export default function MenuPage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Is this a Refill / Dependent Item?</label>
+            <select
+              value={itemForm.parentItemId || ""}
+              onChange={(e) => setItemForm({ ...itemForm, parentItemId: e.target.value })}
+              className="select-base h-11 rounded-xl shadow-sm w-full"
+            >
+              <option value="">No, this is a normal item</option>
+              <optgroup label="Select Parent Item">
+                {allItems.map((i) => (
+                  <option key={i.id} value={i.id} disabled={i.id === editingItem?.id}>
+                    {i.name} {i.id === editingItem?.id ? "(This Item)" : ""}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <p className="text-[10px] text-slate-500 mt-1">If set, this item will be hidden on the menu until the customer orders the selected parent item.</p>
           </div>
 
           <div>

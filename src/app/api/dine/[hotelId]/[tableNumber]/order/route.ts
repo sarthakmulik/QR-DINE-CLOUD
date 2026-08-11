@@ -93,7 +93,7 @@ export async function POST(
     // Batch-fetch all menu items + hotel status in PARALLEL (not serial per item)
     const [menuItemsRes, hotelRes] = await Promise.all([
       sb.from("menu_items")
-        .select("id, name, price, is_available, menu_categories(name)")
+        .select("id, name, price, is_available, parent_item_id, menu_categories(name)")
         .in("id", menuItemIds)
         .eq("hotel_id", hotelId)
         .eq("is_available", true),
@@ -117,7 +117,7 @@ export async function POST(
     }
 
     // Build a lookup map for O(1) price lookup
-    const menuItemMap = new Map<string, { id: string; name: string; price: number; category_name?: string }>(
+    const menuItemMap = new Map<string, { id: string; name: string; price: number; category_name?: string; parent_item_id?: string | null }>(
       (menuItemsRes.data || []).map((m: any) => [
         m.id, 
         { ...m, category_name: m.menu_categories?.name }
@@ -154,6 +154,16 @@ export async function POST(
     for (const cartItem of items) {
       const menuItem = menuItemMap.get(cartItem.menuItemId);
       if (!menuItem) continue; // Skip unavailable items
+
+      // Refill Validation: if the item requires a parent, ensure the parent is ordered.
+      if (menuItem.parent_item_id) {
+        const isParentInSession = session.items.some((si: any) => si.menuItemId === menuItem.parent_item_id);
+        const isParentInCart = items.some(i => i.menuItemId === menuItem.parent_item_id);
+        
+        if (!isParentInSession && !isParentInCart) {
+           return NextResponse.json({ error: `Cannot order ${menuItem.name} without first ordering its parent item.` }, { status: 400 });
+        }
+      }
 
       const qty = Math.max(1, Math.min(99, parseInt(String(cartItem.quantity)) || 1));
 
