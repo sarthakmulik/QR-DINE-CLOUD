@@ -29,8 +29,8 @@ export async function POST(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    if (session.status !== "payment_pending") {
-      return NextResponse.json({ error: "Only unpaid orders can be cancelled" }, { status: 400 });
+    if (session.status === "closed" || session.status === "cancelled") {
+      return NextResponse.json({ error: "Only active sessions can be cancelled" }, { status: 400 });
     }
 
     const now = new Date().toISOString();
@@ -44,6 +44,14 @@ export async function POST(
       .eq("id", id)
       .select("*")
       .single<TableSession>();
+
+    // Clear the table's current session pointer so it can be scanned again immediately
+    if (session.table_id) {
+      await sb
+        .from("restaurant_tables")
+        .update({ current_session_id: null })
+        .eq("id", session.table_id);
+    }
 
     revalidateTag(`staff-overview-${hotelId}`);
     revalidateTag(`kitchen-orders-${hotelId}`);

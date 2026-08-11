@@ -84,8 +84,8 @@ export default function LiveOrdersPage() {
     }
   }
 
-  async function handleCancelOrder(sessionId: string) {
-    if (!confirm("Are you sure you want to cancel this unpaid order?")) return;
+  async function handleCancelOrder(sessionId: string, promptText = "Are you sure you want to cancel this unpaid order?") {
+    if (!confirm(promptText)) return;
     // Optimistic Update
     mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
@@ -220,6 +220,15 @@ export default function LiveOrdersPage() {
                     <p className="font-black text-2xl text-brand-600 tracking-tight leading-none mt-1">
                       {formatINR(session.total)}
                     </p>
+                    
+                    {session.status === "open" && !isOpenQS && (
+                      <button
+                         onClick={() => handleCancelOrder(session.id, "Are you sure you want to discard this table and clear the current session?")}
+                         className="text-[11px] text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded-md mt-1 transition-colors uppercase tracking-widest border border-red-100"
+                      >
+                        Discard Table
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -300,7 +309,7 @@ export default function LiveOrdersPage() {
                                     console.error(err);
                                   }
                                 }}
-                                className="w-6 h-6 flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover/item:opacity-100"
+                                className="w-6 h-6 flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                                 title="Remove item"
                               >
                                 <AlertCircle size={14} className="hidden" />
