@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Capacitor } from "@capacitor/core";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, ChevronRight, RefreshCw, Printer, AlertCircle } from "lucide-react";
+import { usePrinter } from "@/components/providers/printer-provider";
 
 let BluetoothSerial: any;
 let BleClient: any;
@@ -23,9 +24,12 @@ export function NativePrinterSettings({
   form: any;
   setForm: (v: any) => void;
 }) {
-  const [printers, setPrinters] = useState<any[]>([]);
+  const [printers, setPrinters] = useState<{ name: string; displayName?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const { status: livePrinterStatus } = usePrinter();
 
   const printerType = form.customizations?.printerType || "html";
   const isDesktop = typeof window !== "undefined" && !!(window as any).electronAPI;
@@ -244,61 +248,150 @@ export function NativePrinterSettings({
       )}
 
       {!(printerType === "html" && isAndroid) && (
-        <div className="space-y-2 pt-2">
-          <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">
-            {printerType === "raw" ? (isAndroid ? "Paired Bluetooth Printers" : "Available Serial Ports") : "Available OS Printers"}
-          </label>
-          <div className="flex gap-2 items-center">
-            <div className="relative flex-1 min-w-0">
-              <button
-                type="button"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full flex items-center justify-between border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm text-left shadow-sm overflow-hidden"
-              >
-                <span className="truncate pr-2">
-                  {currentValue 
-                    ? (printers.find(p => p.name === currentValue)?.displayName || currentValue)
-                    : (printerType === "raw" ? "Select device..." : "Use Default OS Printer")}
-                </span>
-                <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
-              </button>
-              
-              {isDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto py-1">
-                    <button
-                      type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-between"
-                      onClick={() => { handleChange(""); setIsDropdownOpen(false); }}
-                    >
-                      <span className="opacity-70">{printerType === "raw" ? "Select device..." : "Use Default OS Printer"}</span>
-                      {currentValue === "" && <Check className="w-4 h-4 text-brand-500" />}
-                    </button>
-                    {printers.map((p: any) => (
+        <div className="space-y-4 pt-2">
+          {printerType === "raw" && isAndroid ? (
+            <>
+              {/* OpenLabel-Style My Devices */}
+              <div>
+                <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block">My Devices</label>
+                {currentValue ? (
+                  <div className="border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 bg-white dark:bg-zinc-900 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-12 h-12 bg-gray-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Printer className="w-6 h-6 text-gray-600 dark:text-zinc-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-bold text-gray-900 dark:text-white truncate max-w-[200px]">
+                            {printers.find(p => p.name === currentValue)?.displayName?.split(' (')[0] || currentValue.replace(/^(ble:|spp:)/, '')}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            livePrinterStatus === "connected" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                            livePrinterStatus === "connecting" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
+                            "bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400"
+                          }`}>
+                            {livePrinterStatus}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-zinc-400">
+                          <span className="font-medium text-gray-700 dark:text-zinc-300">{currentValue.startsWith('ble:') ? 'BLE' : 'SPP'}</span>
+                          <span>{currentValue.replace(/^(ble:|spp:)/, '')}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={testPrint} className="h-8 rounded-lg px-3">
+                        Test
+                      </Button>
+                      <ChevronRight className="w-5 h-5 text-gray-400 opacity-50" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl p-6 text-center bg-gray-50 dark:bg-zinc-900/50">
+                    <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-zinc-400">No device saved yet.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Available Devices */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-gray-900 dark:text-white">Available Devices</label>
+                  <button type="button" onClick={loadPrinters} disabled={loading} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                
+                {printers.length > 0 ? (
+                  <div className="border border-gray-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900 overflow-hidden shadow-sm divide-y divide-gray-100 dark:divide-zinc-800">
+                    {printers.filter(p => p.name !== currentValue).map((p: any) => (
                       <button
                         key={p.name}
                         type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-between"
-                        onClick={() => { handleChange(p.name); setIsDropdownOpen(false); }}
+                        className="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 flex items-center justify-between transition-colors"
+                        onClick={() => { handleChange(p.name); alert("Device saved. Testing connection..."); testPrint(); }}
                       >
-                        <span className="truncate pr-2">{p.displayName || p.name}</span>
-                        {currentValue === p.name && <Check className="w-4 h-4 text-brand-500" />}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{p.displayName?.split(' (')[0] || p.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{p.name}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300" />
                       </button>
                     ))}
+                    {printers.filter(p => p.name !== currentValue).length === 0 && (
+                      <div className="p-6 text-center text-sm text-gray-500">No other devices found.</div>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
-            <Button type="button" variant="secondary" onClick={loadPrinters} disabled={loading}>
-              {loading ? "Scanning..." : "↻ Refresh"}
-            </Button>
-            <Button type="button" variant="secondary" onClick={testPrint}>
-              Test Print
-            </Button>
-          </div>
-          {printerType === "raw" && isAndroid && (
-            <p className="text-xs text-gray-500">Pair your printer in Android Settings first, then click Refresh.</p>
+                ) : (
+                  <div className="space-y-3 p-6 text-center">
+                    <p className="text-sm font-medium text-gray-500">No available devices found</p>
+                    <div className="text-xs text-gray-400 text-left max-w-sm mx-auto space-y-2 pl-4">
+                      <p>1. Try searching again</p>
+                      <p>2. Make sure the device is powered on</p>
+                      <p>3. Ensure the printer is paired in Android Settings</p>
+                      <p>4. Check that Location and Nearby Devices permissions are granted</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Desktop / HTML Dropdown Fallback */}
+              <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">
+                {printerType === "raw" ? "Available Serial Ports" : "Available OS Printers"}
+              </label>
+              <div className="flex gap-2 items-center">
+                <div className="relative flex-1 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm text-left shadow-sm overflow-hidden"
+                  >
+                    <span className="truncate pr-2">
+                      {currentValue 
+                        ? (printers.find(p => p.name === currentValue)?.displayName || currentValue)
+                        : (printerType === "raw" ? "Select device..." : "Use Default OS Printer")}
+                    </span>
+                    <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
+                  </button>
+                  
+                  {isDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto py-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                          onClick={() => { handleChange(""); setIsDropdownOpen(false); }}
+                        >
+                          <span className="opacity-70">{printerType === "raw" ? "Select device..." : "Use Default OS Printer"}</span>
+                          {currentValue === "" && <Check className="w-4 h-4 text-brand-500" />}
+                        </button>
+                        {printers.map((p: any) => (
+                          <button
+                            key={p.name}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                            onClick={() => { handleChange(p.name); setIsDropdownOpen(false); }}
+                          >
+                            <span className="truncate pr-2">{p.displayName || p.name}</span>
+                            {currentValue === p.name && <Check className="w-4 h-4 text-brand-500" />}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <Button type="button" variant="secondary" onClick={loadPrinters} disabled={loading}>
+                  {loading ? "Scanning..." : "↻ Refresh"}
+                </Button>
+                <Button type="button" variant="secondary" onClick={testPrint}>
+                  Test Print
+                </Button>
+              </div>
+            </>
           )}
         </div>
       )}
