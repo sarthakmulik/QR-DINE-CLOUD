@@ -4,11 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Capacitor } from "@capacitor/core";
 
-// Use dynamic import for bluetooth serial to avoid SSR issues
 let BluetoothSerial: any;
+let BleClient: any;
 if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
   import("@ascentio-it/capacitor-bluetooth-serial").then((mod) => {
     BluetoothSerial = mod.BluetoothSerial;
+  }).catch(console.error);
+  import("@capacitor-community/bluetooth-le").then((mod) => {
+    BleClient = mod.BleClient;
   }).catch(console.error);
 }
 
@@ -40,40 +43,82 @@ export function NativePrinterSettings({
         }
       } else if (isAndroid) {
         if (printerType === "raw") {
-          if (!BluetoothSerial) {
-            console.error("BluetoothSerial not loaded yet");
+          if (!BluetoothSerial || !BleClient) {
+            console.error("Bluetooth plugins not loaded yet");
             return;
           }
-          const isEnabled = await BluetoothSerial.isEnabled();
-          if (!isEnabled) {
-            alert("Please enable Bluetooth first.");
-            return;
+          
+          try {
+            // This triggers native Location and Nearby Devices permission prompts
+            await BleClient.initialize();
+            
+            const isLocationEnabled = await BleClient.isLocationEnabled();
+            if (!isLocationEnabled) {
+              await BleClient.openLocationSettings();
+              await new Promise(r => setTimeout(r, 2000));
+            }
+          } catch (e) {
+            console.warn("BLE initialize failed (permissions denied?)", e);
           }
+          
           let devices: any[] = [];
+          const seenMacs = new Set();
+          
+          const addDevice = (d: any, type: string) => {
+            if (!seenMacs.has(d.address)) {
+              seenMacs.add(d.address);
+              devices.push({
+                name: `${type}:${d.address}`, // Prefix MAC with type to route printing
+                displayName: `${d.name || "Unknown"} [${type.toUpperCase()}] (${d.address})`
+              });
+            }
+          };
           
           try {
             const paired = await BluetoothSerial.getPairedDevices();
             if (paired && paired.devices) {
-              devices = [...paired.devices];
+              for (const d of paired.devices) addDevice(d, "spp");
             }
           } catch (e) {
-            console.warn("Failed to get paired devices", e);
+            console.warn("Failed to get paired SPP devices", e);
           }
           
           try {
-            const scanResult = await BluetoothSerial.scan();
-            if (scanResult && scanResult.devices) {
-              for (const dev of scanResult.devices) {
-                if (!devices.find(d => d.address === dev.address)) {
-                  devices.push(dev);
-                }
+            // Concurrent Live Scan: BLE and SPP
+            const bleScanned: any[] = [];
+            
+            // Start BLE Scan
+            const blePromise = BleClient.requestLEScan({}, (result: any) => {
+              if (result.device && result.device.name) {
+                bleScanned.push({ address: result.device.deviceId, name: result.device.name });
               }
+            }).catch((e: any) => console.warn("BLE scan error", e));
+            
+            // Start SPP Scan
+            const sppPromise = BluetoothSerial.scan().catch((e: any) => {
+              console.warn("SPP live scan error", e);
+              return { devices: [] };
+            });
+            
+            // Wait 4 seconds for discovery
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            
+            await BleClient.stopLEScan().catch(() => {});
+            
+            const sppResult = await sppPromise;
+            
+            // Merge SPP
+            if (sppResult && sppResult.devices) {
+              for (const d of sppResult.devices) addDevice(d, "spp");
             }
+            // Merge BLE
+            for (const d of bleScanned) addDevice(d, "ble");
+            
           } catch (e) {
-            console.warn("Bluetooth live scan failed", e);
+            console.warn("Hybrid live scan failed", e);
           }
           
-          setPrinters(devices.map((d: any) => ({ name: d.address, displayName: `${d.name || "Unknown"} (${d.address})` })));
+          setPrinters(devices);
         }
       }
     } catch (e) {
@@ -137,21 +182,13 @@ export function NativePrinterSettings({
         } else if (isAndroid) {
           if (!currentValue) return alert("Select a Bluetooth printer first.");
           alert("Connecting to printer...");
-          await BluetoothSerial.connect({ address: currentValue });
-          const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
-          await BluetoothSerial.write({ address: currentValue, value: base64Value });
-          
-          // Wait 1 second to allow OS Bluetooth buffer to flush over the air before tearing down the socket
-          await new Promise(r => setTimeout(r, 1000));
-          await BluetoothSerial.disconnect({ address: currentValue });
+          const { executeAndroidBluetoothPrint } = await import("@/lib/bill-generator");
+          await executeAndroidBluetoothPrint(bytes, currentValue);
           alert("✅ Raw print sent!");
         }
       }
     } catch (e: any) {
       alert("❌ Test print failed: " + e.message);
-      if (isAndroid && printerType === "raw" && currentValue) {
-        BluetoothSerial?.disconnect({ address: currentValue }).catch(() => {});
-      }
     }
   }
 

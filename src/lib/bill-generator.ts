@@ -196,6 +196,62 @@ import { Capacitor } from "@capacitor/core";
 import { generateRawEscPos } from "./esc-pos-encoder";
 
 /**
+ * Connects and prints to an Android Bluetooth printer using SPP or BLE based on the prefix.
+ */
+export async function executeAndroidBluetoothPrint(bytes: Uint8Array, macWithPrefix: string): Promise<void> {
+  let isBle = false;
+  let mac = macWithPrefix;
+  
+  if (macWithPrefix.startsWith("ble:")) {
+    isBle = true;
+    mac = macWithPrefix.replace("ble:", "");
+  } else if (macWithPrefix.startsWith("spp:")) {
+    isBle = false;
+    mac = macWithPrefix.replace("spp:", "");
+  }
+
+  if (isBle) {
+    const mod = await import("@capacitor-community/bluetooth-le");
+    const BleClient = mod.BleClient;
+    await BleClient.initialize();
+    await BleClient.connect(mac, () => {});
+    const services = await BleClient.getServices(mac);
+    let targetService = "";
+    let targetCharacteristic = "";
+    for (const service of services) {
+      for (const char of service.characteristics) {
+        if (char.properties.write || char.properties.writeWithoutResponse) {
+          targetService = service.uuid;
+          targetCharacteristic = char.uuid;
+          break;
+        }
+      }
+    }
+    if (!targetCharacteristic) {
+      await BleClient.disconnect(mac);
+      throw new Error("No writable characteristic found on BLE printer");
+    }
+    const CHUNK_SIZE = 256;
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      const chunk = bytes.slice(i, i + CHUNK_SIZE);
+      const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+      await BleClient.write(mac, targetService, targetCharacteristic, dataView);
+      await new Promise(r => setTimeout(r, 20));
+    }
+    await new Promise(r => setTimeout(r, 500));
+    await BleClient.disconnect(mac);
+  } else {
+    const mod = await import("@ascentio-it/capacitor-bluetooth-serial");
+    const BluetoothSerial = mod.BluetoothSerial;
+    await BluetoothSerial.connect({ address: mac });
+    const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
+    await BluetoothSerial.write({ address: mac, value: base64Value });
+    await new Promise(r => setTimeout(r, 1000));
+    await BluetoothSerial.disconnect({ address: mac });
+  }
+}
+
+/**
  * Silently prints an HTML string or raw ESC/POS data.
  * If printerType="raw", sends raw bytes to Android Bluetooth or Desktop Serial.
  * Otherwise, uses electronAPI (Desktop) or hidden iframe (Browser) for HTML printing.
@@ -229,15 +285,7 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
         return;
       } else if (isAndroid) {
         if (!bluetoothPrinterMac) throw new Error("No Bluetooth printer configured");
-        const mod = await import("@ascentio-it/capacitor-bluetooth-serial");
-        const BluetoothSerial = mod.BluetoothSerial;
-        await BluetoothSerial.connect({ address: bluetoothPrinterMac });
-        const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
-        await BluetoothSerial.write({ address: bluetoothPrinterMac, value: base64Value });
-        
-        // Wait 1 second to allow OS Bluetooth buffer to flush over the air before tearing down the socket
-        await new Promise(r => setTimeout(r, 1000));
-        await BluetoothSerial.disconnect({ address: bluetoothPrinterMac });
+        await executeAndroidBluetoothPrint(bytes, bluetoothPrinterMac);
         return;
       }
     } catch (err: any) {

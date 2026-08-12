@@ -36,4 +36,20 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    
+    <!-- Location permissions (Required for Bluetooth scanning on Android < 12) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
+    <!-- Legacy Bluetooth permissions (Android < 12) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    
+    <!-- Modern Bluetooth permissions (Android 12+) -->
+    <!-- We do NOT use neverForLocation because Classic SPP scanning uses location to derive physical location -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    
+    <!-- BLE Hardware feature -->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 </manifest>
