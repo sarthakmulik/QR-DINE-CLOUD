@@ -207,7 +207,7 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
         
         const Capacitor = require('@capacitor/core').Capacitor;
         if (Capacitor.isNativePlatform()) {
-          tempQrCode.getRawData(extension as any).then((blob: Blob | null) => {
+          tempQrCode.getRawData(extension as any).then((blob: any) => {
             if (!blob) return;
             const reader = new FileReader();
             reader.readAsDataURL(blob);
