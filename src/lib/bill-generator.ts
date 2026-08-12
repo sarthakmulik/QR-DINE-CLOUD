@@ -232,6 +232,9 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
         await BluetoothSerial.connect({ address: bluetoothPrinterMac });
         const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
         await BluetoothSerial.write({ address: bluetoothPrinterMac, value: base64Value });
+        
+        // Wait 1 second to allow OS Bluetooth buffer to flush over the air before tearing down the socket
+        await new Promise(r => setTimeout(r, 1000));
         await BluetoothSerial.disconnect({ address: bluetoothPrinterMac });
         return;
       }
