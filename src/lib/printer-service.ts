@@ -8,6 +8,7 @@ class PrinterService {
   private currentMacWithPrefix: string | null = null;
   private isAndroid: boolean = false;
   private checkInterval: any = null;
+  private isConnectingLock: boolean = false;
 
   constructor() {
     this.isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
@@ -48,7 +49,8 @@ class PrinterService {
     if (this.checkInterval) clearInterval(this.checkInterval);
 
     const tryConnect = async () => {
-      if (!this.currentMacWithPrefix) return;
+      if (!this.currentMacWithPrefix || this.isConnectingLock) return;
+      this.isConnectingLock = true;
       try {
         this.setStatus("connecting");
         
@@ -69,6 +71,7 @@ class PrinterService {
           const connectedDevices = await BleClient.getConnectedDevices([]);
           if (connectedDevices.some(d => d.deviceId === mac)) {
              this.setStatus("connected");
+             this.isConnectingLock = false;
              return;
           }
           
@@ -94,6 +97,8 @@ class PrinterService {
       } catch (err) {
         console.warn("Background printer connection failed:", err);
         this.setStatus("error");
+      } finally {
+        this.isConnectingLock = false;
       }
     };
 
@@ -161,8 +166,14 @@ class PrinterService {
         }
       } else {
         const { BluetoothSerial } = await import("@ascentio-it/capacitor-bluetooth-serial");
-        const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
-        await BluetoothSerial.write({ address: mac, value: base64Value });
+        // Chunk SPP writes to prevent buffer overflow on cheap thermal printers
+        const CHUNK_SIZE = 1024;
+        for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+          const chunk = bytes.slice(i, i + CHUNK_SIZE);
+          const base64Value = btoa(Array.from(chunk).map(b => String.fromCharCode(b)).join(''));
+          await BluetoothSerial.write({ address: mac, value: base64Value });
+          await new Promise(r => setTimeout(r, 50));
+        }
       }
 
       await new Promise(r => setTimeout(r, 500));
