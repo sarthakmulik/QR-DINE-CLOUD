@@ -165,6 +165,7 @@ export function generateBillHTML(
         <td style="text-align:right;padding:4px 0 2px;border-top:1px dashed #000">${formatINR(session.subtotal)}</td>
       </tr>
       ${discountRow}
+      ${session.taxAmount > 0 ? `
       <tr style="color:#555">
         <td colspan="3" style="padding:2px 0">CGST @ ${cgst}%</td>
         <td style="text-align:right">${formatINR(session.taxAmount / 2)}</td>
@@ -173,6 +174,7 @@ export function generateBillHTML(
         <td colspan="3" style="padding:2px 0">SGST @ ${sgst}%</td>
         <td style="text-align:right">${formatINR(session.taxAmount / 2)}</td>
       </tr>
+      ` : ''}
       <tr class="total-row">
         <td colspan="3" style="padding:4px 0">GRAND TOTAL</td>
         <td style="text-align:right">${formatINR(session.total)}</td>

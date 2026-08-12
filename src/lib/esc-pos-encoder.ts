@@ -165,11 +165,13 @@ export function generateRawEscPos(
     encoder.line(padLeft(`${label}: ${dStr}`, LINE_WIDTH));
   }
   
-  const cgstStr = padLeft((session.taxAmount / 2).toFixed(2), AMT_WIDTH);
-  encoder.line(padLeft(`CGST @ ${cgst}%: ${cgstStr}`, LINE_WIDTH));
-  
-  const sgstStr = padLeft((session.taxAmount / 2).toFixed(2), AMT_WIDTH);
-  encoder.line(padLeft(`SGST @ ${sgst}%: ${sgstStr}`, LINE_WIDTH));
+  if (session.taxAmount > 0) {
+    const cgstStr = padLeft((session.taxAmount / 2).toFixed(2), AMT_WIDTH);
+    encoder.line(padLeft(`CGST @ ${cgst}%: ${cgstStr}`, LINE_WIDTH));
+    
+    const sgstStr = padLeft((session.taxAmount / 2).toFixed(2), AMT_WIDTH);
+    encoder.line(padLeft(`SGST @ ${sgst}%: ${sgstStr}`, LINE_WIDTH));
+  }
   
   encoder.setBold(true);
   const totStr = padLeft(session.total.toFixed(2), AMT_WIDTH);
