@@ -137,11 +137,20 @@ export function generateRawEscPos(
   
   // Items
   for (const item of items) {
-    const nameStr = padRight(item.name.substring(0, NAME_WIDTH), NAME_WIDTH);
+    let nameRemaining = item.name;
     const qtyStr = padLeft(item.quantity.toString(), QTY_WIDTH);
     const rateStr = padLeft(item.price.toFixed(2), RATE_WIDTH);
     const amtStr = padLeft((item.price * item.quantity).toFixed(2), AMT_WIDTH);
-    encoder.line(`${nameStr} ${qtyStr} ${rateStr} ${amtStr}`);
+
+    const firstLineName = padRight(nameRemaining.substring(0, NAME_WIDTH), NAME_WIDTH);
+    encoder.line(`${firstLineName} ${qtyStr} ${rateStr} ${amtStr}`);
+    nameRemaining = nameRemaining.substring(NAME_WIDTH);
+
+    while (nameRemaining.length > 0) {
+      const nextLineName = padRight(nameRemaining.substring(0, NAME_WIDTH), NAME_WIDTH);
+      encoder.line(nextLineName);
+      nameRemaining = nameRemaining.substring(NAME_WIDTH);
+    }
   }
   
   encoder.line("-".repeat(LINE_WIDTH));
