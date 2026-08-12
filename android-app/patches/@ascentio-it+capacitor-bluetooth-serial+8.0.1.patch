@@ -1,0 +1,12 @@
+diff --git a/node_modules/@ascentio-it/capacitor-bluetooth-serial/android/src/main/java/com/bluetoothserial/BluetoothDeviceHelper.java b/node_modules/@ascentio-it/capacitor-bluetooth-serial/android/src/main/java/com/bluetoothserial/BluetoothDeviceHelper.java
+index 16103fb..168124e 100644
+--- a/node_modules/@ascentio-it/capacitor-bluetooth-serial/android/src/main/java/com/bluetoothserial/BluetoothDeviceHelper.java
++++ b/node_modules/@ascentio-it/capacitor-bluetooth-serial/android/src/main/java/com/bluetoothserial/BluetoothDeviceHelper.java
+@@ -35,6 +35,6 @@ public class BluetoothDeviceHelper implements Serializable {
+             return new byte[0];
+         }
+ 
+-        return value.getBytes(StandardCharsets.UTF_8);
++        return android.util.Base64.decode(value, android.util.Base64.DEFAULT);
+     }
+ }
