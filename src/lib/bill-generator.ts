@@ -230,12 +230,8 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
         const mod = await import("@ascentio-it/capacitor-bluetooth-serial");
         const BluetoothSerial = mod.BluetoothSerial;
         await BluetoothSerial.connect({ address: bluetoothPrinterMac });
-        // Convert Uint8Array to string (Java plugin expects string and uses UTF-8 decoding)
-        let strValue = "";
-        for (let i = 0; i < bytes.length; i++) {
-          strValue += String.fromCharCode(bytes[i]);
-        }
-        await BluetoothSerial.write({ address: bluetoothPrinterMac, value: strValue });
+        const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
+        await BluetoothSerial.write({ address: bluetoothPrinterMac, value: base64Value });
         await BluetoothSerial.disconnect({ address: bluetoothPrinterMac });
         return;
       }

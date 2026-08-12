@@ -115,12 +115,8 @@ export function NativePrinterSettings({
           if (!currentValue) return alert("Select a Bluetooth printer first.");
           alert("Connecting to printer...");
           await BluetoothSerial.connect({ address: currentValue });
-          // Convert Uint8Array to string for the plugin
-          let strValue = "";
-          for (let i = 0; i < bytes.length; i++) {
-            strValue += String.fromCharCode(bytes[i]);
-          }
-          await BluetoothSerial.write({ address: currentValue, value: strValue });
+          const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
+          await BluetoothSerial.write({ address: currentValue, value: base64Value });
           await BluetoothSerial.disconnect({ address: currentValue });
           alert("✅ Raw print sent!");
         }
