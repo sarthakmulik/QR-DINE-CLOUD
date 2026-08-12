@@ -68,6 +68,7 @@ export default function TablesDashboardPage() {
   const [isPrinting, setIsPrinting] = useState(false);
   const checkoutPendingRef = useRef<Record<string, boolean>>({});
   const paymentPendingRef = useRef<Record<string, boolean>>({});
+  const autoPrintedSessionsRef = useRef<Set<string>>(new Set());
 
   const { currentPlan, canAccess, serviceType } = usePlan();
   const router = useRouter();
@@ -85,6 +86,21 @@ export default function TablesDashboardPage() {
       setCouponInput("");
     }
   }, [selected]);
+
+  useEffect(() => {
+    // Automatically trigger bill print when a session enters checkout_initiated state
+    tables.forEach(t => {
+      if (t.currentSession && t.currentSession.status === "checkout_initiated") {
+        if (!autoPrintedSessionsRef.current.has(t.currentSession.id)) {
+          autoPrintedSessionsRef.current.add(t.currentSession.id);
+          // Wait a tiny bit for the UI to settle before printing
+          setTimeout(() => {
+            silentBillPrint(t.currentSession!.id).catch(() => {});
+          }, 500);
+        }
+      }
+    });
+  }, [tables]);
 
   const [stats, setStats] = useState<{
     activeSessions: number;

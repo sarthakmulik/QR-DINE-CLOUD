@@ -184,9 +184,15 @@ export function NativePrinterSettings({
         } else if (isAndroid) {
           if (!currentValue) return alert("Select a Bluetooth printer first.");
           alert("Connecting to printer...");
-          const { executeAndroidBluetoothPrint } = await import("@/lib/bill-generator");
-          await executeAndroidBluetoothPrint(bytes, currentValue);
-          alert("✅ Raw print sent!");
+          const { backgroundPrinterService } = await import("@/lib/printer-service");
+          // If the user selected a different printer just now in settings, start the engine for it
+          backgroundPrinterService.startEngine(currentValue);
+          const success = await backgroundPrinterService.printRaw(bytes);
+          if (success) {
+            alert("✅ Raw print sent!");
+          } else {
+            alert("❌ Print failed. Printer may be offline.");
+          }
         }
       }
     } catch (e: any) {

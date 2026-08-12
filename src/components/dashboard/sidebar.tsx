@@ -25,6 +25,7 @@ import {
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { usePlan } from "@/lib/contexts/plan-context";
+import { usePrinter } from "@/components/providers/printer-provider";
 
 export function DashboardSidebar({
   hotelName,
@@ -44,6 +45,7 @@ export function DashboardSidebar({
   }, []);
 
   const { serviceType } = usePlan();
+  const { status: printerStatus } = usePrinter();
 
   const links = [
     ...(serviceType !== "quick_service" ? [{ href: "/dashboard", label: "Tables & Orders", icon: LayoutGrid }] : []),
@@ -87,7 +89,15 @@ export function DashboardSidebar({
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight">{hotelName}</p>
-              <p className="text-[11px] text-gray-400 dark:text-zinc-500 leading-tight mt-0.5">Admin Panel</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div 
+                  className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", 
+                    printerStatus === "connected" ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]" : 
+                    printerStatus === "connecting" ? "bg-amber-500 animate-pulse" : 
+                    printerStatus === "error" ? "bg-red-500" : "bg-gray-300 dark:bg-zinc-600")}
+                />
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500 leading-tight">Admin Panel</p>
+              </div>
             </div>
           </div>
         </div>
@@ -148,7 +158,15 @@ export function DashboardSidebar({
           </div>
           <div>
             <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[150px] leading-tight">{hotelName}</p>
-            <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-tight">Admin Panel</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div 
+                className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", 
+                  printerStatus === "connected" ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]" : 
+                  printerStatus === "connecting" ? "bg-amber-500 animate-pulse" : 
+                  printerStatus === "error" ? "bg-red-500" : "bg-gray-300 dark:bg-zinc-600")}
+              />
+              <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-tight">Admin Panel</p>
+            </div>
           </div>
         </div>
         <button
