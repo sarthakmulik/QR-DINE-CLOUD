@@ -243,11 +243,11 @@ export function NativePrinterSettings({
             {printerType === "raw" ? (isAndroid ? "Paired Bluetooth Printers" : "Available Serial Ports") : "Available OS Printers"}
           </label>
           <div className="flex gap-2 items-center">
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full flex items-center justify-between border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm text-left shadow-sm"
+                className="w-full flex items-center justify-between border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm text-left shadow-sm overflow-hidden"
               >
                 <span className="truncate pr-2">
                   {currentValue 
