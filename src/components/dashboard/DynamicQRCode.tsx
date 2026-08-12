@@ -205,8 +205,30 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
           }
         });
         
-        tempQrCode.download({ name: filename, extension });
-      }
+        const Capacitor = require('@capacitor/core').Capacitor;
+        if (Capacitor.isNativePlatform()) {
+          tempQrCode.getRawData(extension as any).then((blob: Blob | null) => {
+            if (!blob) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+              try {
+                const base64data = reader.result as string;
+                const { Share } = await import('@capacitor/share');
+                await Share.share({
+                  title: 'QR Code',
+                  url: base64data,
+                  dialogTitle: 'Save or Share QR Code',
+                });
+              } catch (e) {
+                console.error("Share failed", e);
+                alert("Failed to share QR code");
+              }
+            };
+          });
+        } else {
+          tempQrCode.download({ name: filename, extension: extension as any });
+        }
     }));
 
     return <div ref={qrRef} className={className} />;
