@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@ascentio-it/capacitor-bluetooth-serial": "^8.0.1",
-    "@capacitor-community/bluetooth-le": "^8.2.0",
     "@capacitor-mlkit/barcode-scanning": "^8.1.0",
     "@capacitor/camera": "^8.2.1",
     "@capacitor/core": "^8.4.1",

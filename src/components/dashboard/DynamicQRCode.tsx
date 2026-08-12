@@ -229,6 +229,7 @@ const DynamicQRCode = forwardRef<DynamicQRCodeRef, DynamicQRCodeProps>(
         } else {
           tempQrCode.download({ name: filename, extension: extension as any });
         }
+      }
     }));
 
     return <div ref={qrRef} className={className} />;
