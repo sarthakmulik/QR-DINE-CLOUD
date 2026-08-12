@@ -6,9 +6,13 @@ import { Capacitor } from "@capacitor/core";
 
 // Use dynamic import for bluetooth serial to avoid SSR issues
 let BluetoothSerial: any;
+let BleClient: any;
 if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
   import("@ascentio-it/capacitor-bluetooth-serial").then((mod) => {
     BluetoothSerial = mod.BluetoothSerial;
+  }).catch(console.error);
+  import("@capacitor-community/bluetooth-le").then((mod) => {
+    BleClient = mod.BleClient;
   }).catch(console.error);
 }
 
@@ -40,37 +44,55 @@ export function NativePrinterSettings({
         }
       } else if (isAndroid) {
         if (printerType === "raw") {
-          if (!BluetoothSerial) {
-            console.error("BluetoothSerial not loaded yet");
+          if (!BleClient) {
+            console.error("BleClient not loaded yet");
             return;
           }
-          const isEnabled = await BluetoothSerial.isEnabled();
-          if (!isEnabled) {
+          
+          try {
+            await BleClient.initialize();
+          } catch (e) {
             alert("Please enable Bluetooth first.");
             return;
           }
+          
           let devices: any[] = [];
           
-          try {
-            const paired = await BluetoothSerial.getPairedDevices();
-            if (paired && paired.devices) {
-              devices = [...paired.devices];
-            }
-          } catch (e) {
-            console.warn("Failed to get paired devices", e);
+          // Fallback to Classic Bluetooth paired devices if BleClient doesn't find anything
+          if (BluetoothSerial) {
+             try {
+                const paired = await BluetoothSerial.getPairedDevices();
+                if (paired && paired.devices) {
+                  devices = [...paired.devices];
+                }
+             } catch(e) {}
           }
           
           try {
-            const scanResult = await BluetoothSerial.scan();
-            if (scanResult && scanResult.devices) {
-              for (const dev of scanResult.devices) {
-                if (!devices.find(d => d.address === dev.address)) {
-                  devices.push(dev);
-                }
-              }
+            // Wait a moment for BLE scan, but it's better to let the user select via requestDevice
+            // Actually, we can use requestDevice which pops up the native OS BLE scanner overlay!
+            // But we want to populate our OWN dropdown to save the MAC address.
+            // Let's do a short scan.
+            const scanned: any[] = [];
+            await BleClient.requestLEScan({}, (result: any) => {
+               if (result.device && result.device.name) {
+                 scanned.push({
+                   address: result.device.deviceId,
+                   name: result.device.name
+                 });
+               }
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 3000)); // scan for 3 seconds
+            await BleClient.stopLEScan();
+            
+            for (const dev of scanned) {
+               if (!devices.find(d => d.address === dev.address)) {
+                 devices.push(dev);
+               }
             }
           } catch (e) {
-            console.warn("Bluetooth live scan failed", e);
+            console.warn("BLE scan failed", e);
           }
           
           setPrinters(devices.map((d: any) => ({ name: d.address, displayName: `${d.name || "Unknown"} (${d.address})` })));
