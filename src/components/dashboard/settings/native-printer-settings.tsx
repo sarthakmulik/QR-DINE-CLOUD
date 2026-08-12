@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Capacitor } from "@capacitor/core";
+import { ChevronDown, Check } from "lucide-react";
 
 let BluetoothSerial: any;
 let BleClient: any;
@@ -24,6 +25,7 @@ export function NativePrinterSettings({
 }) {
   const [printers, setPrinters] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const printerType = form.customizations?.printerType || "html";
   const isDesktop = typeof window !== "undefined" && !!(window as any).electronAPI;
@@ -241,18 +243,47 @@ export function NativePrinterSettings({
             {printerType === "raw" ? (isAndroid ? "Paired Bluetooth Printers" : "Available Serial Ports") : "Available OS Printers"}
           </label>
           <div className="flex gap-2 items-center">
-            <select
-              value={currentValue}
-              onChange={(e) => handleChange(e.target.value)}
-              className="flex-1 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm"
-            >
-              <option value="">{printerType === "raw" ? "Select device..." : "Use Default OS Printer"}</option>
-              {printers.map((p: any) => (
-                <option key={p.name} value={p.name}>
-                  {p.displayName || p.name}
-                </option>
-              ))}
-            </select>
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full flex items-center justify-between border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-sm text-left shadow-sm"
+              >
+                <span className="truncate pr-2">
+                  {currentValue 
+                    ? (printers.find(p => p.name === currentValue)?.displayName || currentValue)
+                    : (printerType === "raw" ? "Select device..." : "Use Default OS Printer")}
+                </span>
+                <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
+              </button>
+              
+              {isDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto py-1">
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                      onClick={() => { handleChange(""); setIsDropdownOpen(false); }}
+                    >
+                      <span className="opacity-70">{printerType === "raw" ? "Select device..." : "Use Default OS Printer"}</span>
+                      {currentValue === "" && <Check className="w-4 h-4 text-brand-500" />}
+                    </button>
+                    {printers.map((p: any) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                        onClick={() => { handleChange(p.name); setIsDropdownOpen(false); }}
+                      >
+                        <span className="truncate pr-2">{p.displayName || p.name}</span>
+                        {currentValue === p.name && <Check className="w-4 h-4 text-brand-500" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <Button type="button" variant="secondary" onClick={loadPrinters} disabled={loading}>
               {loading ? "Scanning..." : "↻ Refresh"}
             </Button>
