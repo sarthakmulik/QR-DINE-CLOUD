@@ -229,50 +229,15 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
         return;
       } else if (isAndroid) {
         if (!bluetoothPrinterMac) throw new Error("No Bluetooth printer configured");
+        const mod = await import("@ascentio-it/capacitor-bluetooth-serial");
+        const BluetoothSerial = mod.BluetoothSerial;
+        await BluetoothSerial.connect({ address: bluetoothPrinterMac });
+        const base64Value = btoa(Array.from(bytes).map(b => String.fromCharCode(b)).join(''));
+        await BluetoothSerial.write({ address: bluetoothPrinterMac, value: base64Value });
         
-        const mod = await import("@capacitor-community/bluetooth-le");
-        const BleClient = mod.BleClient;
-        await BleClient.initialize();
-        
-        await BleClient.connect(bluetoothPrinterMac, () => {
-          console.log("Disconnected from BLE printer");
-        });
-        
-        try {
-          const services = await BleClient.getServices(bluetoothPrinterMac);
-          let targetService = "";
-          let targetChar = "";
-          
-          // Find any writable characteristic
-          for (const s of services) {
-            for (const c of s.characteristics) {
-              if (c.properties.write || c.properties.writeWithoutResponse) {
-                targetService = s.uuid;
-                targetChar = c.uuid;
-                break;
-              }
-            }
-            if (targetChar) break;
-          }
-          
-          if (!targetChar) {
-            throw new Error("No writable BLE characteristic found on this printer");
-          }
-          
-          // DataViewer takes DataView. BleClient writes DataView.
-          // Chunk the bytes into 256 byte chunks (common BLE MTU limit is ~512, 256 is safe)
-          const CHUNK_SIZE = 256;
-          for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-            const chunk = bytes.slice(i, i + CHUNK_SIZE);
-            const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
-            await BleClient.write(bluetoothPrinterMac, targetService, targetChar, dataView);
-            await new Promise(r => setTimeout(r, 20)); // tiny delay to prevent overwhelming buffer
-          }
-          
-          await new Promise(r => setTimeout(r, 1000));
-        } finally {
-          await BleClient.disconnect(bluetoothPrinterMac);
-        }
+        // Wait 1 second to allow OS Bluetooth buffer to flush over the air before tearing down the socket
+        await new Promise(r => setTimeout(r, 1000));
+        await BluetoothSerial.disconnect({ address: bluetoothPrinterMac });
         return;
       }
     } catch (err: any) {
