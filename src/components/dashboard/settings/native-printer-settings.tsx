@@ -49,7 +49,30 @@ export function NativePrinterSettings({
             alert("Please enable Bluetooth first.");
             return;
           }
-          const devices = await BluetoothSerial.list();
+          let devices: any[] = [];
+          
+          try {
+            const paired = await BluetoothSerial.getPairedDevices();
+            if (paired && paired.devices) {
+              devices = [...paired.devices];
+            }
+          } catch (e) {
+            console.warn("Failed to get paired devices", e);
+          }
+          
+          try {
+            const scanResult = await BluetoothSerial.scan();
+            if (scanResult && scanResult.devices) {
+              for (const dev of scanResult.devices) {
+                if (!devices.find(d => d.address === dev.address)) {
+                  devices.push(dev);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("Bluetooth live scan failed", e);
+          }
+          
           setPrinters(devices.map((d: any) => ({ name: d.address, displayName: `${d.name || "Unknown"} (${d.address})` })));
         }
       }
