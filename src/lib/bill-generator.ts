@@ -232,13 +232,19 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
       } else if (isAndroid) {
         if (!bluetoothPrinterMac) throw new Error("No Bluetooth printer configured");
         const success = await backgroundPrinterService.printRaw(bytes);
-        if (!success) throw new Error("Failed to communicate with printer.");
-        return;
+        if (!success) {
+           alert("Printer is currently offline. Your bill has been securely queued and will print automatically as soon as the printer is turned on!");
+        }
+        return; // Always return here for raw Android, never fall back to HTML
       }
     } catch (err: any) {
       console.error("Raw print failed:", err);
-      // Fall through to HTML print as backup, or alert?
-      alert(`Bluetooth Print Failed: ${err.message}. Falling back to OS print dialog...`);
+      if (isAndroid) {
+         alert(`Printer error: ${err.message}. Bill queued for auto-printing.`);
+         return; // Do not fall back to HTML
+      } else {
+         alert(`Desktop Print Failed: ${err.message}. Falling back to OS print dialog...`);
+      }
     }
   }
 

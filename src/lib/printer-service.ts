@@ -10,6 +10,8 @@ class PrinterService {
   private isAndroid: boolean = false;
   private checkInterval: any = null;
   private isConnectingLock: boolean = false;
+  private printQueue: Uint8Array[] = [];
+  private isFlushing: boolean = false;
 
   constructor() {
     this.isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
@@ -91,11 +93,13 @@ class PrinterService {
             }
           });
           this.setStatus("connected");
+          this.flushQueue();
         } else {
           const { BluetoothSerial } = await import("@ascentio-it/capacitor-bluetooth-serial");
           try {
              await BluetoothSerial.connect({ address: mac });
              this.setStatus("connected");
+             this.flushQueue();
           } catch (e: any) {
              if (e && typeof e === 'string' && e.toLowerCase().includes("already connected")) {
                 this.setStatus("connected");
@@ -119,11 +123,52 @@ class PrinterService {
     this.checkInterval = setInterval(async () => {
       if (this.status === "error" || this.status === "idle") {
         await tryConnect();
+      } else if (this.status === "connected" && this.printQueue.length > 0) {
+        this.flushQueue();
       }
     }, 10000); // Retry every 10 seconds if dropped
   }
 
+  private async flushQueue() {
+    if (this.isFlushing || this.printQueue.length === 0 || this.status !== "connected") return;
+    this.isFlushing = true;
+    
+    try {
+      while (this.printQueue.length > 0) {
+        if (this.status !== "connected") break; // Stop flushing if dropped
+        const bytes = this.printQueue[0];
+        const success = await this.executeRawPrint(bytes);
+        if (success) {
+          this.printQueue.shift(); // Remove from queue only if successful
+          await new Promise(r => setTimeout(r, 1000)); // Delay between multiple bills
+        } else {
+          break; // Stop flushing, let the reconnect loop handle it
+        }
+      }
+    } finally {
+      this.isFlushing = false;
+    }
+  }
+
   public async printRaw(bytes: Uint8Array): Promise<boolean> {
+    if (!this.isAndroid || !this.currentMacWithPrefix) return false;
+
+    // Fast path: if connected, try printing immediately
+    if (this.status === "connected") {
+      const success = await this.executeRawPrint(bytes);
+      if (success) return true;
+    }
+    
+    // If we reach here, we are disconnected or the direct print failed.
+    // Queue it up and trigger a connection attempt!
+    this.printQueue.push(bytes);
+    if (this.status !== "connecting") {
+      this.setStatus("error"); // Force the interval/listeners to know we need connection
+    }
+    return false; // Returns false to indicate it was queued, not printed instantly
+  }
+
+  private async executeRawPrint(bytes: Uint8Array): Promise<boolean> {
     if (!this.isAndroid || !this.currentMacWithPrefix) return false;
 
     let isBle = false;
@@ -138,19 +183,6 @@ class PrinterService {
     }
 
     try {
-      if (this.status !== "connected") {
-        this.setStatus("connecting");
-        if (isBle) {
-           const { BleClient } = await import("@capacitor-community/bluetooth-le");
-           await BleClient.initialize();
-           await BleClient.connect(mac, () => { this.setStatus("error"); });
-        } else {
-           const { BluetoothSerial } = await import("@ascentio-it/capacitor-bluetooth-serial");
-           await BluetoothSerial.connect({ address: mac });
-        }
-        this.setStatus("connected");
-      }
-
       if (isBle) {
         const { BleClient } = await import("@capacitor-community/bluetooth-le");
         const services = await BleClient.getServices(mac);
