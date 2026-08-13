@@ -255,7 +255,7 @@ export function NativePrinterSettings({
               <div>
                 <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block">My Devices</label>
                 {currentValue ? (
-                  <div className="border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 bg-white dark:bg-zinc-900 shadow-sm flex items-center justify-between">
+                  <div className="border border-gray-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 bg-white dark:bg-zinc-900 shadow-sm flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0">
                       <div className="w-12 h-12 bg-gray-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center flex-shrink-0">
                         <Printer className="w-6 h-6 text-gray-600 dark:text-zinc-400" />
@@ -309,7 +309,7 @@ export function NativePrinterSettings({
                       <button
                         key={p.name}
                         type="button"
-                        className="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 flex items-center justify-between transition-colors"
+                        className="w-full text-left p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 flex items-center justify-between transition-colors"
                         onClick={() => { handleChange(p.name); alert("Device saved. Testing connection..."); testPrint(); }}
                       >
                         <div className="min-w-0">

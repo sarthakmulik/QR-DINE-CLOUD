@@ -374,12 +374,12 @@ export default function SettingsPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSave} className="bg-white dark:bg-zinc-900 rounded-xl border p-6 space-y-4">
+          <form onSubmit={handleSave} className="bg-white dark:bg-zinc-900 rounded-xl border p-3 sm:p-6 space-y-4">
             
             {activeTab === "general" && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Store Status Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-zinc-800">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-900 dark:text-zinc-100">Accepting Orders</span>
@@ -478,7 +478,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="flex items-start gap-3 bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4">
+            <div className="flex items-start gap-3 bg-amber-50/40 border border-amber-200/50 rounded-2xl p-3 sm:p-4">
               <input
                 type="checkbox"
                 id="secureQr"
@@ -499,7 +499,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 bg-brand-50/40 border border-brand-200/50 rounded-2xl p-4">
+            <div className="flex items-start gap-3 bg-brand-50/40 border border-brand-200/50 rounded-2xl p-3 sm:p-4">
               <input
                 type="checkbox"
                 id="isRepeatingCustomerDiscountEnabled"
@@ -517,7 +517,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="bg-emerald-50/40 border border-emerald-200/50 rounded-2xl p-4 space-y-4">
+            <div className="bg-emerald-50/40 border border-emerald-200/50 rounded-2xl p-3 sm:p-4 space-y-4">
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
@@ -610,7 +610,7 @@ export default function SettingsPage() {
             {activeTab === "payments" && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Payment Integrations */}
-            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
+            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-3 sm:p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
                   💳 Payment Integration
@@ -765,7 +765,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Thermal Printer Size */}
-            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-3 sm:p-4 space-y-3">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-200 flex items-center gap-2">
                   🖨️ Thermal Receipt Printer Size
@@ -893,7 +893,7 @@ export default function SettingsPage() {
                           }
                         });
                       }}
-                      className={`relative flex items-start text-left p-4 rounded-2xl border transition-all ${
+                      className={`relative flex items-start text-left p-3 sm:p-4 rounded-2xl border transition-all ${
                         isSelected
                           ? "border-brand-600 bg-brand-50/10 shadow-sm"
                           : layout.allowed
