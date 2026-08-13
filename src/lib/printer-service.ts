@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export type PrinterStatus = "idle" | "connecting" | "connected" | "error";
 
@@ -12,6 +13,15 @@ class PrinterService {
 
   constructor() {
     this.isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
+    
+    if (this.isAndroid) {
+      App.addListener("appStateChange", async ({ isActive }) => {
+        if (isActive && this.currentMacWithPrefix) {
+          // Immediately try to reconnect when app comes to foreground
+          this.connectLoop();
+        }
+      });
+    }
   }
 
   public subscribe(listener: (status: PrinterStatus) => void) {

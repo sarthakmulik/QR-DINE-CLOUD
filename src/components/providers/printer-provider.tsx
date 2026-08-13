@@ -17,21 +17,25 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<PrinterStatus>("idle");
 
   useEffect(() => {
-    // Check if we have a configured printer
-    const cached = sessionStorage.getItem("admin_profile");
-    if (cached) {
-      try {
-        const profile = JSON.parse(cached);
-        const printerType = profile.customizations?.printerType;
-        const mac = profile.customizations?.bluetoothPrinterMac;
-        if (printerType === "raw" && mac) {
-          backgroundPrinterService.startEngine(mac);
-        }
-      } catch (e) {}
-    }
+    // Polling mechanism to auto-start the engine as soon as the profile is loaded asynchronously
+    const checkProfileInterval = setInterval(() => {
+      const cached = sessionStorage.getItem("admin_profile");
+      if (cached) {
+        try {
+          const profile = JSON.parse(cached);
+          const printerType = profile.customizations?.printerType;
+          const mac = profile.customizations?.bluetoothPrinterMac;
+          
+          if (printerType === "raw" && mac && backgroundPrinterService.getStatus() === "idle") {
+            backgroundPrinterService.startEngine(mac);
+          }
+        } catch (e) {}
+      }
+    }, 2000);
 
     const unsubscribe = backgroundPrinterService.subscribe(setStatus);
     return () => {
+      clearInterval(checkProfileInterval);
       unsubscribe();
       // Optionally stop engine on unmount, but usually we want it persistent 
       // across the whole app lifecycle
