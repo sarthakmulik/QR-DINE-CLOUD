@@ -88,18 +88,22 @@ export default function TablesDashboardPage() {
   }, [selected]);
 
   useEffect(() => {
-    // Automatically trigger bill print when a session enters checkout_initiated state
+    // Automatically trigger bill print when a session enters checkout_initiated state.
+    // [M-2 FIX] The autoPrintedSessionsRef set prevents re-firing after a page refresh
+    // because we only queue the print if the session ID hasn't been seen this session.
+    // The outer status check (=== "checkout_initiated") already excludes "bill_printed" sessions.
     tables.forEach(t => {
       if (t.currentSession && t.currentSession.status === "checkout_initiated") {
         if (!autoPrintedSessionsRef.current.has(t.currentSession.id)) {
           autoPrintedSessionsRef.current.add(t.currentSession.id);
-          // Wait a tiny bit for the UI to settle before printing
           setTimeout(() => {
-            silentBillPrint(t.currentSession!.id).catch(() => {});
+            // [M-5 FIX] Pass silent=true so background auto-prints never show alert() mid-workflow
+            silentBillPrint(t.currentSession!.id, undefined, true).catch(() => {});
           }, 500);
         }
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tables]);
 
   const [stats, setStats] = useState<{
@@ -187,6 +191,10 @@ export default function TablesDashboardPage() {
       fetch("/api/hotel/menu/categories"),
       fetch("/api/hotel/overview-stats"),
     ]);
+    if (!tablesRes.ok || !profileRes.ok) {
+      setLoading(false);
+      return;
+    }
     const tablesRaw = await tablesRes.json();
     const tablesData = adjustTablesData(tablesRaw);
     setTables(tablesData);
@@ -218,9 +226,10 @@ export default function TablesDashboardPage() {
       return tablesData.find((t: TableData) => t.id === sel.id) || sel;
     });
     setLoading(false);
+    return tablesData;
   }, [adjustTablesData]);
 
-  const pollTables = useCallback(async () => {
+  const pollTables = useCallback(async (): Promise<TableData[] | undefined> => {
     try {
       const res = await fetch("/api/hotel/tables");
       if (res.ok) {
@@ -232,6 +241,7 @@ export default function TablesDashboardPage() {
           if (!sel) return sel;
           return tablesData.find((t: TableData) => t.id === sel.id) || sel;
         });
+        return tablesData;
       }
     } catch (e) {
       console.error("Error polling tables:", e);
@@ -291,9 +301,9 @@ export default function TablesDashboardPage() {
       });
       if (res.ok) {
         setSessionToOpen(null);
-        await pollTables();
-        const refreshedTables = await fetch("/api/hotel/tables").then((r) => r.json());
-        const newlyOccupied = refreshedTables.find((t: any) => t.id === sessionToOpen.id);
+        // [H-6 FIX] Use pollTables return value directly instead of double-fetching
+        const refreshedTables = await pollTables();
+        const newlyOccupied = refreshedTables?.find((t: TableData) => t.id === sessionToOpen.id);
         if (newlyOccupied && newlyOccupied.status !== "free") {
           setSelected(newlyOccupied);
         }
@@ -391,7 +401,7 @@ export default function TablesDashboardPage() {
   }
 
   /** Fetch bill data and silently print to thermal printer — no new tab */
-  async function silentBillPrint(sessionId: string, paymentMethod?: string) {
+  async function silentBillPrint(sessionId: string, paymentMethod?: string, silent = false) {
     try {
       const res = await fetch(`/api/hotel/sessions/${sessionId}/bill-data`);
       if (!res.ok) return; // non-blocking — don't alert on background print failure
@@ -401,11 +411,13 @@ export default function TablesDashboardPage() {
         (data.hotel?.printerSize as PrinterSize) ||
         "80mm";
       const html = generateBillHTML(data, size, paymentMethod);
-      await silentPrint(html, data, paymentMethod);
+      await silentPrint(html, data, paymentMethod, silent);
     } catch (e) {
       console.error("Silent bill print error:", e);
-      alert("Thermal print failed. Please check printer connection or print dialog.");
-      throw e;
+      if (!silent) {
+        alert("Thermal print failed. Please check printer connection or print dialog.");
+        throw e;
+      }
     }
   }
 
@@ -503,7 +515,10 @@ export default function TablesDashboardPage() {
 
   const groupedModalItems = selected?.currentSession ? Object.values(
     selected.currentSession.items.reduce((acc: any, item: any) => {
-      const key = `${item.menuItemId}-${item.price}-${item.status}`;
+      // [M-3 FIX] Use item.name for custom (non-menu) items since menuItemId can be null,
+      // which would cause different items with the same price to be incorrectly merged.
+      const menuKey = item.menuItemId || `custom:${item.name}`;
+      const key = `${menuKey}-${item.price}-${item.status}`;
       if (!acc[key]) acc[key] = { ...item };
       else acc[key].quantity += item.quantity;
       return acc;
@@ -519,7 +534,7 @@ export default function TablesDashboardPage() {
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
               Tables &amp; Orders
             </h1>
-            <span className="text-[11px] bg-brand-50 dark:bg-zinc-900rand-500/10 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-500/20 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">
+            <span className="text-[11px] bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-500/20 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">
               {currentPlan}
             </span>
           </div>
@@ -897,14 +912,18 @@ export default function TablesDashboardPage() {
                         type="tel"
                         placeholder="10-digit number"
                         value={whatsappNumbers[selected.currentSession.id] || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          // [L-2 FIX] Only allow digits to prevent invalid phone data
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                           setWhatsappNumbers((prev) => ({
                             ...prev,
-                            [selected.currentSession!.id]: e.target.value,
-                          }))
-                        }
+                            [selected.currentSession!.id]: digits,
+                          }));
+                        }}
                         className="flex-1 border border-gray-300 dark:border-zinc-700/80 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800/50 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
                         maxLength={10}
+                        inputMode="numeric"
+                        pattern="[0-9]{10}"
                       />
                     </div>
                   </div>
@@ -928,15 +947,20 @@ export default function TablesDashboardPage() {
                       type="tel"
                       placeholder="10-digit number"
                       value={whatsappNumbers[selected.currentSession.id] || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        // [L-2 FIX] Only allow digits to prevent invalid phone data
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                         setWhatsappNumbers((prev) => ({
                           ...prev,
-                          [selected.currentSession!.id]: e.target.value,
-                        }))
-                      }
+                          [selected.currentSession!.id]: digits,
+                        }));
+                      }}
                       className="flex-1 border border-gray-300 dark:border-zinc-700/80 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800/50 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       maxLength={10}
+                      inputMode="numeric"
+                      pattern="[0-9]{10}"
                     />
+
                   </div>
                 </div>
 

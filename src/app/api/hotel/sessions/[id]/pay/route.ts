@@ -14,6 +14,12 @@ export async function POST(
     const { id } = await params;
     const body = await req.json();
 
+    // [H-7 FIX] Validate payment method to prevent arbitrary strings from being stored in DB
+    const VALID_PAYMENT_METHODS = ["Cash", "UPI", "Card"];
+    if (!VALID_PAYMENT_METHODS.includes(body.paymentMethod)) {
+      return NextResponse.json({ error: "Invalid payment method. Must be Cash, UPI, or Card." }, { status: 400 });
+    }
+
     const { data: session } = await createAdminClient()
       .from("table_sessions")
       .select("*")

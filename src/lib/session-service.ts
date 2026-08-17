@@ -395,8 +395,17 @@ export async function printBill(sessionId: string) {
     .from("table_sessions")
     .update({ status: "bill_printed" })
     .eq("id", sessionId)
-    .select("*").single<TableSession>();
-  if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to update session");
+    // [L-1 FIX] Only update if currently in checkout_initiated state.
+    // Avoids a redundant DB write if the waiter presses "Print Bill" twice.
+    .eq("status", "checkout_initiated")
+    .select("*")
+    .maybeSingle<TableSession>();
+    
+  if (updateErr || !updated) {
+    // If already bill_printed, just return the existing session data gracefully
+    if (sessionData.status === "bill_printed") return mapTableSession(sessionData as TableSession, items, hotel || undefined, table || undefined);
+    throw new Error(updateErr?.message || "Failed to update session");
+  }
   return mapTableSession(updated, items, hotel || undefined, table || undefined);
 }
 
@@ -671,7 +680,10 @@ async function processLoyaltyOnCheckout(hotelId: string, phone: string, discount
 
   let newCycleVisits = customer.cycle_visits + 1;
 
-  if (discountApplied === 20 && newMonthlyVisits > 10) {
+  // [M-4 FIX] Changed > 10 to >= 10 to match the discount threshold in calculateLoyaltyDiscount.
+  // Previously, customers who hit exactly 10 visits got the 20% discount but the cycle
+  // never reset, so they received 20% off indefinitely.
+  if (discountApplied === 20 && newMonthlyVisits >= 10) {
     newMonthlyVisits = 0; // Reset VIP cycle after claim
   } else if (discountApplied === 5) {
     newCycleVisits = 0; // Reset normal cycle

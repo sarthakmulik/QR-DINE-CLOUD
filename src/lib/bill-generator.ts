@@ -54,6 +54,17 @@ function formatDate(iso: string): string {
   }
 }
 
+// [H-1 FIX] Escape HTML special characters in user-supplied strings to prevent
+// layout breaks and XSS inside the print iframe.
+function escHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function generateBillHTML(
   data: BillData,
   printerSize: PrinterSize,
@@ -66,14 +77,14 @@ export function generateBillHTML(
   const headerSize = printerSize === "58mm" ? "13px" : "16px";
   const padding = printerSize === "58mm" ? "2mm" : "3mm";
 
-  const tableLabel = table?.label || `Table ${session.tableNumber}`;
+  const tableLabel = escHtml(table?.label || `Table ${session.tableNumber}`);
   const cgst = hotel?.cgst ?? (hotel?.taxRate ?? 5) / 2;
   const sgst = hotel?.sgst ?? (hotel?.taxRate ?? 5) / 2;
-  const resolvedPayment = paymentMethod || session.paymentMethod || "";
+  const resolvedPayment = escHtml(paymentMethod || session.paymentMethod || "");
 
   const itemRows = items.map(item => `
     <tr>
-      <td style="padding:2px 0;word-break:break-word;max-width:${printerSize === "58mm" ? "95px" : "130px"}">${item.name}</td>
+      <td style="padding:2px 0;word-break:break-word;max-width:${printerSize === "58mm" ? "95px" : "130px"}">${escHtml(item.name)}</td>
       <td style="padding:2px 4px;text-align:center;white-space:nowrap">${item.quantity}</td>
       <td style="padding:2px 0;text-align:right;white-space:nowrap">${formatINR(item.price)}</td>
       <td style="padding:2px 0 2px 4px;text-align:right;white-space:nowrap">${formatINR(item.price * item.quantity)}</td>
@@ -82,7 +93,7 @@ export function generateBillHTML(
 
   const discountRow = session.discountAmount > 0 ? `
     <tr style="color:#555">
-      <td colspan="3" style="padding:2px 0">Discount${session.couponCode ? ` (${session.couponCode})` : ""}</td>
+      <td colspan="3" style="padding:2px 0">Discount${session.couponCode ? ` (${escHtml(session.couponCode)})` : ""}</td>
       <td style="padding:2px 0;text-align:right">-${formatINR(session.discountAmount)}</td>
     </tr>
   ` : "";
@@ -94,7 +105,7 @@ export function generateBillHTML(
   ` : "";
 
   const logoHTML = hotel?.logo ? `
-    <img src="${hotel.logo}" alt="logo" style="width:40px;height:40px;object-fit:contain;margin:0 auto 4px;display:block;border-radius:50%" />
+    <img src="${escHtml(hotel.logo)}" alt="logo" style="width:40px;height:40px;object-fit:contain;margin:0 auto 4px;display:block;border-radius:50%" />
   ` : "";
 
   return `<!DOCTYPE html>
@@ -132,9 +143,9 @@ export function generateBillHTML(
 </head>
 <body>
   ${logoHTML}
-  <div class="center bold" style="font-size:${headerSize};margin-bottom:2px">${hotel?.name || "Restaurant"}</div>
-  ${hotel?.address ? `<div class="center" style="font-size:9px;margin-bottom:1px">${hotel.address}</div>` : ""}
-  ${hotel?.gstNumber ? `<div class="center" style="font-size:9px">GSTIN: ${hotel.gstNumber}</div>` : ""}
+  <div class="center bold" style="font-size:${headerSize};margin-bottom:2px">${escHtml(hotel?.name || "Restaurant")}</div>
+  ${hotel?.address ? `<div class="center" style="font-size:9px;margin-bottom:1px">${escHtml(hotel.address)}</div>` : ""}
+  ${hotel?.gstNumber ? `<div class="center" style="font-size:9px">GSTIN: ${escHtml(hotel.gstNumber)}</div>` : ""}
 
   <div class="divider"></div>
 
@@ -202,7 +213,7 @@ import { backgroundPrinterService } from "./printer-service";
  * If printerType="raw", sends raw bytes to Android Bluetooth or Desktop Serial.
  * Otherwise, uses electronAPI (Desktop) or hidden iframe (Browser) for HTML printing.
  */
-export async function silentPrint(html: string, data?: BillData, paymentMethod?: string): Promise<void> {
+export async function silentPrint(html: string, data?: BillData, paymentMethod?: string, silent = false): Promise<void> {
   const cached = typeof window !== "undefined" ? sessionStorage.getItem("admin_profile") : null;
   let printerType = "html";
   let desktopPrinter = "";
@@ -210,11 +221,16 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
   let printerSize: PrinterSize = "80mm";
 
   if (cached) {
-    const profile = JSON.parse(cached);
-    printerType = profile.customizations?.printerType || "html";
-    desktopPrinter = profile.customizations?.desktopPrinter || "";
-    bluetoothPrinterMac = profile.customizations?.bluetoothPrinterMac || "";
-    printerSize = profile.customizations?.printerSize || "80mm";
+    // [H-2 FIX] Wrap JSON.parse in try/catch — malformed sessionStorage must not crash printing
+    try {
+      const profile = JSON.parse(cached);
+      printerType = profile.customizations?.printerType || "html";
+      desktopPrinter = profile.customizations?.desktopPrinter || "";
+      bluetoothPrinterMac = profile.customizations?.bluetoothPrinterMac || "";
+      printerSize = profile.customizations?.printerSize || "80mm";
+    } catch {
+      console.error("silentPrint: failed to parse admin_profile from sessionStorage; falling back to HTML print.");
+    }
   }
 
   const isDesktop = typeof window !== "undefined" && !!(window as any).electronAPI;
@@ -232,7 +248,7 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
       } else if (isAndroid) {
         if (!bluetoothPrinterMac) throw new Error("No Bluetooth printer configured");
         const success = await backgroundPrinterService.printRaw(bytes);
-        if (!success) {
+        if (!success && !silent) {
            alert("Printer is currently offline. Your bill has been securely queued and will print automatically as soon as the printer is turned on!");
         }
         return; // Always return here for raw Android, never fall back to HTML
@@ -240,10 +256,10 @@ export async function silentPrint(html: string, data?: BillData, paymentMethod?:
     } catch (err: any) {
       console.error("Raw print failed:", err);
       if (isAndroid) {
-         alert(`Printer error: ${err.message}. Bill queued for auto-printing.`);
+         if (!silent) alert(`Printer error: ${err.message}. Bill queued for auto-printing.`);
          return; // Do not fall back to HTML
       } else {
-         alert(`Desktop Print Failed: ${err.message}. Falling back to OS print dialog...`);
+         if (!silent) alert(`Desktop Print Failed: ${err.message}. Falling back to OS print dialog...`);
       }
     }
   }

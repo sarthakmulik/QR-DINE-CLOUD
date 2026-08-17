@@ -6,16 +6,8 @@ import { Capacitor } from "@capacitor/core";
 import { ChevronDown, Check, ChevronRight, RefreshCw, Printer, AlertCircle } from "lucide-react";
 import { usePrinter } from "@/components/providers/printer-provider";
 
-let BluetoothSerial: any;
-let BleClient: any;
-if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
-  import("@ascentio-it/capacitor-bluetooth-serial").then((mod) => {
-    BluetoothSerial = mod.BluetoothSerial;
-  }).catch(console.error);
-  import("@capacitor-community/bluetooth-le").then((mod) => {
-    BleClient = mod.BleClient;
-  }).catch(console.error);
-}
+// [H-3 FIX] Removed module-level async imports of BleClient and BluetoothSerial.
+// They are now imported inside loadPrinters() to guarantee they are resolved before use.
 
 export function NativePrinterSettings({
   form,
@@ -28,6 +20,12 @@ export function NativePrinterSettings({
   const [loading, setLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // [H-4 FIX] Scan lock to prevent stacking concurrent BLE/SPP scans on rapid refresh clicks
+  const isScanningRef = useRef(false);
+  // [M-1 FIX] Track component mount state to avoid calling setPrinters on unmounted component
+  const mountedRef = useRef(true);
+  // [C-1 FIX] Keep a ref to the latest selected printer value so testPrint always uses the current value
+  const selectedPrinterRef = useRef<string>("");
   
   const { status: livePrinterStatus } = usePrinter();
 
@@ -36,32 +34,45 @@ export function NativePrinterSettings({
   const isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
 
   const loadPrinters = useCallback(async () => {
+    // [H-4 FIX] Prevent stacking multiple concurrent BLE/SPP scans on rapid refresh clicks
+    if (isScanningRef.current) return;
+    isScanningRef.current = true;
     setLoading(true);
     setPrinters([]);
     try {
       if (isDesktop) {
         if (printerType === "raw") {
           const ports = await (window as any).electronAPI.getSerialPorts();
-          setPrinters(ports.map((p: any) => ({ name: p.path, displayName: `${p.path} (${p.friendlyName || "Serial Port"})` })));
+          if (mountedRef.current) setPrinters(ports.map((p: any) => ({ name: p.path, displayName: `${p.path} (${p.friendlyName || "Serial Port"})` })));
         } else {
           const list = await (window as any).electronAPI.getPrinters();
-          setPrinters(list || []);
+          if (mountedRef.current) setPrinters(list || []);
         }
       } else if (isAndroid) {
         if (printerType === "raw") {
-          if (!BluetoothSerial || !BleClient) {
-            console.error("Bluetooth plugins not loaded yet");
+          // [H-3 FIX] Import Bluetooth modules inside the function to ensure they are resolved
+          // before use, regardless of when the component first renders.
+          let BluetoothSerial: any;
+          let BleClient: any;
+          try {
+            const [serialMod, bleMod] = await Promise.all([
+              import("@ascentio-it/capacitor-bluetooth-serial"),
+              import("@capacitor-community/bluetooth-le"),
+            ]);
+            BluetoothSerial = serialMod.BluetoothSerial;
+            BleClient = bleMod.BleClient;
+          } catch (e) {
+            console.error("Failed to load Bluetooth plugins:", e);
             return;
           }
           
           try {
-            // This triggers native Location and Nearby Devices permission prompts
             await BleClient.initialize();
-            
             const isLocationEnabled = await BleClient.isLocationEnabled();
             if (!isLocationEnabled) {
               await BleClient.openLocationSettings();
-              await new Promise(r => setTimeout(r, 2000));
+              // [LOW] Don't assume 2s is enough; just wait briefly and continue anyway
+              await new Promise(r => setTimeout(r, 1500));
             }
           } catch (e) {
             console.warn("BLE initialize failed (permissions denied?)", e);
@@ -74,7 +85,7 @@ export function NativePrinterSettings({
             if (!seenMacs.has(d.address)) {
               seenMacs.add(d.address);
               devices.push({
-                name: `${type}:${d.address}`, // Prefix MAC with type to route printing
+                name: `${type}:${d.address}`,
                 displayName: `${d.name || "Unknown"} [${type.toUpperCase()}] (${d.address})`
               });
             }
@@ -90,52 +101,51 @@ export function NativePrinterSettings({
           }
           
           try {
-            // Concurrent Live Scan: BLE and SPP
             const bleScanned: any[] = [];
             
-            // Start BLE Scan
             const blePromise = BleClient.requestLEScan({}, (result: any) => {
               if (result.device && result.device.name) {
                 bleScanned.push({ address: result.device.deviceId, name: result.device.name });
               }
             }).catch((e: any) => console.warn("BLE scan error", e));
             
-            // Start SPP Scan
             const sppPromise = BluetoothSerial.scan().catch((e: any) => {
               console.warn("SPP live scan error", e);
               return { devices: [] };
             });
             
-            // Wait 4 seconds for discovery
             await new Promise(resolve => setTimeout(resolve, 4000));
             
             await BleClient.stopLEScan().catch(() => {});
             
             const sppResult = await sppPromise;
             
-            // Merge SPP
             if (sppResult && sppResult.devices) {
               for (const d of sppResult.devices) addDevice(d, "spp");
             }
-            // Merge BLE
             for (const d of bleScanned) addDevice(d, "ble");
             
           } catch (e) {
             console.warn("Hybrid live scan failed", e);
           }
           
-          setPrinters(devices);
+          // [M-1 FIX] Only update state if the component is still mounted
+          if (mountedRef.current) setPrinters(devices);
         }
       }
     } catch (e) {
       console.error("Failed to load printers:", e);
     } finally {
-      setLoading(false);
+      isScanningRef.current = false;
+      if (mountedRef.current) setLoading(false);
     }
   }, [printerType, isDesktop, isAndroid]);
 
   useEffect(() => {
+    mountedRef.current = true;
     loadPrinters();
+    // [M-1 FIX] Set mounted = false on unmount so pending scan callbacks don't update state
+    return () => { mountedRef.current = false; };
   }, [loadPrinters]);
 
   if (!isDesktop && !isAndroid) {
@@ -147,6 +157,10 @@ export function NativePrinterSettings({
       ? form.customizations?.bluetoothPrinterMac || ""
       : form.customizations?.desktopPrinter || "";
 
+  // [C-1 FIX] Keep ref in sync so testPrint always reads the latest value,
+  // not the stale closure value from when the button was rendered.
+  selectedPrinterRef.current = currentValue;
+
   function handleChange(val: string) {
     if (printerType === "raw" && isAndroid) {
       setForm({ ...form, customizations: { ...form.customizations, bluetoothPrinterMac: val } });
@@ -156,11 +170,13 @@ export function NativePrinterSettings({
   }
 
   async function testPrint() {
+    // [C-1 FIX] Read from ref (always current) instead of the closure value of currentValue
+    const printerTarget = selectedPrinterRef.current;
     try {
       if (printerType === "html" && isDesktop) {
-        const res = await (window as any).electronAPI.testPrint(currentValue);
-        if (res.success) alert("✅ Test print sent!");
-        else alert("❌ Print failed: " + res.error);
+        const res = await (window as any).electronAPI.testPrint(printerTarget);
+        if (res.success) alert("\u2705 Test print sent!");
+        else alert("\u274C Print failed: " + res.error);
       } else if (printerType === "raw") {
         const { generateRawEscPos } = await import("@/lib/esc-pos-encoder");
         const dummyData = {
@@ -181,26 +197,25 @@ export function NativePrinterSettings({
         const bytes = generateRawEscPos(dummyData as any, form.customizations?.printerSize || "80mm");
 
         if (isDesktop) {
-          if (!currentValue) return alert("Select a COM port first.");
-          const res = await (window as any).electronAPI.printRaw(bytes, currentValue);
-          if (res.success) alert("✅ Raw print sent!");
-          else alert("❌ Print failed: " + res.error);
+          if (!printerTarget) return alert("Select a COM port first.");
+          const res = await (window as any).electronAPI.printRaw(bytes, printerTarget);
+          if (res.success) alert("\u2705 Raw print sent!");
+          else alert("\u274C Print failed: " + res.error);
         } else if (isAndroid) {
-          if (!currentValue) return alert("Select a Bluetooth printer first.");
+          if (!printerTarget) return alert("Select a Bluetooth printer first.");
           alert("Connecting to printer...");
           const { backgroundPrinterService } = await import("@/lib/printer-service");
-          // If the user selected a different printer just now in settings, start the engine for it
-          backgroundPrinterService.startEngine(currentValue);
+          backgroundPrinterService.startEngine(printerTarget);
           const success = await backgroundPrinterService.printRaw(bytes);
           if (success) {
-            alert("✅ Raw print sent!");
+            alert("\u2705 Raw print sent!");
           } else {
-            alert("❌ Print failed. Printer may be offline.");
+            alert("\u274C Print failed. Printer may be offline.");
           }
         }
       }
     } catch (e: any) {
-      alert("❌ Test print failed: " + e.message);
+      alert("\u274C Test print failed: " + e.message);
     }
   }
 
@@ -310,7 +325,14 @@ export function NativePrinterSettings({
                         key={p.name}
                         type="button"
                         className="w-full text-left p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 flex items-center justify-between transition-colors"
-                        onClick={() => { handleChange(p.name); alert("Device saved. Testing connection..."); testPrint(); }}
+                        onClick={() => {
+                          // [C-1 FIX] Save the selection first, update the ref immediately,
+                          // then kick off testPrint AFTER a microtask tick so the ref is fresh.
+                          handleChange(p.name);
+                          selectedPrinterRef.current = p.name;
+                          alert("Device saved. Testing connection...");
+                          setTimeout(() => testPrint(), 0);
+                        }}
                       >
                         <div className="min-w-0">
                           <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{p.displayName?.split(' (')[0] || p.name}</p>

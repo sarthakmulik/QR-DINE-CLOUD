@@ -12,14 +12,15 @@ class PrinterService {
   private isConnectingLock: boolean = false;
   private printQueue: Uint8Array[] = [];
   private isFlushing: boolean = false;
+  // [C-2 FIX] Flag to detect if stopEngine() was called while connectLoop is awaiting
+  private engineRunning: boolean = false;
 
   constructor() {
     this.isAndroid = typeof window !== "undefined" && Capacitor.isNativePlatform();
     
     if (this.isAndroid) {
       App.addListener("appStateChange", async ({ isActive }) => {
-        if (isActive && this.currentMacWithPrefix) {
-          // Immediately try to reconnect when app comes to foreground
+        if (isActive && this.currentMacWithPrefix && this.engineRunning) {
           this.connectLoop();
         }
       });
@@ -43,15 +44,25 @@ class PrinterService {
     return this.status;
   }
 
+  public getCurrentMac() {
+    return this.currentMacWithPrefix;
+  }
+
   public async startEngine(macWithPrefix: string) {
     if (!this.isAndroid || !macWithPrefix) return;
     
-    // If we're already managing this printer, just return
+    // If already managing this exact printer, just return
     if (this.currentMacWithPrefix === macWithPrefix && (this.status === "connected" || this.status === "connecting")) {
       return;
     }
 
+    // [H-5 FIX] If switching to a different printer, stop the old engine first
+    if (this.currentMacWithPrefix && this.currentMacWithPrefix !== macWithPrefix) {
+      this.stopEngine();
+    }
+
     this.currentMacWithPrefix = macWithPrefix;
+    this.engineRunning = true;
     this.connectLoop();
   }
 
@@ -61,7 +72,7 @@ class PrinterService {
     if (this.checkInterval) clearInterval(this.checkInterval);
 
     const tryConnect = async () => {
-      if (!this.currentMacWithPrefix || this.isConnectingLock) return;
+      if (!this.currentMacWithPrefix || this.isConnectingLock || !this.engineRunning) return;
       this.isConnectingLock = true;
       try {
         this.setStatus("connecting");
@@ -84,6 +95,7 @@ class PrinterService {
           if (connectedDevices.some(d => d.deviceId === mac)) {
              this.setStatus("connected");
              this.isConnectingLock = false;
+             this.flushQueue();
              return;
           }
           
@@ -103,6 +115,7 @@ class PrinterService {
           } catch (e: any) {
              if (e && typeof e === 'string' && e.toLowerCase().includes("already connected")) {
                 this.setStatus("connected");
+                this.flushQueue();
              } else {
                 throw e;
              }
@@ -119,14 +132,21 @@ class PrinterService {
     // Initial connection attempt
     await tryConnect();
 
-    // Set up a polling interval to keep connection alive or retry
+    // [C-2 FIX] Only create interval if engine is still supposed to be running.
+    // stopEngine() may have been called while tryConnect was awaiting a slow BT handshake.
+    if (!this.engineRunning) return;
+
     this.checkInterval = setInterval(async () => {
+      if (!this.engineRunning) {
+        clearInterval(this.checkInterval);
+        return;
+      }
       if (this.status === "error" || this.status === "idle") {
         await tryConnect();
       } else if (this.status === "connected" && this.printQueue.length > 0) {
         this.flushQueue();
       }
-    }, 10000); // Retry every 10 seconds if dropped
+    }, 10000);
   }
 
   private async flushQueue() {
@@ -135,14 +155,14 @@ class PrinterService {
     
     try {
       while (this.printQueue.length > 0) {
-        if (this.status !== "connected") break; // Stop flushing if dropped
+        if (this.status !== "connected") break;
         const bytes = this.printQueue[0];
         const success = await this.executeRawPrint(bytes);
         if (success) {
-          this.printQueue.shift(); // Remove from queue only if successful
-          await new Promise(r => setTimeout(r, 1000)); // Delay between multiple bills
+          this.printQueue.shift();
+          await new Promise(r => setTimeout(r, 1000));
         } else {
-          break; // Stop flushing, let the reconnect loop handle it
+          break;
         }
       }
     } finally {
@@ -153,19 +173,23 @@ class PrinterService {
   public async printRaw(bytes: Uint8Array): Promise<boolean> {
     if (!this.isAndroid || !this.currentMacWithPrefix) return false;
 
-    // Fast path: if connected, try printing immediately
-    if (this.status === "connected") {
+    // [C-3 FIX] Fast path ONLY when connected AND no flush in progress AND queue is empty.
+    // Prevents interleaving new bytes with an active flush (corrupted merged receipt).
+    if (this.status === "connected" && !this.isFlushing && this.printQueue.length === 0) {
       const success = await this.executeRawPrint(bytes);
       if (success) return true;
     }
     
-    // If we reach here, we are disconnected or the direct print failed.
-    // Queue it up and trigger a connection attempt!
+    // Disconnected or flush in progress — push to queue
     this.printQueue.push(bytes);
     if (this.status !== "connecting") {
-      this.setStatus("error"); // Force the interval/listeners to know we need connection
+      this.setStatus("error");
     }
-    return false; // Returns false to indicate it was queued, not printed instantly
+    // If already connected and the flush just finished, kick off a new one
+    if (this.status === "connected" && !this.isFlushing) {
+      this.flushQueue();
+    }
+    return false;
   }
 
   private async executeRawPrint(bytes: Uint8Array): Promise<boolean> {
@@ -208,7 +232,6 @@ class PrinterService {
         }
       } else {
         const { BluetoothSerial } = await import("@ascentio-it/capacitor-bluetooth-serial");
-        // Chunk SPP writes to prevent buffer overflow on cheap thermal printers
         const CHUNK_SIZE = 1024;
         for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
           const chunk = bytes.slice(i, i + CHUNK_SIZE);
@@ -229,9 +252,12 @@ class PrinterService {
   }
 
   public stopEngine() {
+    // [C-2 FIX] Set flag FIRST before clearing interval so any in-flight awaits abort
+    this.engineRunning = false;
     if (this.checkInterval) clearInterval(this.checkInterval);
+    this.checkInterval = null;
     if (this.isAndroid && this.currentMacWithPrefix) {
-      let mac = this.currentMacWithPrefix.replace("ble:", "").replace("spp:", "");
+      const mac = this.currentMacWithPrefix.replace("ble:", "").replace("spp:", "");
       if (this.currentMacWithPrefix.startsWith("ble:")) {
         import("@capacitor-community/bluetooth-le").then(({ BleClient }) => BleClient.disconnect(mac).catch(() => {}));
       } else {
@@ -244,3 +270,4 @@ class PrinterService {
 }
 
 export const backgroundPrinterService = new PrinterService();
+
