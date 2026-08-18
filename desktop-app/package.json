@@ -1,7 +1,7 @@
 {
   "name": "qr-dine-cloud-desktop",
-  "version": "1.0.0",
-  "description": "QR Dine Cloud Desktop Application for Hotel Admins",
+  "version": "2.0.0",
+  "description": "QR Dine Cloud Desktop POS Application — Offline Capable",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

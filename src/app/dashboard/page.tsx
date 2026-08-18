@@ -74,10 +74,23 @@ export default function TablesDashboardPage() {
   const checkoutPendingRef = useRef<Record<string, boolean>>({});
   const paymentPendingRef = useRef<Record<string, boolean>>({});
   const autoPrintedSessionsRef = useRef<Set<string>>(new Set());
+  /** True while offline queue is replaying — prevents pollTables from clobbering optimistic state */
+  const pausePollDuringSyncRef = useRef(false);
 
   const { currentPlan, canAccess, serviceType, hotelId } = usePlan();
   const router = useRouter();
-  const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode();
+
+  // pollTables is declared below — we need a stable ref to pass it into useOfflineMode
+  const pollTablesRef = useRef<(() => Promise<any>) | null>(null);
+
+  const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode({
+    onSyncComplete: () => {
+      // Called 1.5s after the queue finishes syncing — safe to re-fetch from DB
+      pausePollDuringSyncRef.current = false;
+      pollTablesRef.current?.();
+    },
+  });
+
 
   useEffect(() => {
     if (serviceType === "quick_service") {
@@ -191,6 +204,12 @@ export default function TablesDashboardPage() {
   }, []);
 
   const loadTables = useCallback(async () => {
+    // If offline, serve from sessionStorage cache immediately — never hang on network
+    if (!navigator.onLine) {
+      setLoading(false);
+      return;
+    }
+
     const [tablesRes, profileRes, menuRes, statsRes] = await Promise.all([
       fetch("/api/hotel/tables"),
       fetch("/api/hotel/profile"),
@@ -236,6 +255,9 @@ export default function TablesDashboardPage() {
   }, [adjustTablesData]);
 
   const pollTables = useCallback(async (): Promise<TableData[] | undefined> => {
+    // Don't overwrite optimistic state while offline queue is still replaying
+    if (pausePollDuringSyncRef.current) return;
+    if (!navigator.onLine) return;
     try {
       const res = await fetch("/api/hotel/tables");
       if (res.ok) {
@@ -254,10 +276,15 @@ export default function TablesDashboardPage() {
     }
   }, [adjustTablesData]);
 
+  // Register pollTables in the ref so useOfflineMode can call it after sync
+  useEffect(() => {
+    pollTablesRef.current = pollTables;
+  }, [pollTables]);
+
   // --- Realtime: instant push updates ----------------------------------------
   // Subscribe to table_sessions changes for this hotel. On any INSERT/UPDATE/DELETE
   // we call pollTables() which re-fetches /api/hotel/tables and merges via the
-  // existing adjustTablesData + optimistic-UI logic. Zero changes to that logic.
+  // existing adjustTablesData + optimistic-UI logic.
   useRealtimeRefresh({
     table: "table_sessions",
     hotelId,
@@ -268,10 +295,16 @@ export default function TablesDashboardPage() {
   useEffect(() => {
     loadTables();
     // 60-second fallback poll — safety net for brief Realtime disconnects.
-    // Not the primary update path (Realtime handles that).
-    const interval = setInterval(pollTables, 60000);
+    const interval = setInterval(() => {
+      if (!pausePollDuringSyncRef.current) pollTables();
+    }, 60000);
     return () => clearInterval(interval);
   }, [loadTables, pollTables]);
+
+  // When the queue starts syncing, pause table polling to prevent race conditions
+  useEffect(() => {
+    pausePollDuringSyncRef.current = isSyncing;
+  }, [isSyncing]);
 
   async function handleAddManualItem() {
     if (!selected?.currentSession || !manualItemId) return;

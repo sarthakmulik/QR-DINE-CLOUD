@@ -30,6 +30,16 @@ interface AnalyticsData {
 export default function AnalyticsPage() {
   const { currentPlan, canAccess } = usePlan();
   const hasAccess = canAccess("advanced_analytics");
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    setIsOffline(!navigator.onLine);
+    const onOnline = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
+  }, []);
 
   const [range, setRange] = useState<"today" | "week" | "month" | "custom">("week");
   const [customFrom, setCustomFrom] = useState("");
@@ -62,9 +72,11 @@ export default function AnalyticsPage() {
     return url;
   }, [range, customFrom, customTo]);
 
-  const { data, error, isValidating } = useSWR<AnalyticsData>(hasAccess ? apiUrl : null, fetcher, {
-    revalidateOnFocus: true,
-  });
+  const { data, error, isValidating } = useSWR<AnalyticsData>(
+    hasAccess && !isOffline ? apiUrl : null,
+    fetcher,
+    { revalidateOnFocus: true }
+  );
 
   const loading = !error && !data && isValidating;
 
@@ -226,6 +238,11 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6 animate-page-entrance">
+      {isOffline && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3 flex items-center gap-3 text-sm text-yellow-800 dark:text-yellow-300">
+          <span>📶 You are offline. Analytics data will load when internet returns.</span>
+        </div>
+      )}
 
       {/* Header section with filters */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

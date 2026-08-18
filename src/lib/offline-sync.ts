@@ -1,4 +1,4 @@
-import { get, set, update } from 'idb-keyval';
+import { get, set, update } from "idb-keyval";
 
 export interface OfflineAction {
   id: string;
@@ -8,15 +8,14 @@ export interface OfflineAction {
   timestamp: number;
 }
 
-const QUEUE_KEY = 'offline_queue';
+const QUEUE_KEY = "offline_queue";
 
-export async function addOfflineAction(action: Omit<OfflineAction, 'id' | 'timestamp'>) {
+export async function addOfflineAction(action: Omit<OfflineAction, "id" | "timestamp">) {
   const newAction: OfflineAction = {
     ...action,
     id: crypto.randomUUID(),
     timestamp: Date.now(),
   };
-
   await update(QUEUE_KEY, (val: any) => {
     const queue = Array.isArray(val) ? val : [];
     return [...queue, newAction];
@@ -39,76 +38,65 @@ export async function removeOfflineAction(id: string) {
   });
 }
 
-let isSyncing = false;
+let _isSyncing = false;
+export function isSyncingOfflineQueue() { return _isSyncing; }
 
-export async function syncOfflineQueue() {
-  if (isSyncing) return;
-  if (!navigator.onLine) return;
+export async function syncOfflineQueue(onProgress?: (remaining: number) => void) {
+  if (_isSyncing) return;
+  if (typeof navigator === "undefined" || !navigator.onLine) return;
 
-  isSyncing = true;
+  _isSyncing = true;
   try {
     const queue = await getOfflineQueue();
-    if (queue.length === 0) {
-      isSyncing = false;
-      return;
-    }
+    if (queue.length === 0) return;
 
-    // Sort by timestamp just in case
     queue.sort((a, b) => a.timestamp - b.timestamp);
 
     for (const action of queue) {
-      // Check online status before each request
       if (!navigator.onLine) break;
-
       try {
         const response = await fetch(action.url, {
           method: action.method,
-          headers: action.body ? { 'Content-Type': 'application/json' } : undefined,
+          headers: action.body ? { "Content-Type": "application/json" } : undefined,
           body: action.body ? JSON.stringify(action.body) : undefined,
         });
-
-        if (response.ok || response.status >= 400) {
-          // If successful OR it failed with 4xx/5xx (meaning the server responded but rejected it),
-          // we should remove it from the queue so we don't get stuck forever.
+        const status = response.status;
+        if (response.ok || status === 409 || status === 404 || (status >= 400 && status < 500)) {
           await removeOfflineAction(action.id);
         }
+        const remaining = (await getOfflineQueue()).length;
+        onProgress?.(remaining);
       } catch (err) {
-        // Network error (fetch failed entirely)
-        console.error('Failed to sync offline action:', err);
-        break; // Stop syncing, wait for connection again
+        console.error("[OfflineSync] Network error during sync:", err);
+        break;
       }
     }
   } finally {
-    isSyncing = false;
+    _isSyncing = false;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("offline-sync-complete"));
+    }
   }
 }
 
-export async function fetchOrQueue(url: string, options: RequestInit = {}): Promise<Response | { ok: true, offline: true }> {
-  if (navigator.onLine) {
+export async function fetchOrQueue(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response | { ok: true; offline: true }> {
+  if (typeof navigator !== "undefined" && navigator.onLine) {
     try {
       const res = await fetch(url, options);
       return res;
-    } catch (err) {
-      // Network failed despite navigator.onLine saying true
-      console.warn('Fetch failed, queueing offline', err);
+    } catch (_err) {
+      console.warn("[OfflineSync] Fetch failed, queueing:", url);
     }
   }
 
-  // Queue it offline
   let bodyData: any = undefined;
-  if (options.body && typeof options.body === 'string') {
-    try {
-      bodyData = JSON.parse(options.body);
-    } catch (e) {
-      // Not JSON
-    }
+  if (options.body && typeof options.body === "string") {
+    try { bodyData = JSON.parse(options.body); } catch (_e) { bodyData = options.body; }
   }
 
-  await addOfflineAction({
-    url,
-    method: options.method || 'GET',
-    body: bodyData,
-  });
-
+  await addOfflineAction({ url, method: options.method || "GET", body: bodyData });
   return { ok: true, offline: true };
 }

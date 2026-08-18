@@ -1,60 +1,85 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, session } = require('electron');
 const path = require('path');
 
 // Live production URL
 const APP_URL = 'https://qr-dine-cloud.vercel.app';
+const APP_VERSION = '2.0.0';
 
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1280,
+    height: 860,
+    minWidth: 900,
+    minHeight: 600,
     icon: path.join(__dirname, 'icon.png'),
+    title: `QR Dine Cloud POS v${APP_VERSION}`,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
+      // Enable disk-based cache so app assets load when offline
+      partition: 'persist:qrdine',
     },
-    show: false, // Don't show until ready-to-show
+    show: false,
+    backgroundColor: '#ffffff',
   });
 
-  // Remove the default application menu (File, Edit, View, etc.)
   Menu.setApplicationMenu(null);
 
-  // Load the live URL
+  // Load the live URL — ServiceWorker will serve cached assets when offline
   mainWindow.loadURL(APP_URL);
 
-  // Show window gracefully once it's ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    mainWindow.setTitle(`QR Dine Cloud POS v${APP_VERSION}`);
   });
 
-  mainWindow.on('closed', function () {
+  // Show a simple offline indicator in the title bar
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, _errorDesc, validatedUrl) => {
+    // -2 = ERR_FAILED, -105 = ERR_NAME_NOT_RESOLVED (no internet)
+    if (validatedUrl && validatedUrl.startsWith('https://qr-dine-cloud.vercel.app')) {
+      mainWindow.setTitle(`QR Dine Cloud POS — Working Offline`);
+      // Try loading again in 5 seconds
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.loadURL(APP_URL);
+        }
+      }, 5000);
+    }
+  });
+
+  mainWindow.webContents.on('did-navigate', () => {
+    mainWindow.setTitle(`QR Dine Cloud POS v${APP_VERSION}`);
+  });
+
+  mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
-// App lifecycle events
 app.whenReady().then(() => {
+  // Enable aggressive disk caching for offline support
+  const ses = session.fromPartition('persist:qrdine');
+  ses.setPreloads([]);
+
   createWindow();
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
   setupIpcHandlers();
 });
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
 /**
  * Helper: Creates a hidden BrowserWindow, loads HTML, prints it, and cleans up.
- * Handles all edge cases: empty printer name, load failures, hanging prints,
- * and memory leaks from orphaned windows.
  */
 function printInHiddenWindow(html, printerName) {
   return new Promise((resolve) => {
@@ -74,16 +99,13 @@ function printInHiddenWindow(html, printerName) {
       resolve(result);
     }
 
-    // Safety timeout: if anything hangs (driver crash, etc.), destroy after 30s
     const safetyTimeout = setTimeout(() => {
       console.error('Print safety timeout reached (30s). Force-closing print window.');
       finish({ success: false, error: 'Print timed out after 30 seconds. Check printer connection.' });
     }, 30000);
 
-    // Handle load failure (Issue 2)
     printWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
       clearTimeout(safetyTimeout);
-      console.error('Print window failed to load:', errorCode, errorDescription);
       finish({ success: false, error: `Failed to render bill: ${errorDescription}` });
     });
 
@@ -91,23 +113,18 @@ function printInHiddenWindow(html, printerName) {
     printWindow.loadURL(dataUrl);
 
     printWindow.webContents.on('did-finish-load', () => {
-      // Build print options (Issue 1: omit deviceName if empty/falsy)
       const options = {
         silent: true,
         margins: { marginType: 'none' },
       };
 
-      // Only set deviceName if a specific printer was chosen
       if (printerName && printerName.trim() !== '') {
         options.deviceName = printerName.trim();
       }
-      // If printerName is empty/null/undefined, we omit deviceName entirely
-      // so Electron uses the OS default printer
 
       printWindow.webContents.print(options, (success, failureReason) => {
         clearTimeout(safetyTimeout);
         if (!success) {
-          console.error('Print failed:', failureReason);
           finish({ success: false, error: failureReason || 'Print failed. Check printer connection.' });
         } else {
           finish({ success: true });
@@ -150,19 +167,12 @@ function setupIpcHandlers() {
       
       const { SerialPort } = require('serialport');
       const port = new SerialPort({ path: portName, baudRate: 9600 }, (err) => {
-        if (err) {
-          console.error('Serial port open error:', err);
-          return resolve({ success: false, error: err.message });
-        }
+        if (err) return resolve({ success: false, error: err.message });
       });
       
       const buffer = Buffer.from(data);
       port.write(buffer, (err) => {
-        if (err) {
-          console.error('Serial port write error:', err);
-          return resolve({ success: false, error: err.message });
-        }
-        
+        if (err) return resolve({ success: false, error: err.message });
         port.drain((drainErr) => {
           port.close();
           if (drainErr) return resolve({ success: false, error: drainErr.message });
@@ -178,7 +188,7 @@ function setupIpcHandlers() {
         <body style="font-family: monospace; text-align: center; margin: 0; padding: 20px;">
           <h2>TEST PRINT</h2>
           <p>--------------------------------</p>
-          <p>QR DINE CLOUD</p>
+          <p>QR DINE CLOUD v${APP_VERSION}</p>
           <p>Printer integration successful!</p>
           <p>--------------------------------</p>
           <p>Printer: ${printerName || 'OS Default'}</p>
@@ -186,7 +196,9 @@ function setupIpcHandlers() {
         </body>
       </html>
     `;
-
     return printInHiddenWindow(testHtml, printerName);
   });
+
+  ipcMain.handle('get-version', () => APP_VERSION);
 }
+

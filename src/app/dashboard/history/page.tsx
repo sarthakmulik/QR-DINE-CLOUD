@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { formatINR, formatDateTime } from "@/lib/utils";
 import { usePlan } from "@/lib/contexts/plan-context";
-import { Download, Lock, History, AlertCircle, Loader2 } from "lucide-react";
+import { Download, Lock, History, AlertCircle, Loader2, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then(res => res.json());
@@ -23,10 +23,22 @@ export default function HistoryPage() {
   const { canAccess, planLimit } = usePlan();
   const hasExportAccess = canAccess("csv_export");
   const exportLimit = planLimit("csv_export_limit");
+  const [isOffline, setIsOffline] = useState(false);
 
-  const { data, error, isValidating } = useSWR<{ sessions: Session[], totalRevenue: number }>("/api/hotel/history", fetcher, {
-    revalidateOnFocus: true,
-  });
+  useEffect(() => {
+    setIsOffline(!navigator.onLine);
+    const onOnline = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
+  }, []);
+
+  const { data, error, isValidating } = useSWR<{ sessions: Session[], totalRevenue: number }>(
+    isOffline ? null : "/api/hotel/history",
+    fetcher,
+    { revalidateOnFocus: true }
+  );
 
   const sessions = data?.sessions || [];
   const totalRevenue = data?.totalRevenue || 0;
@@ -35,6 +47,12 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6 animate-page-entrance">
+      {isOffline && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3 flex items-center gap-3 text-sm text-yellow-800 dark:text-yellow-300">
+          <WifiOff className="w-4 h-4 flex-shrink-0" />
+          <span>You are offline. Order history will load when internet returns.</span>
+        </div>
+      )}
       <div className="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
         <div>
           <h1 className="text-2xl font-bold">Order History</h1>
