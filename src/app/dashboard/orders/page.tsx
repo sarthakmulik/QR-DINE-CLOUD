@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import Link from "next/link";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PairTabletModal } from "@/components/dashboard/PairTabletModal";
@@ -30,8 +31,18 @@ export default function LiveOrdersPage() {
   const { hotelId, canAccess } = usePlan();
   const hasKdsAccess = canAccess("kds_access");
   const { data: sessions = [], mutate, error, isValidating } = useSWR<Session[]>("/api/hotel/sessions", fetcher, {
-    refreshInterval: 15000,
+    // 60-second fallback poll — Realtime subscription below is the primary update path.
+    refreshInterval: 60000,
     revalidateOnFocus: true,
+  });
+
+  // Realtime: call SWR mutate() instantly on any table_sessions change for this hotel.
+  // All action handlers (handleConfirmPayment etc.) are untouched.
+  useRealtimeRefresh({
+    table: "table_sessions",
+    hotelId,
+    onRefresh: () => mutate(),
+    enabled: !!hotelId,
   });
 
   const loading = !error && sessions.length === 0 && isValidating;

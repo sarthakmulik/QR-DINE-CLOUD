@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, use, useCallback } from "react";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize } from "lucide-react";
 
 interface SessionItem {
@@ -70,70 +71,84 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
       });
   }, [hotelId]);
 
-  // 2. Poll for open orders every 8 seconds once authenticated
+  // 2. Fetch orders — extracted to useCallback so Realtime hook can call it too.
+  const fetchOrders = useCallback(() => {
+    if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
+    const token = sessionStorage.getItem(`kitchen_token_${hotelId}`) || "";
+    fetch(`/api/kitchen/${hotelId}/orders?t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "x-kitchen-token": token },
+    })
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          setPinEntered(false);
+          sessionStorage.removeItem(`kitchen_token_${hotelId}`);
+          throw new Error("KDS session expired");
+        }
+        return res.json();
+      })
+      .then((data: TableSession[]) => {
+        // Initialize item statuses if not set yet
+        setItemStatus((prev) => {
+          const next = { ...prev };
+          data.forEach((session) => {
+            session.items.forEach((item) => {
+              const serverStatus = item.status || "preparing";
+              const localStatus = next[item.id];
+
+              if (!localStatus) {
+                next[item.id] = serverStatus;
+              } else {
+                if (serverStatus === "served") {
+                  next[item.id] = "served";
+                } else if (serverStatus === "ready" && localStatus === "preparing") {
+                  next[item.id] = "ready";
+                }
+              }
+            });
+          });
+          return next;
+        });
+
+        // Play alert beep on new incoming orders
+        if (prevOrderIdsRef.current !== null) {
+          const currentIds = data.map((s) => s.id);
+          const hasNewOrder = currentIds.some((id) => !prevOrderIdsRef.current!.includes(id));
+          if (hasNewOrder) {
+            playBeep();
+          }
+          prevOrderIdsRef.current = currentIds;
+        } else {
+          prevOrderIdsRef.current = data.map((s) => s.id);
+        }
+
+        setSessions(data);
+      })
+      .catch((err) => console.error("Error loading KDS orders:", err));
+  }, [hotelId, pinEntered, hotelPlan]);
+
+  // Realtime: instantly refresh KDS when any session_items or table_sessions change.
+  // session_items has no hotel_id column so we subscribe without a row-level filter —
+  // the kitchen API route handles hotel-scoped auth. table_sessions uses hotel_id filter.
+  useRealtimeRefresh({
+    table: "session_items",
+    onRefresh: fetchOrders,
+    enabled: pinEntered && hotelPlan.toLowerCase() !== "basic",
+  });
+  useRealtimeRefresh({
+    table: "table_sessions",
+    hotelId,
+    onRefresh: fetchOrders,
+    enabled: pinEntered && hotelPlan.toLowerCase() !== "basic",
+  });
+
   useEffect(() => {
     if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
-
-    function fetchOrders() {
-      const token = sessionStorage.getItem(`kitchen_token_${hotelId}`) || "";
-      fetch(`/api/kitchen/${hotelId}/orders?t=${Date.now()}`, {
-        cache: "no-store",
-        headers: {
-          "x-kitchen-token": token,
-        },
-      })
-        .then((res) => {
-          if (res.status === 401 || res.status === 403) {
-            setPinEntered(false);
-            sessionStorage.removeItem(`kitchen_token_${hotelId}`);
-            throw new Error("KDS session expired");
-          }
-          return res.json();
-        })
-        .then((data: TableSession[]) => {
-          // Initialize item statuses if not set yet
-          setItemStatus((prev) => {
-            const next = { ...prev };
-            data.forEach((session) => {
-              session.items.forEach((item) => {
-                const serverStatus = item.status || "preparing";
-                const localStatus = next[item.id];
-
-                if (!localStatus) {
-                  next[item.id] = serverStatus;
-                } else {
-                  if (serverStatus === "served") {
-                    next[item.id] = "served";
-                  } else if (serverStatus === "ready" && localStatus === "preparing") {
-                    next[item.id] = "ready";
-                  }
-                }
-              });
-            });
-            return next;
-          });
-
-          // Play alert beep on new incoming orders
-          if (prevOrderIdsRef.current !== null) {
-            const currentIds = data.map((s) => s.id);
-            const hasNewOrder = currentIds.some((id) => !prevOrderIdsRef.current!.includes(id));
-            if (hasNewOrder) {
-              playBeep();
-            }
-            prevOrderIdsRef.current = currentIds;
-          } else {
-            prevOrderIdsRef.current = data.map((s) => s.id);
-          }
-
-          setSessions(data);
-        })
-        .catch((err) => console.error("Error loading KDS orders:", err));
-    }
-
     fetchOrders();
-    const interval = setInterval(fetchOrders, 8000);
+    // 60-second fallback poll — safety net for brief Realtime disconnects.
+    const interval = setInterval(fetchOrders, 60000);
     return () => clearInterval(interval);
-  }, [hotelId, pinEntered, hotelPlan]);
+  }, [fetchOrders, pinEntered, hotelPlan]);
 
   // 3. Keep current time fresh
   useEffect(() => {

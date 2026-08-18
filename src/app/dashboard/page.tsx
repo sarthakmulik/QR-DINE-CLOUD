@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { generateBillHTML, silentPrint, type PrinterSize } from "@/lib/bill-generator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,7 @@ export default function TablesDashboardPage() {
   const paymentPendingRef = useRef<Record<string, boolean>>({});
   const autoPrintedSessionsRef = useRef<Set<string>>(new Set());
 
-  const { currentPlan, canAccess, serviceType } = usePlan();
+  const { currentPlan, canAccess, serviceType, hotelId } = usePlan();
   const router = useRouter();
 
   useEffect(() => {
@@ -248,9 +249,22 @@ export default function TablesDashboardPage() {
     }
   }, [adjustTablesData]);
 
+  // --- Realtime: instant push updates ----------------------------------------
+  // Subscribe to table_sessions changes for this hotel. On any INSERT/UPDATE/DELETE
+  // we call pollTables() which re-fetches /api/hotel/tables and merges via the
+  // existing adjustTablesData + optimistic-UI logic. Zero changes to that logic.
+  useRealtimeRefresh({
+    table: "table_sessions",
+    hotelId,
+    onRefresh: pollTables,
+    enabled: !!hotelId,
+  });
+
   useEffect(() => {
     loadTables();
-    const interval = setInterval(pollTables, 5000);
+    // 60-second fallback poll — safety net for brief Realtime disconnects.
+    // Not the primary update path (Realtime handles that).
+    const interval = setInterval(pollTables, 60000);
     return () => clearInterval(interval);
   }, [loadTables, pollTables]);
 
