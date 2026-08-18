@@ -135,7 +135,7 @@ async function loadTableWithSession(hotelId: string, tableNumber: number) {
   return { table, currentSession };
 }
 
-export async function getOrCreateOpenSession(hotelId: string, tableNumber: number, expectedSessionId?: string | null, customerName?: string | null, customerPhone?: string | null) {
+export async function getOrCreateOpenSession(hotelId: string, tableNumber: number, expectedSessionId?: string | null, customerName?: string | null, customerPhone?: string | null, offlineId?: string) {
   const sb = admin();
   const [hotelRes, tableData] = await Promise.all([
     sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>(),
@@ -208,6 +208,7 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
     const { data: newSession, error: sessionError } = await sb
       .from("table_sessions")
       .insert({ 
+        ...(offlineId ? { id: offlineId } : {}),
         hotel_id: hotelId, 
         table_id: table.id, 
         table_number: tableNumber, 

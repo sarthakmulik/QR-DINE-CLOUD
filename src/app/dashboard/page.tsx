@@ -316,10 +316,11 @@ export default function TablesDashboardPage() {
     if (!sessionToOpen) return;
     setOpeningSession(true);
     try {
+      const newId = crypto.randomUUID();
       const res = await fetchOrQueue("/api/hotel/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableNumber: sessionToOpen.tableNumber }),
+        body: JSON.stringify({ tableNumber: sessionToOpen.tableNumber, offlineId: newId }),
       });
       if ('offline' in res && res.offline) {
         refreshQueue();
@@ -327,7 +328,7 @@ export default function TablesDashboardPage() {
         // Optimistic offline state
         setTables(prev => prev.map(t => 
           t.id === sessionToOpen.id 
-            ? { ...t, status: "occupied", currentSession: { id: `offline-${Date.now()}`, status: 'open', subtotal: 0, taxAmount: 0, total: 0, startTime: new Date().toISOString(), items: [] } }
+            ? { ...t, status: "occupied", currentSession: { id: newId, status: 'open', subtotal: 0, taxAmount: 0, total: 0, startTime: new Date().toISOString(), items: [] } }
             : t
         ));
       } else if (res.ok) {

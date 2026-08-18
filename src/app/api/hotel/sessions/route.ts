@@ -51,12 +51,13 @@ export async function POST(req: NextRequest) {
     const { hotelId } = await requireHotelAccess();
     const body = await req.json();
     const tableNumber = parseInt(body.tableNumber);
+    const offlineId = body.offlineId;
 
     if (isNaN(tableNumber) || tableNumber < 1) {
       return NextResponse.json({ error: "Invalid table number" }, { status: 400 });
     }
 
-    const result = await getOrCreateOpenSession(hotelId, tableNumber);
+    const result = await getOrCreateOpenSession(hotelId, tableNumber, null, null, null, offlineId);
 
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 400 });
