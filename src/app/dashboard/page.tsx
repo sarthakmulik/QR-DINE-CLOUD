@@ -289,13 +289,22 @@ export default function TablesDashboardPage() {
     };
     setSelected((sel) => {
       if (!sel?.currentSession) return sel;
-      return {
-        ...sel,
-        currentSession: {
-          ...sel.currentSession,
-          items: [...sel.currentSession.items, optimisticItem],
-        },
-      };
+      const newItems = [...sel.currentSession.items, optimisticItem];
+      const subtotal = newItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+      const taxRate = hotelProfile?.taxRate || 0;
+      const discountAmt = subtotal * ((sel.currentSession.discountPercent || 0) / 100);
+      const afterDiscount = subtotal - discountAmt;
+      const taxAmount = (afterDiscount * taxRate) / 100;
+      const total = afterDiscount + taxAmount;
+      
+      const updatedSession = { ...sel.currentSession, items: newItems, subtotal, taxAmount, total };
+      
+      // Also update tables array so the background cards reflect the correct total
+      setTables(prev => prev.map(t => 
+        t.id === sel.id ? { ...t, currentSession: updatedSession } : t
+      ));
+      
+      return { ...sel, currentSession: updatedSession };
     });
 
     setManualItemId("");
@@ -353,13 +362,21 @@ export default function TablesDashboardPage() {
   async function handleApplyAdminCoupon() {
     if (!selected?.currentSession) return;
     setApplyingCoupon(true);
+    
+    // Optimistic UI for coupon (we don't know the exact percent offline easily, so we just queue it, 
+    // but applying coupons offline might be tricky without knowing the discount. We'll queue it anyway)
+    const code = couponInput.trim();
+    
     try {
-      const res = await fetch(`/api/hotel/sessions/${selected.currentSession.id}/apply-coupon`, {
+      const res = await fetchOrQueue(`/api/hotel/sessions/${selected.currentSession.id}/apply-coupon`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: couponInput.trim() }),
+        body: JSON.stringify({ code }),
       });
-      if (!res.ok) {
+      if ('offline' in res && res.offline) {
+        refreshQueue();
+        alert("Coupon application queued for when online.");
+      } else if (!res.ok) {
         const data = await res.json();
         alert(data.error || "Failed to apply coupon");
       } else {
@@ -376,13 +393,27 @@ export default function TablesDashboardPage() {
   async function handleRemoveAdminCoupon() {
     if (!selected?.currentSession) return;
     setApplyingCoupon(true);
+    
+    // Optimistic UI for removing coupon
+    setSelected(sel => {
+      if (!sel?.currentSession) return sel;
+      const subtotal = sel.currentSession.subtotal;
+      const taxRate = hotelProfile?.taxRate || 0;
+      const taxAmount = (subtotal * taxRate) / 100;
+      const total = subtotal + taxAmount;
+      return { ...sel, currentSession: { ...sel.currentSession, discountPercent: 0, taxAmount, total } };
+    });
+    
     try {
-      const res = await fetch(`/api/hotel/sessions/${selected.currentSession.id}/apply-coupon`, {
+      const res = await fetchOrQueue(`/api/hotel/sessions/${selected.currentSession.id}/apply-coupon`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: "" }),
       });
-      if (!res.ok) {
+      if ('offline' in res && res.offline) {
+        refreshQueue();
+        setCouponInput("");
+      } else if (!res.ok) {
         const data = await res.json();
         alert(data.error || "Failed to remove coupon");
       } else {
