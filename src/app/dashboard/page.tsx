@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import { useOfflineMode } from "@/hooks/use-offline-mode";
+import { fetchOrQueue } from "@/lib/offline-sync";
 import { generateBillHTML, silentPrint, type PrinterSize } from "@/lib/bill-generator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,8 @@ import {
   Activity,
   Lock,
   Zap,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 
 interface TableData {
@@ -73,6 +77,7 @@ export default function TablesDashboardPage() {
 
   const { currentPlan, canAccess, serviceType, hotelId } = usePlan();
   const router = useRouter();
+  const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode();
 
   useEffect(() => {
     if (serviceType === "quick_service") {
@@ -297,23 +302,35 @@ export default function TablesDashboardPage() {
     setManualQty("1");
 
     // Fire request then sync in background
-    fetch(`/api/hotel/sessions/${selected.currentSession.id}/items`, {
+    fetchOrQueue(`/api/hotel/sessions/${selected.currentSession.id}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ menuItemId: item.id, name: item.name, price: item.price, quantity: qty }),
-    }).then(() => pollTables());
+    }).then(() => {
+      refreshQueue();
+      if (!isOffline) pollTables();
+    });
   }
 
   async function handleOpenSession() {
     if (!sessionToOpen) return;
     setOpeningSession(true);
     try {
-      const res = await fetch("/api/hotel/sessions", {
+      const res = await fetchOrQueue("/api/hotel/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tableNumber: sessionToOpen.tableNumber }),
       });
-      if (res.ok) {
+      if ('offline' in res && res.offline) {
+        refreshQueue();
+        setSessionToOpen(null);
+        // Optimistic offline state
+        setTables(prev => prev.map(t => 
+          t.id === sessionToOpen.id 
+            ? { ...t, status: "occupied", currentSession: { id: `offline-${Date.now()}`, status: 'open', subtotal: 0, taxAmount: 0, total: 0, startTime: new Date().toISOString(), items: [] } }
+            : t
+        ));
+      } else if (res.ok) {
         setSessionToOpen(null);
         // [H-6 FIX] Use pollTables return value directly instead of double-fetching
         const refreshedTables = await pollTables();
@@ -391,12 +408,16 @@ export default function TablesDashboardPage() {
     updateStatus("checkout_initiated");
     checkoutPendingRef.current[sessionId] = true;
 
-    fetch(`/api/hotel/sessions/${sessionId}/checkout`, { 
+    fetchOrQueue(`/api/hotel/sessions/${sessionId}/checkout`, { 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customerPhone: whatsappNumbers[sessionId] || undefined })
     })
       .then(async (res) => {
+        if ('offline' in res && res.offline) {
+          refreshQueue();
+          return;
+        }
         if (!res.ok) {
           delete checkoutPendingRef.current[sessionId];
           pollTables();
@@ -417,9 +438,26 @@ export default function TablesDashboardPage() {
   /** Fetch bill data and silently print to thermal printer — no new tab */
   async function silentBillPrint(sessionId: string, paymentMethod?: string, silent = false) {
     try {
-      const res = await fetch(`/api/hotel/sessions/${sessionId}/bill-data`);
-      if (!res.ok) return; // non-blocking — don't alert on background print failure
-      const data = await res.json();
+      let data: any = null;
+
+      if (isOffline) {
+        // Fallback to local table data
+        const table = tables.find(t => t.currentSession?.id === sessionId);
+        if (table?.currentSession) {
+          data = {
+            session: table.currentSession,
+            hotel: hotelProfile,
+            table: table,
+          };
+        } else {
+          return; // Can't print offline if table data is missing
+        }
+      } else {
+        const res = await fetch(`/api/hotel/sessions/${sessionId}/bill-data`);
+        if (!res.ok) return; // non-blocking — don't alert on background print failure
+        data = await res.json();
+      }
+
       const size: PrinterSize =
         (hotelProfile?.customizations?.printerSize as PrinterSize) ||
         (data.hotel?.printerSize as PrinterSize) ||
@@ -443,15 +481,19 @@ export default function TablesDashboardPage() {
       await silentBillPrint(selected.currentSession.id);
 
       // Register the print on the server (marks session as bill_printed) AFTER print succeeds
-      const res = await fetch(
+      const res = await fetchOrQueue(
         `/api/hotel/sessions/${selected.currentSession.id}/print`,
         { method: "POST" }
       );
-      if (!res.ok) {
+      if ('offline' in res && res.offline) {
+        refreshQueue();
+        pollTables();
+      } else if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to register print");
+      } else {
+        pollTables();
       }
-      pollTables();
     } catch (err: any) {
       console.error(err);
       // alert is already handled by silentBillPrint if it fails there
@@ -480,16 +522,21 @@ export default function TablesDashboardPage() {
     paymentPendingRef.current[sessionId] = true;
 
     // Fire pay request in background
-    fetch(`/api/hotel/sessions/${sessionId}/pay`, {
+    fetchOrQueue(`/api/hotel/sessions/${sessionId}/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentMethod: method, customerPhone: number || undefined }),
     })
       .then(async (res) => {
+        if ('offline' in res && res.offline) {
+          refreshQueue();
+          return;
+        }
         if (!res.ok) {
           delete paymentPendingRef.current[sessionId];
           pollTables();
-          alert("Failed to record payment");
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.error || "Failed to mark as paid");
         } else {
           // Auto silent-print bill with payment method after successful payment
           silentBillPrint(sessionId, method);
@@ -540,7 +587,17 @@ export default function TablesDashboardPage() {
   ) as any[] : [];
 
   return (
-    <div className="space-y-7 pb-12">
+    <div className="space-y-6 animate-page-entrance pb-[60vh] sm:pb-0 h-full relative">
+      {isOffline && (
+        <div className="bg-yellow-500 text-yellow-950 px-4 py-2 text-sm font-medium rounded-xl flex items-center justify-between mb-4 shadow-sm animate-pulse">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            <span>You are offline. Operating in offline mode. {queueLength} actions pending sync.</span>
+          </div>
+          {isSyncing && <RefreshCw className="w-4 h-4 animate-spin opacity-70" />}
+        </div>
+      )}
+
       {/* HEADER SECTION */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>

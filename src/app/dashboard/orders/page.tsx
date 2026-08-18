@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import { useOfflineMode } from "@/hooks/use-offline-mode";
+import { fetchOrQueue } from "@/lib/offline-sync";
 import Link from "next/link";
 import { usePlan } from "@/lib/contexts/plan-context";
 import { PairTabletModal } from "@/components/dashboard/PairTabletModal";
@@ -30,6 +32,8 @@ interface Session {
 export default function LiveOrdersPage() {
   const { hotelId, canAccess } = usePlan();
   const hasKdsAccess = canAccess("kds_access");
+  const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode();
+
   const { data: sessions = [], mutate, error, isValidating } = useSWR<Session[]>("/api/hotel/sessions", fetcher, {
     // 60-second fallback poll — Realtime subscription below is the primary update path.
     refreshInterval: 60000,
@@ -37,7 +41,6 @@ export default function LiveOrdersPage() {
   });
 
   // Realtime: call SWR mutate() instantly on any table_sessions change for this hotel.
-  // All action handlers (handleConfirmPayment etc.) are untouched.
   useRealtimeRefresh({
     table: "table_sessions",
     hotelId,
@@ -56,10 +59,10 @@ export default function LiveOrdersPage() {
   }
 
   async function handleConfirmPayment(sessionId: string) {
-    // Optimistic Update
     mutate(prev => prev?.map(s => s.id === sessionId ? { ...s, status: "open" } : s), false);
     try {
-      await fetch(`/api/hotel/sessions/${sessionId}/confirm-payment`, { method: "POST" });
+      const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/confirm-payment`, { method: "POST" });
+      if ('offline' in res && res.offline) refreshQueue();
       mutate();
     } catch (err) {
       mutate(); // rollback
@@ -68,10 +71,10 @@ export default function LiveOrdersPage() {
   }
 
   async function handleMarkReady(sessionId: string) {
-    // Optimistic Update
     mutate(prev => prev?.map(s => s.id === sessionId ? { ...s, status: "ready_for_pickup" } : s), false);
     try {
-      await fetch(`/api/hotel/sessions/${sessionId}/ready`, { method: "POST" });
+      const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/ready`, { method: "POST" });
+      if ('offline' in res && res.offline) refreshQueue();
       mutate();
     } catch (err) {
       mutate(); // rollback
@@ -80,14 +83,14 @@ export default function LiveOrdersPage() {
   }
 
   async function handleMarkCollected(sessionId: string) {
-    // Optimistic Update
     mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
-      await fetch(`/api/hotel/sessions/${sessionId}/force-close`, {
+      const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/force-close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: "Collected by customer" })
       });
+      if ('offline' in res && res.offline) refreshQueue();
       mutate();
     } catch (err) {
       mutate(); // rollback
@@ -97,11 +100,11 @@ export default function LiveOrdersPage() {
 
   async function handleCancelOrder(sessionId: string, promptText = "Are you sure you want to cancel this unpaid order?") {
     if (!confirm(promptText)) return;
-    // Optimistic Update
     mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
-      const res = await fetch(`/api/hotel/sessions/${sessionId}/cancel`, { method: "POST" });
-      if (!res.ok) alert("Failed to cancel order.");
+      const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/cancel`, { method: "POST" });
+      if ('offline' in res && res.offline) refreshQueue();
+      else if (!res.ok) alert("Failed to cancel order.");
       mutate();
     } catch (err) {
       mutate(); // rollback
@@ -111,6 +114,16 @@ export default function LiveOrdersPage() {
 
   return (
     <div className="space-y-6 animate-page-entrance">
+      {isOffline && (
+        <div className="bg-yellow-500 text-yellow-950 px-4 py-2 text-sm font-medium rounded-xl flex items-center justify-between shadow-sm animate-pulse">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            <span>You are offline. Operating in offline mode. {queueLength} actions pending sync.</span>
+          </div>
+          {isSyncing && <RefreshCw className="w-4 h-4 animate-spin opacity-70" />}
+        </div>
+      )}
+
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Live Orders</h1>
