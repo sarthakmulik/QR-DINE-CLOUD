@@ -61,9 +61,43 @@ export async function syncOfflineQueue(onProgress?: (remaining: number) => void)
           body: action.body ? JSON.stringify(action.body) : undefined,
         });
         const status = response.status;
+        
         if (response.ok || status === 409 || status === 404 || (status >= 400 && status < 500)) {
+          // If this was a session creation, check if the server returned a DIFFERENT ID than our offlineId
+          // (e.g. if it reused an existing open session for that table)
+          if (response.ok && action.url.endsWith("/api/hotel/sessions") && action.method === "POST" && action.body?.offlineId) {
+            try {
+              const data = await response.clone().json();
+              if (data && data.id && data.id !== action.body.offlineId) {
+                const oldId = action.body.offlineId;
+                const newId = data.id;
+                
+                // Update indexedDB queue
+                await update(QUEUE_KEY, (val: any) => {
+                  const arr = Array.isArray(val) ? val : [];
+                  return arr.map((item: OfflineAction) => {
+                    if (item.url.includes(oldId)) {
+                      return { ...item, url: item.url.replace(oldId, newId) };
+                    }
+                    return item;
+                  });
+                });
+                
+                // Update in-memory queue for the current loop
+                for (let i = 0; i < queue.length; i++) {
+                  if (queue[i].url.includes(oldId)) {
+                    queue[i].url = queue[i].url.replace(oldId, newId);
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("[OfflineSync] Failed to remap session ID", e);
+            }
+          }
+          
           await removeOfflineAction(action.id);
         }
+        
         const remaining = (await getOfflineQueue()).length;
         onProgress?.(remaining);
       } catch (err) {
