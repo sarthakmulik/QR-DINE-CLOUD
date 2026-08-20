@@ -74,7 +74,7 @@ export async function recalculateSessionTotals(
     const taxAmount = Math.round(taxableAmount * (taxRate / 100) * 100) / 100;
     const total = Math.round((taxableAmount + taxAmount) * 100) / 100;
 
-    const { data: updated, error: updateErr } = await sb
+    let query = sb
       .from("table_sessions")
       .update({ 
         subtotal, 
@@ -84,10 +84,15 @@ export async function recalculateSessionTotals(
         tax_amount: taxAmount, 
         total 
       })
-      .eq("id", sessionId)
-      .eq("subtotal", sessionData.subtotal) // OCC Lock: Ensure no concurrent lost updates
-      .select("*")
-      .maybeSingle();
+      .eq("id", sessionId);
+
+    if (sessionData.subtotal === null) {
+      query = query.is("subtotal", null);
+    } else {
+      query = query.eq("subtotal", sessionData.subtotal);
+    }
+
+    const { data: updated, error: updateErr } = await query.select("*").maybeSingle();
 
     if (updated) {
       return mapTableSession(updated as TableSession, items);
@@ -214,6 +219,10 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
         table_number: tableNumber, 
         status: "open", 
         customer_count: 1,
+        subtotal: 0,
+        tax_amount: 0,
+        total: 0,
+        discount_amount: 0,
         customer_name: customerName || null,
         customer_phone: customerPhone || null,
         discount_percent: discountPercent
@@ -547,7 +556,15 @@ export async function getOrCreateQuickServiceSession(hotelId: string, expectedSe
   // Create new draft session
   const { data: newSession, error: sessionError } = await sb
     .from("table_sessions")
-    .insert({ hotel_id: hotelId, status: "draft", customer_count: 1 })
+    .insert({ 
+      hotel_id: hotelId, 
+      status: "draft", 
+      customer_count: 1,
+      subtotal: 0,
+      tax_amount: 0,
+      total: 0,
+      discount_amount: 0
+    })
     .select("*")
     .single<TableSession>();
 
