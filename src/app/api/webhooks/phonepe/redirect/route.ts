@@ -27,9 +27,14 @@ export async function POST(req: NextRequest) {
 
     try {
       let verifyEndpoint = "";
+      let redirectTarget = `/dine/${hotelId}`; // default for Quick Service
+
       if (session && (session.status === "checkout_initiated" || session.status === "bill_printed")) {
         const tableNumber = (session as any).restaurant_tables?.table_number;
         verifyEndpoint = `${baseUrl}/api/dine/${hotelId}/${tableNumber}/verify-payment`;
+        if (tableNumber) {
+          redirectTarget = `/dine/${hotelId}/${tableNumber}`;
+        }
       } else {
         verifyEndpoint = `${baseUrl}/api/quick-service/${hotelId}/order/${sessionId}/verify-payment`;
       }
@@ -40,18 +45,21 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ gateway: "phonepe", sessionId })
       });
       
-      // We redirect back to the Dine page with a success or error query param
+      // We must use 303 (See Other) because PhonePe sends a POST to this webhook.
+      // A 307 redirect preserves the POST method, which causes a Vercel 502 BAD_GATEWAY
+      // (ROUTER_CANNOT_MATCH) when the browser tries to POST to a Next.js page route.
+      // 303 forces the browser to switch to a GET request.
       if (verifyRes.ok) {
-        return NextResponse.redirect(new URL(`/dine/${hotelId}?payment=success&session=${sessionId}`, req.url));
+        return NextResponse.redirect(new URL(`${redirectTarget}?payment=success&session=${sessionId}`, req.url), 303);
       } else {
-        return NextResponse.redirect(new URL(`/dine/${hotelId}?payment=failed&session=${sessionId}`, req.url));
+        return NextResponse.redirect(new URL(`${redirectTarget}?payment=failed&session=${sessionId}`, req.url), 303);
       }
     } catch (e) {
-      return NextResponse.redirect(new URL(`/dine/${hotelId}?payment=failed&session=${sessionId}`, req.url));
+      return NextResponse.redirect(new URL(`/dine/${hotelId}?payment=failed&session=${sessionId}`, req.url), 303);
     }
 
   } catch (err) {
     console.error("PhonePe Webhook Error:", err);
-    return NextResponse.redirect(new URL("/error", req.url));
+    return NextResponse.redirect(new URL("/error", req.url), 303);
   }
 }
