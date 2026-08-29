@@ -17,8 +17,10 @@ const QUEUE_KEY = "offline_queue";
  * This eliminates the race window described in Bug 1.
  */
 let _hasPendingActions = false;
+let _hydrated = false;
 
 export async function addOfflineAction(action: Omit<OfflineAction, "id" | "timestamp">) {
+  _hasPendingActions = true; // Set synchronously immediately to prevent races
   const newAction: OfflineAction = {
     ...action,
     id: crypto.randomUUID(),
@@ -28,7 +30,6 @@ export async function addOfflineAction(action: Omit<OfflineAction, "id" | "times
     const queue = Array.isArray(val) ? val : [];
     return [...queue, newAction];
   });
-  _hasPendingActions = true;
 }
 
 export async function getOfflineQueue(): Promise<OfflineAction[]> {
@@ -54,6 +55,7 @@ export async function removeOfflineAction(id: string) {
 export async function hydrateOfflineFlag() {
   const queue = await getOfflineQueue();
   _hasPendingActions = queue.length > 0;
+  _hydrated = true;
 }
 
 let _isSyncing = false;
@@ -196,6 +198,8 @@ export async function fetchOrQueue(
   url: string,
   options: RequestInit = {}
 ): Promise<Response | { ok: true; offline: true }> {
+  if (!_hydrated) await hydrateOfflineFlag();
+  
   const isOnline = typeof navigator !== "undefined" && navigator.onLine;
 
   // Use the in-memory flag (synchronous — no async DB read) to decide ordering.

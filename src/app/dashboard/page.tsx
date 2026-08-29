@@ -85,7 +85,9 @@ export default function TablesDashboardPage() {
 
   const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode({
     onSyncComplete: () => {
-      // Called 1.5s after the queue finishes syncing — safe to re-fetch from DB
+      // Called repeatedly during the multi-stage re-poll loop after sync completes.
+      // pausePollDuringSyncRef stays true until this fires, preventing stale DB
+      // state from overwriting the correct fresh data during the re-poll window.
       pausePollDuringSyncRef.current = false;
       pollTablesRef.current?.();
     },
@@ -107,6 +109,7 @@ export default function TablesDashboardPage() {
   }, [selected]);
 
   useEffect(() => {
+    const timeouts: NodeJS.Timeout[] = [];
     // Automatically trigger bill print when a session enters checkout_initiated state.
     // [M-2 FIX] The autoPrintedSessionsRef set prevents re-firing after a page refresh
     // because we only queue the print if the session ID hasn't been seen this session.
@@ -115,13 +118,15 @@ export default function TablesDashboardPage() {
       if (t.currentSession && t.currentSession.status === "checkout_initiated") {
         if (!autoPrintedSessionsRef.current.has(t.currentSession.id)) {
           autoPrintedSessionsRef.current.add(t.currentSession.id);
-          setTimeout(() => {
+          const tid = setTimeout(() => {
             // [M-5 FIX] Pass silent=true so background auto-prints never show alert() mid-workflow
             silentBillPrint(t.currentSession!.id, undefined, true).catch(() => {});
           }, 500);
+          timeouts.push(tid);
         }
       }
     });
+    return () => timeouts.forEach(clearTimeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tables]);
 
@@ -301,10 +306,16 @@ export default function TablesDashboardPage() {
     return () => clearInterval(interval);
   }, [loadTables, pollTables]);
 
-  // When the queue starts syncing, pause table polling to prevent race conditions
+  // Pause table polling when the offline queue starts syncing to prevent
+  // stale DB state from overwriting optimistic UI during replay.
+  // NOTE: We do NOT unpause here — onSyncComplete() unpauses after the
+  // multi-stage re-poll loop confirms the DB is consistent.
   useEffect(() => {
-    pausePollDuringSyncRef.current = isSyncing;
+    if (isSyncing) {
+      pausePollDuringSyncRef.current = true;
+    }
   }, [isSyncing]);
+
 
   async function handleAddManualItem() {
     if (!selected?.currentSession || !manualItemId) return;
@@ -366,13 +377,24 @@ export default function TablesDashboardPage() {
       });
       if ('offline' in res && res.offline) {
         refreshQueue();
+        // Build the optimistic table state
+        const optimisticTable: TableData = {
+          ...sessionToOpen,
+          status: "occupied",
+          currentSession: {
+            id: newId,
+            status: 'open',
+            subtotal: 0,
+            taxAmount: 0,
+            total: 0,
+            startTime: new Date().toISOString(),
+            items: [],
+          }
+        };
+        setTables(prev => prev.map(t => t.id === sessionToOpen.id ? optimisticTable : t));
         setSessionToOpen(null);
-        // Optimistic offline state
-        setTables(prev => prev.map(t => 
-          t.id === sessionToOpen.id 
-            ? { ...t, status: "occupied", currentSession: { id: newId, status: 'open', subtotal: 0, taxAmount: 0, total: 0, startTime: new Date().toISOString(), items: [] } }
-            : t
-        ));
+        // Auto-open the Running Order modal so admin can immediately add items
+        setSelected(optimisticTable);
       } else if (res.ok) {
         setSessionToOpen(null);
         // [H-6 FIX] Use pollTables return value directly instead of double-fetching
@@ -464,6 +486,7 @@ export default function TablesDashboardPage() {
   async function handleCheckout() {
     if (!selected?.currentSession) return;
     const sessionId = selected.currentSession.id;
+    if (checkoutPendingRef.current[sessionId] || paymentPendingRef.current[sessionId]) return;
 
     // Optimistic UI: update session status immediately
     const updateStatus = (status: string) => {
@@ -573,6 +596,8 @@ export default function TablesDashboardPage() {
   async function handlePay(method: string) {
     if (!selected?.currentSession) return;
     const sessionId = selected.currentSession.id;
+    if (checkoutPendingRef.current[sessionId] || paymentPendingRef.current[sessionId]) return;
+    
     const number = whatsappNumbers[sessionId] || "";
     const sessionStatus = selected.currentSession.status;
 
@@ -584,11 +609,15 @@ export default function TablesDashboardPage() {
     // ...and that `order_number` is assigned correctly (happens during checkout).
     // We do NOT do this if the session is already in checkout_initiated/bill_printed.
     if (sessionStatus === "open") {
-      await fetchOrQueue(`/api/hotel/sessions/${sessionId}/checkout`, {
+      const checkoutRes = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerPhone: number || undefined }),
       });
+      if (!('offline' in checkoutRes) && !checkoutRes.ok) {
+        alert("Failed to initiate checkout. Please try again.");
+        return;
+      }
       checkoutPendingRef.current[sessionId] = true;
     }
 
@@ -676,12 +705,21 @@ export default function TablesDashboardPage() {
       {isOffline && (
         <div className="bg-yellow-500 text-yellow-950 px-4 py-2 text-sm font-medium rounded-xl flex items-center justify-between mb-4 shadow-sm animate-pulse">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            <span>You are offline. Operating in offline mode. {queueLength} actions pending sync.</span>
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>You are offline — POS is running locally. {queueLength > 0 ? `${queueLength} action${queueLength === 1 ? '' : 's'} will sync when back online.` : "No pending actions."}</span>
           </div>
           {isSyncing && <RefreshCw className="w-4 h-4 animate-spin opacity-70" />}
         </div>
       )}
+      {!isOffline && isSyncing && (
+        <div className="bg-blue-500 text-white px-4 py-2 text-sm font-medium rounded-xl flex items-center justify-between mb-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+            <span>Back online — syncing {queueLength > 0 ? `${queueLength} pending action${queueLength === 1 ? '' : 's'}` : "offline data"} to server…</span>
+          </div>
+        </div>
+      )}
+
 
       {/* HEADER SECTION */}
       <div className="flex items-start justify-between flex-wrap gap-4">
