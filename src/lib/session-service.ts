@@ -369,6 +369,13 @@ export async function initiateCheckout(sessionId: string, preVerifiedSession?: T
     table = (sessionData as any).restaurant_tables as RestaurantTable | null;
   }
 
+  // IDEMPOTENCY: If the session was already moved to checkout (e.g. offline replay fired
+  // the checkout action twice, or the queue retried after a transient error), return it
+  // gracefully instead of throwing. This is safe — the state only moves forward.
+  if (session.status === "checkout_initiated" || session.status === "bill_printed") {
+    return mapTableSession(session, items, hotel || undefined, table || undefined);
+  }
+
   if (session.status !== "open") throw new Error("Session is not open for checkout");
 
   const { data: updated, error: updateErr } = await sb
@@ -381,9 +388,18 @@ export async function initiateCheckout(sessionId: string, preVerifiedSession?: T
     .eq("id", sessionId)
     .eq("status", "open")
     .select("*").single<TableSession>();
-  if (updateErr || !updated) throw new Error(updateErr?.message || "Failed to update session");
+
+  if (updateErr || !updated) {
+    // Race condition: another process already moved it to checkout_initiated — re-fetch and return gracefully
+    const { data: refetched } = await sb.from("table_sessions").select("*").eq("id", sessionId).single<TableSession>();
+    if (refetched && (refetched.status === "checkout_initiated" || refetched.status === "bill_printed")) {
+      return mapTableSession(refetched, items, hotel || undefined, table || undefined);
+    }
+    throw new Error(updateErr?.message || "Failed to update session");
+  }
   return mapTableSession(updated, items, hotel || undefined, table || undefined);
 }
+
 
 export async function printBill(sessionId: string) {
   const { data: sessionData, error } = await admin()
@@ -451,6 +467,13 @@ export async function markAsPaid(
     items = (sessionData.session_items || []) as SessionItem[];
     hotel = (sessionData as any).hotels as Hotel | null;
     table = (sessionData as any).restaurant_tables as RestaurantTable | null;
+  }
+
+  // IDEMPOTENCY: If the session is already closed, return a special error that the
+  // API route maps to a 409 Conflict. The offline sync queue discards 4xx responses,
+  // so this prevents a double-close from crashing the replay.
+  if (session.status === "closed") {
+    throw new Error("ALREADY_CLOSED");
   }
 
   const now = new Date().toISOString();

@@ -574,6 +574,23 @@ export default function TablesDashboardPage() {
     if (!selected?.currentSession) return;
     const sessionId = selected.currentSession.id;
     const number = whatsappNumbers[sessionId] || "";
+    const sessionStatus = selected.currentSession.status;
+
+    // BUG 5 FIX: If the admin presses "Paid" while the session is still "open"
+    // (i.e. they didn't press "Initiate Checkout" first — very common in rush-hour
+    // offline mode), we must queue a checkout action BEFORE the pay action.
+    // This ensures the DB always goes through the correct state machine:
+    //   open → checkout_initiated → closed
+    // ...and that `order_number` is assigned correctly (happens during checkout).
+    // We do NOT do this if the session is already in checkout_initiated/bill_printed.
+    if (sessionStatus === "open") {
+      await fetchOrQueue(`/api/hotel/sessions/${sessionId}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerPhone: number || undefined }),
+      });
+      checkoutPendingRef.current[sessionId] = true;
+    }
 
     // Optimistic UI: remove table session immediately
     setTables((prev) =>
@@ -586,7 +603,7 @@ export default function TablesDashboardPage() {
     setSelected(null);
     paymentPendingRef.current[sessionId] = true;
 
-    // Fire pay request in background
+    // Fire pay request in background (or queue it if offline/pending)
     fetchOrQueue(`/api/hotel/sessions/${sessionId}/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -599,6 +616,7 @@ export default function TablesDashboardPage() {
         }
         if (!res.ok) {
           delete paymentPendingRef.current[sessionId];
+          delete checkoutPendingRef.current[sessionId];
           pollTables();
           const errData = await res.json().catch(() => ({}));
           alert(errData.error || "Failed to mark as paid");
@@ -611,6 +629,7 @@ export default function TablesDashboardPage() {
       .catch((err) => {
         console.error(err);
         delete paymentPendingRef.current[sessionId];
+        delete checkoutPendingRef.current[sessionId];
         pollTables();
         alert("Failed to record payment");
       });
@@ -621,6 +640,7 @@ export default function TablesDashboardPage() {
       return copy;
     });
   }
+
 
   const statusColors = {
     free: "border-green-300 bg-green-50 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400",

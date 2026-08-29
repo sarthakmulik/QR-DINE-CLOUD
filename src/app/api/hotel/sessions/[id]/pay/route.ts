@@ -38,9 +38,12 @@ export async function POST(
 
     return NextResponse.json(updated);
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed" },
-      { status: 400 }
-    );
+    const message = e instanceof Error ? e.message : "Failed";
+    // ALREADY_CLOSED = idempotent — session was already paid. Return 409 so the
+    // offline sync queue discards the action without retrying.
+    if (message === "ALREADY_CLOSED") {
+      return NextResponse.json({ error: "Session already closed" }, { status: 409 });
+    }
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
