@@ -111,101 +111,102 @@ export async function syncOfflineQueue(onProgress?: (remaining: number) => void)
 
       let processedAny = false;
 
-      for (const action of queue) {
+      // Group actions in chunks of 50 to prevent huge payloads and Vercel timeouts
+      const CHUNK_SIZE = 50;
+      for (let i = 0; i < queue.length; i += CHUNK_SIZE) {
         if (!navigator.onLine) break;
 
+        const chunk = queue.slice(i, i + CHUNK_SIZE);
         let retries = 0;
-        let succeeded = false;
+        let chunkSucceeded = false;
 
         while (retries <= MAX_RETRIES) {
           try {
-            const response = await fetch(action.url, {
-              method: action.method,
-              headers: action.body ? { "Content-Type": "application/json" } : undefined,
-              body: action.body ? JSON.stringify(action.body) : undefined,
+            const response = await fetch("/api/hotel/bulk-sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ actions: chunk }),
             });
-            const status = response.status;
 
             if (response.ok) {
-              // --- Session ID remapping for offline-created sessions ---
-              // If the server returned a DIFFERENT ID than our offline-generated UUID
-              // (e.g. the table already had an open session), rewrite all subsequent
-              // queue URLs so they point at the correct real session ID.
-              if (
-                action.url.endsWith("/api/hotel/sessions") &&
-                action.method === "POST" &&
-                action.body?.offlineId
-              ) {
-                try {
-                  const data = await response.clone().json();
-                  if (data?.id && data.id !== action.body.offlineId) {
-                    const oldId = action.body.offlineId as string;
-                    const newId = data.id as string;
+              const result = await response.json();
+              const { processedIds = [], remappedIds = {}, errors = [] } = result;
 
-                    // Rewrite IndexedDB
-                    await update(QUEUE_KEY, (val: any) => {
-                      const arr = Array.isArray(val) ? val : [];
-                      return arr.map((item: OfflineAction) =>
-                        item.url.includes(oldId)
-                          ? { ...item, url: item.url.replace(oldId, newId) }
-                          : item
-                      );
+              // Remove successfully processed actions (and 4xx errors) from IndexedDB and memory
+              for (const id of processedIds) {
+                await removeOfflineAction(id);
+              }
+
+              // Apply ID remapping to remaining items in IDB and memory
+              const remapEntries = Object.entries(remappedIds);
+              if (remapEntries.length > 0) {
+                await update(QUEUE_KEY, (val: any) => {
+                  let arr = Array.isArray(val) ? val : [];
+                  for (const [oldId, newId] of remapEntries) {
+                    const strNewId = newId as string;
+                    arr = arr.map((item: OfflineAction) => {
+                      if (item.url.includes(oldId) || (item.body && JSON.stringify(item.body).includes(oldId))) {
+                        let newUrl = item.url.replace(oldId, strNewId);
+                        let newBody = item.body;
+                        if (newBody) {
+                          newBody = JSON.parse(JSON.stringify(newBody).replace(new RegExp(oldId, 'g'), strNewId));
+                        }
+                        return { ...item, url: newUrl, body: newBody };
+                      }
+                      return item;
                     });
+                  }
+                  return arr;
+                });
 
-                    // Rewrite in-memory queue for the current loop iteration
-                    for (let i = 0; i < queue.length; i++) {
-                      if (queue[i].url.includes(oldId)) {
-                        queue[i] = { ...queue[i], url: queue[i].url.replace(oldId, newId) };
+                // Apply to remaining memQueue
+                for (let j = 0; j < _memQueue.length; j++) {
+                  for (const [oldId, newId] of remapEntries) {
+                    const strNewId = newId as string;
+                    if (_memQueue[j].url.includes(oldId) || (_memQueue[j].body && JSON.stringify(_memQueue[j].body).includes(oldId))) {
+                      _memQueue[j].url = _memQueue[j].url.replace(oldId, strNewId);
+                      if (_memQueue[j].body) {
+                        _memQueue[j].body = JSON.parse(JSON.stringify(_memQueue[j].body).replace(new RegExp(oldId, 'g'), strNewId));
                       }
                     }
                   }
-                } catch (e) {
-                  console.error("[OfflineSync] Failed to remap session ID:", e);
                 }
               }
 
-              await removeOfflineAction(action.id);
-              processedAny = true;
-              succeeded = true;
+              if (processedIds.length > 0) {
+                processedAny = true;
+              }
+              chunkSucceeded = true;
               break;
             }
 
-            // 4xx errors are client errors that will NEVER succeed on retry — discard permanently.
-            // 409 Conflict = already processed (idempotent operation), safe to discard.
-            if (status >= 400 && status < 500) {
-              console.warn(`[OfflineSync] Client error ${status} for ${action.url} — discarding action.`);
-              await removeOfflineAction(action.id);
-              processedAny = true;
-              succeeded = true;
-              break;
-            }
-
-            // 5xx = server error (cold start, Supabase down, etc.) — retry with backoff.
+            const status = response.status;
             if (status >= 500) {
               retries++;
               if (retries > MAX_RETRIES) {
-                console.error(`[OfflineSync] Server error ${status} after ${MAX_RETRIES} retries for ${action.url} — will retry on next sync.`);
-                break; // Leave it in queue, will be tried next time internet reconnects
+                console.error(`[OfflineSync] Bulk sync server error ${status} after ${MAX_RETRIES} retries.`);
+                break;
               }
-              console.warn(`[OfflineSync] Server error ${status}, retrying ${retries}/${MAX_RETRIES} in ${RETRY_DELAY_MS * retries}ms...`);
               await sleep(RETRY_DELAY_MS * retries);
               continue;
             }
 
-            // Unknown response — break out and retry later
+            // 4xx error on the bulk-sync endpoint itself (e.g. auth failed)
+            console.error(`[OfflineSync] Bulk sync client error ${status}.`);
             break;
+
           } catch (err) {
-            // Network-level error (no response at all)
-            console.error("[OfflineSync] Network error during sync:", err);
+            console.error("[OfflineSync] Network error during bulk sync:", err);
             retries++;
-            if (retries > MAX_RETRIES) {
-              break; // Leave in queue
-            }
+            if (retries > MAX_RETRIES) break;
             await sleep(RETRY_DELAY_MS * retries);
           }
         }
 
-        if (!succeeded && !navigator.onLine) break;
+        if (!chunkSucceeded) {
+          // If a chunk fails completely after retries, stop processing the queue to preserve order
+          break;
+        }
       }
 
       const remaining = _memQueue.length;
