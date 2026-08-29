@@ -19,42 +19,69 @@ const QUEUE_KEY = "offline_queue";
 let _hasPendingActions = false;
 let _hydrated = false;
 
+// In-memory queue mirrors IndexedDB for instant synchronous access.
+// IndexedDB is written asynchronously in the background for crash recovery.
+const _memQueue: OfflineAction[] = [];
+
 export async function addOfflineAction(action: Omit<OfflineAction, "id" | "timestamp">) {
-  _hasPendingActions = true; // Set synchronously immediately to prevent races
+  _hasPendingActions = true; // Synchronous — no await needed for ordering decisions
+
   const newAction: OfflineAction = {
     ...action,
     id: crypto.randomUUID(),
     timestamp: Date.now(),
   };
-  await update(QUEUE_KEY, (val: any) => {
+
+  // Add to in-memory queue SYNCHRONOUSLY — fetchOrQueue returns instantly
+  _memQueue.push(newAction);
+
+  // Persist to IndexedDB in the background (crash recovery) — non-blocking
+  update(QUEUE_KEY, (val: any) => {
     const queue = Array.isArray(val) ? val : [];
     return [...queue, newAction];
-  });
+  }).catch((e) => console.error("[OfflineSync] Failed to persist action to IDB:", e));
 }
 
 export async function getOfflineQueue(): Promise<OfflineAction[]> {
-  const queue = await get(QUEUE_KEY);
-  return Array.isArray(queue) ? queue : [];
+  // In-memory queue is always up-to-date during a session.
+  // IDB is only read on startup (hydrateOfflineFlag) for crash recovery.
+  return [..._memQueue];
 }
 
 export async function clearOfflineQueue() {
-  await set(QUEUE_KEY, []);
+  _memQueue.length = 0; // clear in-memory
   _hasPendingActions = false;
+  await set(QUEUE_KEY, []).catch(() => {});
 }
 
 export async function removeOfflineAction(id: string) {
-  await update(QUEUE_KEY, (val: any) => {
+  const idx = _memQueue.findIndex((a) => a.id === id);
+  if (idx !== -1) _memQueue.splice(idx, 1);
+  _hasPendingActions = _memQueue.length > 0;
+
+  // Persist removal to IDB in background
+  update(QUEUE_KEY, (val: any) => {
     const queue = Array.isArray(val) ? val : [];
-    const next = queue.filter((action: OfflineAction) => action.id !== id);
-    _hasPendingActions = next.length > 0;
-    return next;
-  });
+    return queue.filter((a: OfflineAction) => a.id !== id);
+  }).catch(() => {});
 }
 
-/** Hydrate the in-memory flag from IndexedDB on app startup */
+/** On startup: load any actions persisted from a previous crash into _memQueue */
 export async function hydrateOfflineFlag() {
-  const queue = await getOfflineQueue();
-  _hasPendingActions = queue.length > 0;
+  if (_hydrated) return;
+  try {
+    const persisted = await get(QUEUE_KEY);
+    if (Array.isArray(persisted) && persisted.length > 0) {
+      // Merge: avoid duplicates if addOfflineAction was already called this session
+      const existingIds = new Set(_memQueue.map((a) => a.id));
+      for (const item of persisted) {
+        if (!existingIds.has(item.id)) _memQueue.push(item);
+      }
+    }
+  } catch (e) {
+    console.error("[OfflineSync] Failed to hydrate from IDB:", e);
+  }
+  _hasPendingActions = _memQueue.length > 0;
   _hydrated = true;
 }
 
@@ -74,7 +101,8 @@ export async function syncOfflineQueue(onProgress?: (remaining: number) => void)
 
   _isSyncing = true;
   try {
-    let queue = await getOfflineQueue();
+    // Use in-memory queue — no IDB read needed (already up-to-date)
+    let queue = [..._memQueue];
     _hasPendingActions = queue.length > 0;
 
     while (queue.length > 0) {
@@ -180,11 +208,11 @@ export async function syncOfflineQueue(onProgress?: (remaining: number) => void)
         if (!succeeded && !navigator.onLine) break;
       }
 
-      const remaining = (await getOfflineQueue()).length;
+      const remaining = _memQueue.length;
       onProgress?.(remaining);
 
       if (!processedAny) break; // Nothing was processed — avoid infinite loop
-      queue = await getOfflineQueue(); // Re-fetch to catch any new actions added during sync
+      queue = [..._memQueue]; // Re-snapshot in-memory queue to catch any new actions added during sync
     }
   } finally {
     _isSyncing = false;

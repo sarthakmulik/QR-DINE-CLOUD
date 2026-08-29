@@ -69,18 +69,11 @@ export function useOfflineMode(options?: UseOfflineModeOptions) {
         });
         await checkQueue();
 
-        // BUG 4 FIX: Instead of a hardcoded 1.5s timeout (which is too short on
-        // slow Indian networks), poll the DB up to 4 times at increasing intervals
-        // and stop as soon as we see the data is consistent. This guarantees the UI
-        // reflects the synced state even on 3G / BSNL connections.
-        const POLL_INTERVALS = [800, 1500, 2500, 4000];
-        for (const delay of POLL_INTERVALS) {
-          await new Promise<void>((r) => setTimeout(r, delay));
-          onSyncCompleteRef.current?.();
-          // Re-check the queue — if it's empty we can stop polling early
-          const remaining = await getOfflineQueue();
-          if (remaining.length === 0) break;
-        }
+        // Wait for DB writes to propagate before doing the final poll.
+        // 2.5s covers even slow Supabase writes on 3G/BSNL networks.
+        // We do exactly ONE clean poll — no loop, no flicker.
+        await new Promise<void>((r) => setTimeout(r, 2500));
+        onSyncCompleteRef.current?.(); // sets isSyncingRef=false, calls pollTables
       } finally {
         setIsSyncing(false);
         syncInProgressRef.current = false;

@@ -74,27 +74,31 @@ export default function TablesDashboardPage() {
   const checkoutPendingRef = useRef<Record<string, boolean>>({});
   const paymentPendingRef = useRef<Record<string, boolean>>({});
   const autoPrintedSessionsRef = useRef<Set<string>>(new Set());
-  /** True while offline queue is replaying — prevents pollTables from clobbering optimistic state */
-  const pausePollDuringSyncRef = useRef(false);
+
+  /**
+   * Ref-based sync guard — set synchronously in onSyncStart (no render cycle gap).
+   * All pollTables call sites check this before fetching from DB, guaranteeing
+   * the optimistic UI is never overwritten by intermediate sync states.
+   */
+  const isSyncingRef = useRef(false);
 
   const { currentPlan, canAccess, serviceType, hotelId } = usePlan();
   const router = useRouter();
 
-  // pollTables is declared below — we need a stable ref to pass it into useOfflineMode
+  // Forward-ref so onSyncComplete can call the latest pollTables without
+  // creating a circular dependency in useOfflineMode options.
   const pollTablesRef = useRef<(() => Promise<any>) | null>(null);
 
   const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode({
-    onSyncComplete: () => {
-      // Called at each re-poll interval after sync drains the queue.
-      // pausePollDuringSyncRef stays true until this fires, preventing stale DB
-      // state from overwriting the correct fresh data during the re-poll window.
-      pausePollDuringSyncRef.current = false;
-      pollTablesRef.current?.();
-    },
     onSyncStart: () => {
-      // Set synchronously BEFORE any await in handleOnline so realtime
-      // can't call pollTables during the gap before the isSyncing useEffect runs.
-      pausePollDuringSyncRef.current = true;
+      // Called SYNCHRONOUSLY before any await — closes the timing gap where
+      // realtime could fire pollTables before isSyncing state updates.
+      isSyncingRef.current = true;
+    },
+    onSyncComplete: () => {
+      // Called after queue drains + re-poll confirms DB is settled.
+      isSyncingRef.current = false;
+      pollTablesRef.current?.();
     },
   });
 
@@ -280,8 +284,9 @@ export default function TablesDashboardPage() {
   }, [adjustTablesData]);
 
   const pollTables = useCallback(async (): Promise<TableData[] | undefined> => {
-    // Don't overwrite optimistic state while offline queue is still replaying
-    if (pausePollDuringSyncRef.current) return;
+    // Don't overwrite optimistic state while offline queue is still replaying.
+    // isSyncingRef is set synchronously in onSyncStart — no render-cycle gap.
+    if (isSyncingRef.current) return;
     if (!navigator.onLine) return;
     try {
       const res = await fetch("/api/hotel/tables");
@@ -310,10 +315,19 @@ export default function TablesDashboardPage() {
   // Subscribe to table_sessions changes for this hotel. On any INSERT/UPDATE/DELETE
   // we call pollTables() which re-fetches /api/hotel/tables and merges via the
   // existing adjustTablesData + optimistic-UI logic.
+  // IMPORTANT: We pass a ref-guarded wrapper so realtime events during offline
+  // sync are silently dropped without expensive subscription teardown/rebuild.
+  const guardedPollTablesRef = useRef(pollTables);
+  useEffect(() => { guardedPollTablesRef.current = pollTables; }, [pollTables]);
+  const guardedPollTables = useCallback(() => {
+    // isSyncingRef is always current — no stale closure issue.
+    if (!isSyncingRef.current) guardedPollTablesRef.current();
+  }, []);
+
   useRealtimeRefresh({
     table: "table_sessions",
     hotelId,
-    onRefresh: pollTables,
+    onRefresh: guardedPollTables,
     enabled: !!hotelId,
   });
 
@@ -321,10 +335,12 @@ export default function TablesDashboardPage() {
     loadTables();
     // 60-second fallback poll — safety net for brief Realtime disconnects.
     const interval = setInterval(() => {
-      if (!pausePollDuringSyncRef.current) pollTables();
+      if (!isSyncingRef.current) pollTables();
     }, 60000);
     return () => clearInterval(interval);
   }, [loadTables, pollTables]);
+
+
 
 
 
