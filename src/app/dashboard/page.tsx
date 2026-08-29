@@ -85,11 +85,16 @@ export default function TablesDashboardPage() {
 
   const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode({
     onSyncComplete: () => {
-      // Called repeatedly during the multi-stage re-poll loop after sync completes.
+      // Called at each re-poll interval after sync drains the queue.
       // pausePollDuringSyncRef stays true until this fires, preventing stale DB
       // state from overwriting the correct fresh data during the re-poll window.
       pausePollDuringSyncRef.current = false;
       pollTablesRef.current?.();
+    },
+    onSyncStart: () => {
+      // Set synchronously BEFORE any await in handleOnline so realtime
+      // can't call pollTables during the gap before the isSyncing useEffect runs.
+      pausePollDuringSyncRef.current = true;
     },
   });
 
@@ -175,9 +180,14 @@ export default function TablesDashboardPage() {
     const adjusted = data.map((t: TableData) => {
       if (t.currentSession) {
         const sessionId = t.currentSession.id;
+        // If we queued a payment for this session, keep it shown as free
+        // until the DB confirms (prevents "occupied flash" during sync).
         if (paymentPendingRef.current[sessionId]) {
           return { ...t, status: "free" as const, currentSession: null };
         }
+        // If we queued a checkout for this session and DB still shows "open",
+        // keep the optimistic "checkout_initiated" state. But if DB already
+        // shows a non-open status, the server has processed it — clear the ref.
         if (checkoutPendingRef.current[sessionId]) {
           if (t.currentSession.status === "open") {
             return {
@@ -189,6 +199,7 @@ export default function TablesDashboardPage() {
               }
             };
           } else {
+            // Server advanced past "open" — ref is stale, clear it
             delete checkoutPendingRef.current[sessionId];
           }
         }
@@ -196,6 +207,8 @@ export default function TablesDashboardPage() {
       return t;
     });
 
+    // Garbage-collect payment pending refs for sessions no longer in the DB.
+    // This handles the case where the DB returned the table as free after sync.
     const activeSessionIds = new Set(
       adjusted.map((t) => t.currentSession?.id).filter(Boolean) as string[]
     );
@@ -204,9 +217,16 @@ export default function TablesDashboardPage() {
         delete paymentPendingRef.current[id];
       }
     });
+    // Also clear any orphaned checkout pending refs (e.g. after ID remapping during sync)
+    Object.keys(checkoutPendingRef.current).forEach((id) => {
+      if (!activeSessionIds.has(id)) {
+        delete checkoutPendingRef.current[id];
+      }
+    });
 
     return adjusted;
   }, []);
+
 
   const loadTables = useCallback(async () => {
     // If offline, serve from sessionStorage cache immediately — never hang on network
@@ -306,15 +326,6 @@ export default function TablesDashboardPage() {
     return () => clearInterval(interval);
   }, [loadTables, pollTables]);
 
-  // Pause table polling when the offline queue starts syncing to prevent
-  // stale DB state from overwriting optimistic UI during replay.
-  // NOTE: We do NOT unpause here — onSyncComplete() unpauses after the
-  // multi-stage re-poll loop confirms the DB is consistent.
-  useEffect(() => {
-    if (isSyncing) {
-      pausePollDuringSyncRef.current = true;
-    }
-  }, [isSyncing]);
 
 
   async function handleAddManualItem() {
@@ -596,7 +607,7 @@ export default function TablesDashboardPage() {
   async function handlePay(method: string) {
     if (!selected?.currentSession) return;
     const sessionId = selected.currentSession.id;
-    if (checkoutPendingRef.current[sessionId] || paymentPendingRef.current[sessionId]) return;
+    if (paymentPendingRef.current[sessionId]) return;
     
     const number = whatsappNumbers[sessionId] || "";
     const sessionStatus = selected.currentSession.status;

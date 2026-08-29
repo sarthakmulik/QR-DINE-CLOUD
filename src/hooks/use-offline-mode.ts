@@ -14,6 +14,11 @@ interface UseOfflineModeOptions {
    * safe moment to re-poll UI state from the database.
    */
   onSyncComplete?: () => void;
+  /**
+   * Called synchronously at the very start of handleOnline, before any await.
+   * Use this to set pausePollDuringSyncRef BEFORE Supabase realtime fires.
+   */
+  onSyncStart?: () => void;
 }
 
 export function useOfflineMode(options?: UseOfflineModeOptions) {
@@ -22,6 +27,8 @@ export function useOfflineMode(options?: UseOfflineModeOptions) {
   const [isSyncing, setIsSyncing] = useState(false);
   const onSyncCompleteRef = useRef(options?.onSyncComplete);
   onSyncCompleteRef.current = options?.onSyncComplete;
+  const onSyncStartRef = useRef(options?.onSyncStart);
+  onSyncStartRef.current = options?.onSyncStart;
 
   // Guard against double-registration in React Strict Mode (BUG 6 FIX):
   // A ref-based flag ensures only ONE `handleOnline` invocation runs the
@@ -48,6 +55,10 @@ export function useOfflineMode(options?: UseOfflineModeOptions) {
       // BUG 6 FIX: Only allow one concurrent sync+re-poll cycle.
       if (syncInProgressRef.current) return;
       syncInProgressRef.current = true;
+
+      // Call onSyncStart SYNCHRONOUSLY before any await so the dashboard
+      // can set pausePollDuringSyncRef=true before Supabase realtime fires.
+      onSyncStartRef.current?.();
 
       setIsOffline(false);
       setIsSyncing(true);
