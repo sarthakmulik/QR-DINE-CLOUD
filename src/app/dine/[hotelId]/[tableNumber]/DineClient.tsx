@@ -776,9 +776,13 @@ export default function DineClient({
               percent: data.discountPercent,
               name: data.customer?.name || null
             });
-            if (data.customer?.name && !customerName) {
-              setCustomerName(data.customer.name);
-            }
+            // Use functional state update to avoid depending on customerName
+            setCustomerName(prev => {
+              if (data.customer?.name && !prev) {
+                return data.customer.name;
+              }
+              return prev;
+            });
             showToast(`Welcome back${data.customer?.name ? " " + data.customer.name : ""}! ${data.discountPercent}% loyalty discount applied.`, "success");
           } else {
             setLoyaltyDiscount(null);
@@ -789,7 +793,7 @@ export default function DineClient({
     } else {
       setLoyaltyDiscount(null);
     }
-  }, [customerPhone, hotelId, customerName, showToast]);
+  }, [customerPhone, hotelId, showToast]); // Removed customerName to prevent keystroke spam
 
   useEffect(() => {
     fetch(`/api/hotel/menu/upsells?hotelId=${hotelId}`)

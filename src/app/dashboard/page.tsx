@@ -88,6 +88,10 @@ export default function TablesDashboardPage() {
   // Forward-ref so onSyncComplete can call the latest pollTables without
   // creating a circular dependency in useOfflineMode options.
   const pollTablesRef = useRef<(() => Promise<any>) | null>(null);
+  
+  // Coalescing refs to prevent duplicate parallel fetches
+  const activePollRef = useRef<Promise<TableData[] | undefined> | null>(null);
+  const pendingPollRef = useRef<boolean>(false);
 
   const { isOffline, queueLength, isSyncing, refreshQueue } = useOfflineMode({
     onSyncStart: () => {
@@ -288,22 +292,41 @@ export default function TablesDashboardPage() {
     // isSyncingRef is set synchronously in onSyncStart — no render-cycle gap.
     if (isSyncingRef.current) return;
     if (!navigator.onLine) return;
-    try {
-      const res = await fetch("/api/hotel/tables");
-      if (res.ok) {
-        const tablesRaw = await res.json();
-        const tablesData = adjustTablesData(tablesRaw);
-        setTables(tablesData);
-        sessionStorage.setItem("admin_tables", JSON.stringify(tablesData));
-        setSelected((sel) => {
-          if (!sel) return sel;
-          return tablesData.find((t: TableData) => t.id === sel.id) || sel;
-        });
-        return tablesData;
-      }
-    } catch (e) {
-      console.error("Error polling tables:", e);
+    
+    // Coalesce duplicate requests
+    if (activePollRef.current) {
+      pendingPollRef.current = true;
+      return activePollRef.current;
     }
+
+    const doFetch = async () => {
+      let result;
+      do {
+        pendingPollRef.current = false;
+        try {
+          const res = await fetch("/api/hotel/tables");
+          if (res.ok) {
+            const tablesRaw = await res.json();
+            const tablesData = adjustTablesData(tablesRaw);
+            setTables(tablesData);
+            sessionStorage.setItem("admin_tables", JSON.stringify(tablesData));
+            setSelected((sel) => {
+              if (!sel) return sel;
+              return tablesData.find((t: TableData) => t.id === sel.id) || sel;
+            });
+            result = tablesData;
+          }
+        } catch (e) {
+          console.error("Error polling tables:", e);
+        }
+      } while (pendingPollRef.current);
+      return result;
+    };
+
+    activePollRef.current = doFetch().finally(() => {
+      activePollRef.current = null;
+    });
+    return activePollRef.current;
   }, [adjustTablesData]);
 
   // Register pollTables in the ref so useOfflineMode can call it after sync

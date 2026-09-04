@@ -15,8 +15,8 @@ import crypto from "crypto";
 async function getKitchenOrders(hotelId: string) {
   const sb = createAdminClient();
 
-  // Auto-cleanup stale sessions
-  await autoCleanupSessions(hotelId);
+  // Auto-cleanup stale sessions removed from synchronous fetch path for performance
+  // (Preserved functionality in session-service.ts for future background execution)
 
   // Fetch tables and open/cancelled sessions in parallel
   const [tablesRes, sessionsRes, cancelledSessionsRes] = await Promise.all([
