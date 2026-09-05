@@ -36,15 +36,25 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>{children}</Providers>
-        {/* Register Service Worker for push notifications */}
+        {/* Kill switch for old Service Workers and Caches from the offline update */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                    console.warn('SW registration failed:', err);
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                      registration.unregister();
+                      console.log('ServiceWorker unregistered.');
+                    }
                   });
+                  if (window.caches) {
+                    caches.keys().then(function(names) {
+                      for (let name of names) {
+                        caches.delete(name);
+                      }
+                    });
+                  }
                 });
               }
             `,

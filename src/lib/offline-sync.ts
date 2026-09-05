@@ -227,35 +227,14 @@ export async function fetchOrQueue(
   url: string,
   options: RequestInit = {}
 ): Promise<Response | { ok: true; offline: true }> {
-  if (!_hydrated) await hydrateOfflineFlag();
-  
-  const isOnline = typeof navigator !== "undefined" && navigator.onLine;
-
-  // Use the in-memory flag (synchronous — no async DB read) to decide ordering.
-  // If there are pending actions in the queue, we MUST queue this too to preserve
-  // chronological order (Bug 1 fix). This prevents new requests from racing ahead
-  // of a still-running background sync.
-  if (isOnline && !_hasPendingActions && !_isSyncing) {
-    try {
-      const res = await fetch(url, options);
-      return res;
-    } catch (_err) {
-      console.warn("[OfflineSync] Fetch failed online, falling back to queue:", url);
-      // Fall through to queue it
-    }
+  // OFFLINE POS UPDATE REVERTED: Fall back to native fetch immediately.
+  // This completely disables the buggy offline queueing system that was
+  // stalling the POS and causing extreme slowness.
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } catch (err) {
+    console.warn("[OfflineSync Reverted] Fetch failed:", url);
+    throw err;
   }
-
-  let bodyData: any = undefined;
-  if (options.body && typeof options.body === "string") {
-    try { bodyData = JSON.parse(options.body); } catch (_e) { bodyData = options.body; }
-  }
-
-  await addOfflineAction({ url, method: options.method || "GET", body: bodyData });
-
-  // If we're online but had pending items (or just went offline), kick off sync
-  if (isOnline && !_isSyncing) {
-    syncOfflineQueue().catch(console.error);
-  }
-
-  return { ok: true, offline: true };
 }
