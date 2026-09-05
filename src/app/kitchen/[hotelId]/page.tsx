@@ -76,9 +76,20 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   const pendingFetchRef = useRef<boolean>(false);
 
   // 2. Fetch orders — extracted to useCallback so Realtime hook can call it too.
-  const fetchOrders = useCallback(() => {
+  const fetchOrders = useCallback((payload?: any) => {
     if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
     
+    // Filter out global session_items events that belong to other hotels.
+    // If the session isn't in our current KDS view, ignore the event entirely!
+    if (payload && payload.table === "session_items") {
+      const record = payload.new;
+      if (record && record.session_id) {
+        if (prevOrderIdsRef.current && !prevOrderIdsRef.current.includes(record.session_id)) {
+          return;
+        }
+      }
+    }
+
     if (activeFetchRef.current) {
       pendingFetchRef.current = true;
       return;

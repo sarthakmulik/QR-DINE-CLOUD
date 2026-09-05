@@ -8,7 +8,7 @@ interface Options {
   hotelId?: string | null;
   filterColumn?: string;
   filterValue?: string;
-  onRefresh: () => void;
+  onRefresh: (payload?: any) => void;
   enabled?: boolean;
 }
 
@@ -62,9 +62,9 @@ export function useRealtimeRefresh({
         schema: "public",
         table,
         ...(filterStr ? { filter: filterStr } : {}),
-      }, () => {
-        // Ignore the payload — let existing fetch logic handle data shaping.
-        onRefreshRef.current();
+      }, (payload: any) => {
+        // Pass payload so consumers can conditionally filter global events
+        onRefreshRef.current(payload);
       })
       .subscribe((status: string) => {
         if (status === "SUBSCRIBED") setConnected(true);

@@ -15,21 +15,24 @@ export async function GET() {
     const { hotelId } = await requireHotelAccess();
     const sb = createAdminClient();
 
-    const [tablesRes, sessionsRes] = await Promise.all([
-      sb
-        .from("restaurant_tables")
-        .select("*")
-        .eq("hotel_id", hotelId)
-        .order("table_number", { ascending: true }),
-      sb
-        .from("table_sessions")
-        .select("*, session_items(*)")
-        .eq("hotel_id", hotelId)
-        .neq("status", "closed"),
-    ]);
+    const tablesRes = await sb
+      .from("restaurant_tables")
+      .select("*")
+      .eq("hotel_id", hotelId)
+      .order("table_number", { ascending: true });
 
     const tables = (tablesRes.data || []) as RestaurantTable[];
-    const sessions = (sessionsRes.data || []) as (TableSession & { session_items?: SessionItem[] })[];
+    const currentSessionIds = tables.map((t) => t.current_session_id).filter(Boolean);
+
+    let sessions: (TableSession & { session_items?: SessionItem[] })[] = [];
+    
+    if (currentSessionIds.length > 0) {
+      const sessionsRes = await sb
+        .from("table_sessions")
+        .select("*, session_items(*)")
+        .in("id", currentSessionIds);
+      sessions = (sessionsRes.data || []) as (TableSession & { session_items?: SessionItem[] })[];
+    }
 
     let items: SessionItem[] = [];
     sessions.forEach(s => {
