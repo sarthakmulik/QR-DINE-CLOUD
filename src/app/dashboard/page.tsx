@@ -335,22 +335,61 @@ export default function TablesDashboardPage() {
   }, [pollTables]);
 
   // --- Realtime: instant push updates ----------------------------------------
-  // Subscribe to table_sessions changes for this hotel. On any INSERT/UPDATE/DELETE
-  // we call pollTables() which re-fetches /api/hotel/tables and merges via the
-  // existing adjustTablesData + optimistic-UI logic.
-  // IMPORTANT: We pass a ref-guarded wrapper so realtime events during offline
-  // sync are silently dropped without expensive subscription teardown/rebuild.
+  const tablesRef = useRef(tables);
+  useEffect(() => { tablesRef.current = tables; }, [tables]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const statsRes = await fetch("/api/hotel/overview-stats");
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+        sessionStorage.setItem("admin_stats", JSON.stringify(statsData));
+      }
+    } catch (e) {
+      console.error("Failed to fetch stats", e);
+    }
+  }, []);
+
   const guardedPollTablesRef = useRef(pollTables);
   useEffect(() => { guardedPollTablesRef.current = pollTables; }, [pollTables]);
-  const guardedPollTables = useCallback(() => {
-    // isSyncingRef is always current — no stale closure issue.
-    if (!isSyncingRef.current) guardedPollTablesRef.current();
-  }, []);
+  
+  const handleRealtimeEvent = useCallback((payload?: any) => {
+    if (isSyncingRef.current) return;
+    
+    if (payload) {
+      // 1. Ghost Items Fix: Filter global session_items events
+      if (payload.table === "session_items") {
+        const record = payload.new || payload.old;
+        if (record && record.session_id) {
+          const isActive = tablesRef.current.some(
+            t => t.currentSession?.id === record.session_id
+          );
+          if (!isActive) return; // Drop irrelevant events to save performance
+        }
+      }
+      
+      // 2. Stale Revenue Fix: Refetch stats when a table closes
+      if (payload.table === "table_sessions" && payload.new) {
+        if (payload.new.status === "closed") {
+          fetchStats();
+        }
+      }
+    }
+    
+    guardedPollTablesRef.current();
+  }, [fetchStats]);
 
   useRealtimeRefresh({
     table: "table_sessions",
     hotelId,
-    onRefresh: guardedPollTables,
+    onRefresh: handleRealtimeEvent,
+    enabled: !!hotelId,
+  });
+
+  useRealtimeRefresh({
+    table: "session_items",
+    onRefresh: handleRealtimeEvent,
     enabled: !!hotelId,
   });
 
