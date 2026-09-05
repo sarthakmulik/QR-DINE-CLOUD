@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, use, useCallback } from "react";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize } from "lucide-react";
+import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
 
 interface SessionItem {
   id: string;
@@ -36,6 +36,8 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
 
   // KDS Operational State
   const [sessions, setSessions] = useState<TableSession[]>([]);
+  const sessionsRef = useRef<TableSession[]>([]);
+  useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
   const [itemStatus, setItemStatus] = useState<Record<string, "preparing" | "ready" | "served">>({});
   const [completedSessions, setCompletedSessions] = useState<Record<string, number>>({});
   const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid");
@@ -86,6 +88,11 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
       if (record && record.session_id) {
         if (prevOrderIdsRef.current && !prevOrderIdsRef.current.includes(record.session_id)) {
           return;
+        }
+        if (payload.eventType === "INSERT") {
+          const session = sessionsRef.current.find(s => s.id === record.session_id);
+          const tableName = session?.tableNumber ? `Table ${session.tableNumber}` : (session?.orderNumber ? `Order ${session.orderNumber}` : "a table");
+          speakOrder(`New order on ${tableName}, ${record.quantity} ${record.name}`);
         }
       }
     }
@@ -157,7 +164,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     activeFetchRef.current = doFetch().finally(() => {
       activeFetchRef.current = null;
     });
-  }, [hotelId, pinEntered, hotelPlan]);
+  }, [hotelId, pinEntered, hotelPlan, speakOrder]);
 
   // Realtime: instantly refresh KDS when any session_items or table_sessions change.
   // session_items has no hotel_id column so we subscribe without a row-level filter —
@@ -244,6 +251,45 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   };
 
   // Status mapping colors API beep generator
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const speechQueueRef = useRef<string[]>([]);
+  const isSpeakingRef = useRef(false);
+
+  const processSpeechQueue = useCallback(() => {
+    if (!('speechSynthesis' in window)) return;
+    if (isSpeakingRef.current || speechQueueRef.current.length === 0) return;
+
+    isSpeakingRef.current = true;
+    const text = speechQueueRef.current.shift()!;
+    
+    const msg = new SpeechSynthesisUtterance(text);
+    // Prefer Indian English or Hindi for local pronunciation
+    const voices = window.speechSynthesis.getVoices();
+    const indianVoice = voices.find(v => v.lang === 'en-IN' || v.lang === 'hi-IN');
+    if (indianVoice) {
+      msg.voice = indianVoice;
+    }
+    
+    msg.onend = () => {
+      isSpeakingRef.current = false;
+      processSpeechQueue();
+    };
+    
+    msg.onerror = (e) => {
+      console.warn("TTS Error:", e);
+      isSpeakingRef.current = false;
+      processSpeechQueue();
+    };
+
+    window.speechSynthesis.speak(msg);
+  }, []);
+
+  const speakOrder = useCallback((text: string) => {
+    if (!isVoiceEnabled) return;
+    speechQueueRef.current.push(text);
+    processSpeechQueue();
+  }, [processSpeechQueue, isVoiceEnabled]);
+
   const playBeep = () => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -260,6 +306,13 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
 
       osc.start();
       osc.stop(ctx.currentTime + 0.35);
+
+      // Unlock Android/Browser Web Speech API on user interaction
+      if ('speechSynthesis' in window) {
+         const msg = new SpeechSynthesisUtterance('');
+         msg.volume = 0;
+         window.speechSynthesis.speak(msg);
+      }
     } catch (err) {
       console.error("Audio playback blocked or failed:", err);
     }
@@ -584,6 +637,20 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             >
               <Clock size={14} />
               <span>Timeline View</span>
+            </button>
+          </div>
+
+          {/* Voice toggle */}
+          <div className="bg-slate-800 rounded-lg p-0.5 flex border border-slate-700">
+            <button
+              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+              className={`px-3 py-1.5 rounded-md flex items-center space-x-1.5 text-xs font-semibold transition-all ${
+                isVoiceEnabled ? "bg-indigo-500 text-white shadow-md" : "text-slate-400 hover:text-white"
+              }`}
+              title={isVoiceEnabled ? "Voice announcements ON" : "Voice announcements OFF"}
+            >
+              {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+              <span>Voice</span>
             </button>
           </div>
 
