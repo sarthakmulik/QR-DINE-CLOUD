@@ -87,7 +87,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     // Global unlocker for browsers that bypass PIN (e.g. auto-login)
     const unlockAudio = () => {
       if ('speechSynthesis' in window) {
-         const msg = new SpeechSynthesisUtterance('');
+         const msg = new SpeechSynthesisUtterance('ready');
          msg.volume = 0;
          window.speechSynthesis.speak(msg);
       }
@@ -117,13 +117,25 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
       msg.voice = indianVoice;
     }
     
+    // Fallback timeout in case onend never fires (Android Chrome bug)
+    const timeoutId = setTimeout(() => {
+      if (isSpeakingRef.current) {
+        console.warn("TTS timeout fired, manually resetting queue");
+        isSpeakingRef.current = false;
+        currentUtteranceRef.current = null;
+        processSpeechQueue();
+      }
+    }, 10000); // Max 10 seconds per utterance
+
     msg.onend = () => {
+      clearTimeout(timeoutId);
       isSpeakingRef.current = false;
       currentUtteranceRef.current = null;
       processSpeechQueue();
     };
     
     msg.onerror = (e) => {
+      clearTimeout(timeoutId);
       console.warn("TTS Error:", e);
       isSpeakingRef.current = false;
       currentUtteranceRef.current = null;
@@ -343,7 +355,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
 
       // Unlock Android/Browser Web Speech API on user interaction
       if ('speechSynthesis' in window) {
-         const msg = new SpeechSynthesisUtterance('');
+         const msg = new SpeechSynthesisUtterance('ready');
          msg.volume = 0;
          window.speechSynthesis.speak(msg);
       }
