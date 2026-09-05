@@ -77,6 +77,46 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   const activeFetchRef = useRef<Promise<void> | null>(null);
   const pendingFetchRef = useRef<boolean>(false);
 
+  // Voice State & Engine
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const speechQueueRef = useRef<string[]>([]);
+  const isSpeakingRef = useRef(false);
+
+  const processSpeechQueue = useCallback(() => {
+    if (!('speechSynthesis' in window)) return;
+    if (isSpeakingRef.current || speechQueueRef.current.length === 0) return;
+
+    isSpeakingRef.current = true;
+    const text = speechQueueRef.current.shift()!;
+    
+    const msg = new SpeechSynthesisUtterance(text);
+    // Prefer Indian English or Hindi for local pronunciation
+    const voices = window.speechSynthesis.getVoices();
+    const indianVoice = voices.find(v => v.lang === 'en-IN' || v.lang === 'hi-IN');
+    if (indianVoice) {
+      msg.voice = indianVoice;
+    }
+    
+    msg.onend = () => {
+      isSpeakingRef.current = false;
+      processSpeechQueue();
+    };
+    
+    msg.onerror = (e) => {
+      console.warn("TTS Error:", e);
+      isSpeakingRef.current = false;
+      processSpeechQueue();
+    };
+
+    window.speechSynthesis.speak(msg);
+  }, []);
+
+  const speakOrder = useCallback((text: string) => {
+    if (!isVoiceEnabled) return;
+    speechQueueRef.current.push(text);
+    processSpeechQueue();
+  }, [processSpeechQueue, isVoiceEnabled]);
+
   // 2. Fetch orders — extracted to useCallback so Realtime hook can call it too.
   const fetchOrders = useCallback((payload?: any) => {
     if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
@@ -251,45 +291,6 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   };
 
   // Status mapping colors API beep generator
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const speechQueueRef = useRef<string[]>([]);
-  const isSpeakingRef = useRef(false);
-
-  const processSpeechQueue = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    if (isSpeakingRef.current || speechQueueRef.current.length === 0) return;
-
-    isSpeakingRef.current = true;
-    const text = speechQueueRef.current.shift()!;
-    
-    const msg = new SpeechSynthesisUtterance(text);
-    // Prefer Indian English or Hindi for local pronunciation
-    const voices = window.speechSynthesis.getVoices();
-    const indianVoice = voices.find(v => v.lang === 'en-IN' || v.lang === 'hi-IN');
-    if (indianVoice) {
-      msg.voice = indianVoice;
-    }
-    
-    msg.onend = () => {
-      isSpeakingRef.current = false;
-      processSpeechQueue();
-    };
-    
-    msg.onerror = (e) => {
-      console.warn("TTS Error:", e);
-      isSpeakingRef.current = false;
-      processSpeechQueue();
-    };
-
-    window.speechSynthesis.speak(msg);
-  }, []);
-
-  const speakOrder = useCallback((text: string) => {
-    if (!isVoiceEnabled) return;
-    speechQueueRef.current.push(text);
-    processSpeechQueue();
-  }, [processSpeechQueue, isVoiceEnabled]);
-
   const playBeep = () => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
