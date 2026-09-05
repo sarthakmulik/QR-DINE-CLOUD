@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, use, useCallback } from "react";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { Play, RotateCcw, LayoutGrid, Clock, AlertTriangle, CheckCircle, Zap, Banknote, XCircle, Maximize, Minimize } from "lucide-react";
 
 interface SessionItem {
   id: string;
@@ -77,80 +77,6 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   const activeFetchRef = useRef<Promise<void> | null>(null);
   const pendingFetchRef = useRef<boolean>(false);
 
-  // Voice State & Engine
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const speechQueueRef = useRef<string[]>([]);
-  const isSpeakingRef = useRef(false);
-  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  useEffect(() => {
-    // Global unlocker for browsers that bypass PIN (e.g. auto-login)
-    const unlockAudio = () => {
-      if ('speechSynthesis' in window) {
-         const msg = new SpeechSynthesisUtterance('ready');
-         msg.volume = 0;
-         window.speechSynthesis.speak(msg);
-      }
-    };
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-    return () => {
-      document.removeEventListener('click', unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
-    };
-  }, []);
-
-  const processSpeechQueue = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    if (isSpeakingRef.current || speechQueueRef.current.length === 0) return;
-
-    isSpeakingRef.current = true;
-    const text = speechQueueRef.current.shift()!;
-    
-    const msg = new SpeechSynthesisUtterance(text);
-    currentUtteranceRef.current = msg; // Prevent Garbage Collection in Chrome
-    
-    // Prefer Indian English or Hindi for local pronunciation
-    const voices = window.speechSynthesis.getVoices();
-    const indianVoice = voices.find(v => v.lang === 'en-IN' || v.lang === 'hi-IN');
-    if (indianVoice) {
-      msg.voice = indianVoice;
-    }
-    
-    // Fallback timeout in case onend never fires (Android Chrome bug)
-    const timeoutId = setTimeout(() => {
-      if (isSpeakingRef.current) {
-        console.warn("TTS timeout fired, manually resetting queue");
-        isSpeakingRef.current = false;
-        currentUtteranceRef.current = null;
-        processSpeechQueue();
-      }
-    }, 10000); // Max 10 seconds per utterance
-
-    msg.onend = () => {
-      clearTimeout(timeoutId);
-      isSpeakingRef.current = false;
-      currentUtteranceRef.current = null;
-      processSpeechQueue();
-    };
-    
-    msg.onerror = (e) => {
-      clearTimeout(timeoutId);
-      console.warn("TTS Error:", e);
-      isSpeakingRef.current = false;
-      currentUtteranceRef.current = null;
-      processSpeechQueue();
-    };
-
-    window.speechSynthesis.speak(msg);
-  }, []);
-
-  const speakOrder = useCallback((text: string) => {
-    if (!isVoiceEnabled) return;
-    speechQueueRef.current.push(text);
-    processSpeechQueue();
-  }, [processSpeechQueue, isVoiceEnabled]);
-
   // 2. Fetch orders — extracted to useCallback so Realtime hook can call it too.
   const fetchOrders = useCallback((payload?: any) => {
     if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
@@ -218,22 +144,6 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             if (hasNewOrder) {
               playBeep();
             }
-            
-            // Diff new items for TTS announcements
-            const oldItemIds = new Set(sessionsRef.current.flatMap(s => s.items.map(i => i.id)));
-            data.forEach((newSession) => {
-              newSession.items.forEach(item => {
-                if (!oldItemIds.has(item.id)) {
-                  // Only speak if it was added recently (within last 2 mins)
-                  const addedTime = new Date(item.addedAt).getTime();
-                  if (Date.now() - addedTime < 2 * 60000) {
-                    const tableName = newSession.tableNumber ? `Table ${newSession.tableNumber}` : (newSession.orderNumber ? `Order ${newSession.orderNumber}` : "a table");
-                    speakOrder(`New order on ${tableName}, ${item.quantity} ${item.name}`);
-                  }
-                }
-              });
-            });
-
             prevOrderIdsRef.current = currentIds;
           } else {
             prevOrderIdsRef.current = data.map((s) => s.id);
@@ -249,7 +159,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     activeFetchRef.current = doFetch().finally(() => {
       activeFetchRef.current = null;
     });
-  }, [hotelId, pinEntered, hotelPlan, speakOrder]);
+  }, [hotelId, pinEntered, hotelPlan]);
 
   // Realtime: instantly refresh KDS when any session_items or table_sessions change.
   // session_items has no hotel_id column so we subscribe without a row-level filter —
@@ -352,13 +262,6 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
 
       osc.start();
       osc.stop(ctx.currentTime + 0.35);
-
-      // Unlock Android/Browser Web Speech API on user interaction
-      if ('speechSynthesis' in window) {
-         const msg = new SpeechSynthesisUtterance('ready');
-         msg.volume = 0;
-         window.speechSynthesis.speak(msg);
-      }
     } catch (err) {
       console.error("Audio playback blocked or failed:", err);
     }
@@ -683,20 +586,6 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             >
               <Clock size={14} />
               <span>Timeline View</span>
-            </button>
-          </div>
-
-          {/* Voice toggle */}
-          <div className="bg-slate-800 rounded-lg p-0.5 flex border border-slate-700">
-            <button
-              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-              className={`px-3 py-1.5 rounded-md flex items-center space-x-1.5 text-xs font-semibold transition-all ${
-                isVoiceEnabled ? "bg-indigo-500 text-white shadow-md" : "text-slate-400 hover:text-white"
-              }`}
-              title={isVoiceEnabled ? "Voice announcements ON" : "Voice announcements OFF"}
-            >
-              {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-              <span>Voice</span>
             </button>
           </div>
 
