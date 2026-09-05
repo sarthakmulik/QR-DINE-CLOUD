@@ -81,6 +81,24 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const speechQueueRef = useRef<string[]>([]);
   const isSpeakingRef = useRef(false);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  useEffect(() => {
+    // Global unlocker for browsers that bypass PIN (e.g. auto-login)
+    const unlockAudio = () => {
+      if ('speechSynthesis' in window) {
+         const msg = new SpeechSynthesisUtterance('');
+         msg.volume = 0;
+         window.speechSynthesis.speak(msg);
+      }
+    };
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+  }, []);
 
   const processSpeechQueue = useCallback(() => {
     if (!('speechSynthesis' in window)) return;
@@ -90,6 +108,8 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     const text = speechQueueRef.current.shift()!;
     
     const msg = new SpeechSynthesisUtterance(text);
+    currentUtteranceRef.current = msg; // Prevent Garbage Collection in Chrome
+    
     // Prefer Indian English or Hindi for local pronunciation
     const voices = window.speechSynthesis.getVoices();
     const indianVoice = voices.find(v => v.lang === 'en-IN' || v.lang === 'hi-IN');
@@ -99,12 +119,14 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     
     msg.onend = () => {
       isSpeakingRef.current = false;
+      currentUtteranceRef.current = null;
       processSpeechQueue();
     };
     
     msg.onerror = (e) => {
       console.warn("TTS Error:", e);
       isSpeakingRef.current = false;
+      currentUtteranceRef.current = null;
       processSpeechQueue();
     };
 
@@ -128,11 +150,6 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
       if (record && record.session_id) {
         if (prevOrderIdsRef.current && !prevOrderIdsRef.current.includes(record.session_id)) {
           return;
-        }
-        if (payload.eventType === "INSERT") {
-          const session = sessionsRef.current.find(s => s.id === record.session_id);
-          const tableName = session?.tableNumber ? `Table ${session.tableNumber}` : (session?.orderNumber ? `Order ${session.orderNumber}` : "a table");
-          speakOrder(`New order on ${tableName}, ${record.quantity} ${record.name}`);
         }
       }
     }
@@ -189,6 +206,22 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
             if (hasNewOrder) {
               playBeep();
             }
+            
+            // Diff new items for TTS announcements
+            const oldItemIds = new Set(sessionsRef.current.flatMap(s => s.items.map(i => i.id)));
+            data.forEach((newSession) => {
+              newSession.items.forEach(item => {
+                if (!oldItemIds.has(item.id)) {
+                  // Only speak if it was added recently (within last 2 mins)
+                  const addedTime = new Date(item.addedAt).getTime();
+                  if (Date.now() - addedTime < 2 * 60000) {
+                    const tableName = newSession.tableNumber ? `Table ${newSession.tableNumber}` : (newSession.orderNumber ? `Order ${newSession.orderNumber}` : "a table");
+                    speakOrder(`New order on ${tableName}, ${item.quantity} ${item.name}`);
+                  }
+                }
+              });
+            });
+
             prevOrderIdsRef.current = currentIds;
           } else {
             prevOrderIdsRef.current = data.map((s) => s.id);
