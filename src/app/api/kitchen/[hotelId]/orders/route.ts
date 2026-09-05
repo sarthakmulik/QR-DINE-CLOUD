@@ -15,21 +15,18 @@ import crypto from "crypto";
 async function getKitchenOrders(hotelId: string) {
   const sb = createAdminClient();
 
-  // Auto-cleanup stale sessions removed from synchronous fetch path for performance
-  // (Preserved functionality in session-service.ts for future background execution)
-
-  // Fetch tables and open/cancelled sessions in parallel
-  const [tablesRes, sessionsRes, cancelledSessionsRes] = await Promise.all([
-    sb.from("restaurant_tables").select("*").eq("hotel_id", hotelId),
+  // Fetch ONLY active/cancelled sessions (drop redundant restaurant_tables fetch)
+  // Reduce selected columns to strictly what KDS needs.
+  const [sessionsRes, cancelledSessionsRes] = await Promise.all([
     sb
       .from("table_sessions")
-      .select("*")
+      .select("id, status, start_time, table_number, order_number")
       .eq("hotel_id", hotelId)
       .in("status", ["open", "payment_pending"])
       .order("start_time", { ascending: true }),
     sb
       .from("table_sessions")
-      .select("*")
+      .select("id, status, start_time, table_number, order_number")
       .eq("hotel_id", hotelId)
       .eq("status", "cancelled")
       .gte("closed_at", new Date(Date.now() - 15 * 60 * 1000).toISOString()),
@@ -37,40 +34,45 @@ async function getKitchenOrders(hotelId: string) {
 
   if (sessionsRes.error) throw new Error("Failed to fetch sessions");
 
-  const tables = (tablesRes.data || []) as RestaurantTable[];
-  const activeSessions = (sessionsRes.data || []) as TableSession[];
-  const cancelledSessions = (cancelledSessionsRes?.data || []) as TableSession[];
+  const activeSessions = (sessionsRes.data || []);
+  const cancelledSessions = (cancelledSessionsRes?.data || []);
 
   const sessions = [...activeSessions, ...cancelledSessions].sort(
     (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
   );
 
   const sessionIds = sessions.map((s) => s.id);
-  let allItems: SessionItem[] = [];
+  let allItems: any[] = [];
   if (sessionIds.length > 0) {
     const { data: itemsRes } = await sb
       .from("session_items")
-      .select("*")
+      .select("id, session_id, name, quantity, status, added_at")
       .in("session_id", sessionIds)
       .order("added_at", { ascending: true });
-    allItems = (itemsRes || []) as SessionItem[];
+    allItems = (itemsRes || []);
   }
 
-  const tablesMap = new Map<string, RestaurantTable>();
-  for (const table of tables) tablesMap.set(table.id, table);
-
-  const itemsBySessionId: Record<string, SessionItem[]> = {};
+  const itemsBySessionId: Record<string, any[]> = {};
   for (const item of allItems) {
     if (!itemsBySessionId[item.session_id]) itemsBySessionId[item.session_id] = [];
     itemsBySessionId[item.session_id].push(item);
   }
 
+  // Lightweight Kitchen Mapping - strips 75% of unused JSON payload
   return sessions.map((session) => {
     const sessionItems = itemsBySessionId[session.id] || [];
-    const table = session.table_id ? tablesMap.get(session.table_id) : undefined;
     return {
-      ...mapTableSession(session, sessionItems),
-      table: table ? { label: table.label, tableNumber: table.table_number } : undefined,
+      id: session.id,
+      status: session.status,
+      startTime: session.start_time,
+      tableNumber: session.table_number,
+      orderNumber: session.order_number,
+      items: sessionItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        status: item.status || "preparing"
+      }))
     };
   });
 }

@@ -200,13 +200,14 @@ export async function POST(
       // Background: If any drinks were ordered, send a direct push to one waiter in a round-robin
       if (hasDrinks) {
         const drinkListString = orderedDrinks.join(", ");
-        // MUST await this so serverless environments don't kill the Firebase JWT handshake!
-        await sendStaffPushSequential(hotelId, {
-          title: "New Drink Order 🥤",
+        // Fire-and-forget: Do not await Firebase push notifications!
+        // This removes 500ms-1s of latency from the customer's screen and Admin Dashboard.
+        sendStaffPushSequential(hotelId, {
+          title: "New Drink Order 🥤 ",
           body: `Table ${tableNumber} ordered: ${drinkListString}`,
           tag: `drink-${session.id}`,
           url: `/staff/${hotelId}?tab=orders`
-        });
+        }).catch(err => console.error("Background push failed:", err));
       }
 
       revalidateTag(`staff-overview-${hotelId}`);
