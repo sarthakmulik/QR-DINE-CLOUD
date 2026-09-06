@@ -81,6 +81,16 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
   const fetchOrders = useCallback((payload?: any) => {
     if (!pinEntered || hotelPlan.toLowerCase() === "basic") return;
     
+    // RACE CONDITION FIX:
+    // When a completely new order is placed, `table_sessions` is inserted first, then `session_items`.
+    // The Realtime events arrive milliseconds apart. If we don't optimistically track the new session ID
+    // instantly, the subsequent `session_items` event will be dropped because our API fetch hasn't finished yet!
+    if (payload && payload.table === "table_sessions" && payload.new?.id) {
+      if (prevOrderIdsRef.current !== null && !prevOrderIdsRef.current.includes(payload.new.id)) {
+        prevOrderIdsRef.current.push(payload.new.id);
+      }
+    }
+
     // Filter out global session_items events that belong to other hotels.
     // If the session isn't in our current KDS view, ignore the event entirely!
     if (payload && payload.table === "session_items") {
