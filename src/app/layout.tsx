@@ -36,30 +36,6 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>{children}</Providers>
-        {/* Kill switch for old Service Workers and Caches from the offline update */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                      registration.unregister();
-                      console.log('ServiceWorker unregistered.');
-                    }
-                  });
-                  if (window.caches) {
-                    caches.keys().then(function(names) {
-                      for (let name of names) {
-                        caches.delete(name);
-                      }
-                    });
-                  }
-                });
-              }
-            `,
-          }}
-        />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>

@@ -1,9 +1,33 @@
 /** @type {import('next').NextConfig} */
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
-  disable: true, // FORCE DISABLE: PWA Service Worker is conflicting with Realtime fetches and IDB offline mode
-  register: false,
+  disable: process.env.NODE_ENV === "development",
+  register: true,
   skipWaiting: true,
+  workboxOptions: {
+    // FORCE NetworkOnly for all API routes so the ServiceWorker NEVER stalls 
+    // real-time fetches or throws "no-response" timeouts.
+    runtimeCaching: [
+      {
+        urlPattern: /\/api\/.*/i,
+        handler: 'NetworkOnly',
+        options: {
+          backgroundSync: {
+            name: 'api-queue',
+            options: { maxRetentionTime: 24 * 60 }
+          }
+        }
+      },
+      {
+        urlPattern: /^https?.*/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'offlineCache',
+          expiration: { maxEntries: 200, maxAgeSeconds: 24 * 60 * 60 }
+        }
+      }
+    ]
+  }
 });
 
 const nextConfig = {

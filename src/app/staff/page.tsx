@@ -210,6 +210,16 @@ export default function StaffPanelPage() {
         PushNotifications.addListener('registrationError', (err) => {
           alert('Registration error: ' + err.error);
         });
+
+        PushNotifications.addListener('pushNotificationReceived', (notification) => {
+          // Play a native beep or show a toast when a notification arrives in foreground
+          alert(`New Request: ${notification.title}\n${notification.body}`);
+        });
+
+        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          // Refresh the page or navigate when user taps the notification
+          window.location.reload();
+        });
       } else {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
