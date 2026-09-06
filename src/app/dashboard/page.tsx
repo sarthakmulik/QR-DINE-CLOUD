@@ -336,6 +336,7 @@ export default function TablesDashboardPage() {
 
   // --- Realtime: instant push updates ----------------------------------------
   const tablesRef = useRef(tables);
+  const pendingSessionIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => { tablesRef.current = tables; }, [tables]);
 
   const fetchStats = useCallback(async () => {
@@ -358,13 +359,20 @@ export default function TablesDashboardPage() {
     if (isSyncingRef.current) return;
     
     if (payload) {
+      // Optimistic session tracking to fix race conditions where items are inserted 
+      // milliseconds after the session, but before our API fetch finishes.
+      if (payload.table === "table_sessions" && payload.new?.id) {
+        pendingSessionIdsRef.current.add(payload.new.id);
+      }
+
       // 1. Ghost Items Fix: Filter global session_items events
       if (payload.table === "session_items") {
         const record = payload.new || payload.old;
         if (record && record.session_id) {
           const isActive = tablesRef.current.some(
             t => t.currentSession?.id === record.session_id
-          );
+          ) || pendingSessionIdsRef.current.has(record.session_id);
+          
           if (!isActive) return; // Drop irrelevant events to save performance
         }
       }
@@ -401,6 +409,22 @@ export default function TablesDashboardPage() {
     }, 60000);
     return () => clearInterval(interval);
   }, [loadTables, pollTables]);
+
+  // Instantly refresh when tab regains focus (bypasses WebSocket reconnect delays)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === "visible" && !isSyncingRef.current) {
+        pollTables();
+        fetchStats();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [pollTables, fetchStats]);
 
 
 

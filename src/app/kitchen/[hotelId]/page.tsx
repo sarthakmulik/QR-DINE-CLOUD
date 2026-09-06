@@ -171,6 +171,22 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
     });
   }, [hotelId, pinEntered, hotelPlan]);
 
+  // Instantly refresh orders when the tablet screen wakes up or tab regains focus.
+  // This bypasses the 15-second WebSocket reconnect delay.
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchOrders();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [fetchOrders]);
+
   // Realtime: instantly refresh KDS when any session_items or table_sessions change.
   // session_items has no hotel_id column so we subscribe without a row-level filter —
   // the kitchen API route handles hotel-scoped auth. table_sessions uses hotel_id filter.
