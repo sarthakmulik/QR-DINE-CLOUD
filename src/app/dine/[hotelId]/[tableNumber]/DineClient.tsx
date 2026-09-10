@@ -207,7 +207,7 @@ const CategorySection = React.memo(function CategorySection({
           {cat.name}
         </h2>
       ) : (
-        <h2 className={`font-black text-sm tracking-widest uppercase ${
+        <h2 className={`font-black text-sm tracking-[0.18em] uppercase ${
           isDark ? "text-slate-300" : "text-gray-500"
         }`}>{cat.name}</h2>
       )}
@@ -246,11 +246,11 @@ const CategorySection = React.memo(function CategorySection({
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-[56px] h-[56px] rounded-[1.25rem] object-cover shadow-[0_4px_16px_rgba(0,0,0,0.1)] transition-transform duration-500 group-hover:scale-110"
+                        className="w-[60px] h-[60px] rounded-[1.25rem] object-cover shadow-[0_4px_16px_rgba(0,0,0,0.1)] transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                       />
                     ) : (
-                      <div className={`w-[56px] h-[56px] rounded-[1.25rem] flex items-center justify-center text-2xl flex-shrink-0 ${
+                      <div className={`w-[60px] h-[60px] rounded-[1.25rem] flex items-center justify-center text-2xl flex-shrink-0 ${
                         isDark ? "bg-slate-800 border border-white/5" : "bg-gradient-to-br from-brand-50 to-amber-50 border border-brand-100/40"
                       }`}>🍽️</div>
                     )}
@@ -315,7 +315,7 @@ const CategorySection = React.memo(function CategorySection({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className={`flex flex-col rounded-[2.5rem] border overflow-hidden relative transition-all duration-[400ms] cubic-bezier-[0.34,1.56,0.64,1] group cursor-pointer hover:-translate-y-1.5 ${
+                className={`flex flex-col h-full rounded-[2.5rem] border overflow-hidden relative transition-all duration-[400ms] cubic-bezier-[0.34,1.56,0.64,1] group cursor-pointer hover:-translate-y-1.5 ${
                   isDark
                     ? "bg-slate-900 border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:border-brand-500/40 hover:shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
                     : "bg-white border-gray-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12)] hover:border-brand-300/60"
@@ -569,7 +569,7 @@ const CategorySection = React.memo(function CategorySection({
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className={`rounded-[2rem] border p-4 flex gap-5 transition-all duration-[500ms] cubic-bezier-[0.25,1,0.5,1] cursor-pointer group hover:-translate-y-1.5 active:scale-[0.98] relative mt-4 ${
+              className={`rounded-[2rem] border p-4 flex gap-5 transition-all duration-[500ms] cubic-bezier-[0.25,1,0.5,1] cursor-pointer group hover:-translate-y-1.5 active:scale-[0.98] relative mt-8 ${
                 isDark
                   ? "bg-slate-900/60 border-white/[0.08] hover:border-white/[0.15] backdrop-blur-xl shadow-[inset_0_1px_3px_rgba(255,255,255,0.05),0_8px_32px_-8px_rgba(0,0,0,0.6)] hover:shadow-[inset_0_1px_3px_rgba(255,255,255,0.05),0_16px_48px_-8px_rgba(0,0,0,0.8)]"
                   : "bg-white/70 border-gray-100 hover:border-brand-200/50 backdrop-blur-xl shadow-[inset_0_1px_4px_rgba(255,255,255,0.5),0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_4px_rgba(255,255,255,0.5),0_16px_40px_-8px_rgba(0,0,0,0.1)]"
@@ -1875,11 +1875,11 @@ export default function DineClient({
                 <img
                   src={state.hotelLogo}
                   alt=""
-                  className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
+                  className="w-11 h-11 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
                 />
               </>
             ) : (
-              <div className="w-10 h-10 bg-brand-50 border border-brand-100 text-brand-600 rounded-full flex items-center justify-center text-lg shadow-sm">
+              <div className="w-11 h-11 bg-brand-50 border border-brand-100 text-brand-600 rounded-full flex items-center justify-center text-lg shadow-sm">
                 🍽️
               </div>
             )}
@@ -2297,12 +2297,12 @@ export default function DineClient({
               <img
                 src={state.hotelLogo}
                 alt=""
-                className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
+                className="w-11 h-11 rounded-full object-cover border border-gray-100 dark:border-zinc-800/50 shadow-sm"
               />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
             </div>
           ) : (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border ${
+            <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg shadow-sm border ${
               isDark ? "bg-slate-800 border-white/10 text-white" : "bg-brand-50 border-brand-100 text-brand-600"
             }`}>
               🍽️
@@ -2388,7 +2388,7 @@ export default function DineClient({
         <div className={`border-b pb-3 pt-2 no-print transition-colors duration-300 ${
           isDark ? "bg-slate-950 border-white/5" : "bg-gray-50 border-gray-150/50"
         }`}>
-          <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory max-w-md mx-auto items-center">
+          <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scroll-smooth scrollbar-none max-w-md mx-auto items-center">
             {state.categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
@@ -2415,7 +2415,7 @@ export default function DineClient({
                       isManualScrollingRef.current = false;
                     }, 800);
                   }}
-                  className={`snap-center scroll-mx-4 px-5 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap transition-all duration-300 transform ${
+                  className={`px-5 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap transition-all duration-300 transform ${
                     isActive
                       ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white scale-105 border border-transparent"
                       : isDark
@@ -2521,7 +2521,7 @@ export default function DineClient({
 
       {/* Floating Bottom Cart Pill — Premium */}
       {cartCount > 0 && (
-        <div className="fixed bottom-6 left-4 right-4 z-40 max-w-md mx-auto no-print animate-slide-up">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40 no-print animate-slide-up">
           <button
             onClick={() => {
               setCouponError(null);
@@ -2584,7 +2584,7 @@ export default function DineClient({
             }`} />
 
             {/* Header / Image Area */}
-            <div className="relative h-72 w-full flex-shrink-0 px-6 pb-6 flex items-end overflow-hidden">
+            <div className="relative h-[35vh] min-h-48 max-h-72 w-full flex-shrink-0 px-6 pb-6 flex items-end overflow-hidden">
               {selectedItem.imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -2797,7 +2797,7 @@ export default function DineClient({
             </div>
 
             {/* Cart Items list */}
-            <div className={`p-6 space-y-4 overflow-y-auto flex-1 divide-y ${
+            <div className={`p-6 overflow-y-auto flex-1 divide-y ${
               isDark ? "divide-white/5" : "divide-gray-50"
             }`}>
               {cart.map((item, index) => (

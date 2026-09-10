@@ -759,10 +759,10 @@ export default function QuickServiceClient({
         </div>
 
         {categories.length > 0 && !searchQuery && (
-          <div className="overflow-x-auto hide-scrollbar px-5 pb-4 flex gap-2.5 scroll-smooth snap-x snap-mandatory">
+          <div className="overflow-x-auto hide-scrollbar px-5 pb-4 flex gap-2.5 scroll-smooth">
             <button
               onClick={() => setActiveCategory("all")}
-              className={`snap-start whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === "all" ? t.pillActive : t.pillInactive}`}
+              className={`whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === "all" ? t.pillActive : t.pillInactive}`}
             >
               All Items
             </button>
@@ -770,7 +770,7 @@ export default function QuickServiceClient({
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`snap-start whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === cat.id ? t.pillActive : t.pillInactive}`}
+                className={`whitespace-nowrap px-5 py-2 text-sm transition-all active:scale-95 ${activeCategory === cat.id ? t.pillActive : t.pillInactive}`}
               >
                 {cat.name}
               </button>
@@ -779,7 +779,7 @@ export default function QuickServiceClient({
         )}
       </header>
 
-      <main className="flex-1 px-5 pt-6 pb-36">
+      <main className="flex-1 px-5 pt-6 pb-52">
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div className="relative w-12 h-12">
@@ -832,7 +832,7 @@ export default function QuickServiceClient({
                     </div>
 
                     <div className="flex items-center justify-between mt-3">
-                      <span className="font-black text-brand-500 text-lg tracking-tight leading-none">
+                      <span className="font-black text-[var(--qs-primary)] text-lg tracking-tight leading-none">
                         {formatINR(item.price)}
                       </span>
                       
