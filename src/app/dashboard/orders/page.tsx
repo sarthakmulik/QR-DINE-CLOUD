@@ -48,6 +48,12 @@ export default function LiveOrdersPage() {
     enabled: !!hotelId,
   });
 
+  useRealtimeRefresh({
+    table: "session_items",
+    onRefresh: () => mutate(),
+    enabled: !!hotelId,
+  });
+
   const loading = !error && sessions.length === 0 && isValidating;
   const isRefreshing = isValidating;
   const fetchError = !!error;

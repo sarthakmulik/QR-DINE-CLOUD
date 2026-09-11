@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, use, useCallback, useMemo, useRef, useDeferredValue } from "react";
 import { formatINR, formatMenuPrice } from "@/lib/utils";
 import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search, Sparkles, Smartphone } from "lucide-react";
 import QRCode from "qrcode";
@@ -112,6 +112,7 @@ interface CategorySectionProps {
   updateQty: (itemId: string, delta: number) => void;
   bounceId: string | null;
   setSelectedItem: (item: any) => void;
+  runningItemsMap: Record<string, boolean>;
 }
 
 /* ─── SHARED DIETARY BADGES ─── */
@@ -196,9 +197,23 @@ const CategorySection = React.memo(function CategorySection({
   updateQty,
   bounceId,
   setSelectedItem,
+  runningItemsMap,
 }: CategorySectionProps) {
 
-  /* ── CATEGORY HEADING ── */
+  const visibleItems = useMemo(() => {
+    return cat.items.filter((item) => {
+      if (item.parentItemId) {
+        if (!runningItemsMap[item.parentItemId] && !cartMap[item.parentItemId]) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [cat.items, runningItemsMap, cartMap]);
+
+  if (visibleItems.length === 0) return null;
+
+  /* ─── CATEGORY HEADING ─── */
   const isTrending = cat.id === "trending-now-virtual";
   const categoryHeading = (
     <div className="flex items-center gap-3 mb-3">
@@ -228,7 +243,7 @@ const CategorySection = React.memo(function CategorySection({
             ? "bg-slate-900/60 border-white/10 divide-y divide-white/5"
             : "bg-white/70 border-gray-200/50 divide-y divide-gray-100/50 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.08)]"
         }`}>
-          {cat.items.map((item) => {
+          {visibleItems.map((item) => {
             const qty = cartMap[item.id] || 0;
             return (
               <div
@@ -309,7 +324,7 @@ const CategorySection = React.memo(function CategorySection({
       <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
         {categoryHeading}
         <div className="grid grid-cols-2 gap-3">
-          {cat.items.map((item) => {
+          {visibleItems.map((item) => {
             const qty = cartMap[item.id] || 0;
             return (
               <div
@@ -399,7 +414,7 @@ const CategorySection = React.memo(function CategorySection({
       <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
         {categoryHeading}
         <div className="grid grid-cols-2 gap-3">
-          {cat.items.map((item) => {
+          {visibleItems.map((item) => {
             const qty = cartMap[item.id] || 0;
             return (
               <div
@@ -478,7 +493,7 @@ const CategorySection = React.memo(function CategorySection({
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{cat.items.length} items</span>
         </div>
         <div className="space-y-3">
-          {cat.items.map((item) => {
+          {visibleItems.map((item) => {
             const qty = cartMap[item.id] || 0;
             return (
               <div
@@ -563,7 +578,7 @@ const CategorySection = React.memo(function CategorySection({
     <section id={`cat-${cat.id}`} className="scroll-mt-48 space-y-2">
       {categoryHeading}
       <div className="space-y-4">
-        {cat.items.map((item) => {
+        {visibleItems.map((item) => {
           const qty = cartMap[item.id] || 0;
           return (
             <div
@@ -637,6 +652,20 @@ const CategorySection = React.memo(function CategorySection({
       </div>
     </section>
   );
+}, (prev, next) => {
+  if (prev.cat !== next.cat) return false;
+  if (prev.layout !== next.layout) return false;
+  if (prev.isDark !== next.isDark) return false;
+
+  const prevBounceInCat = prev.bounceId ? prev.cat.items.some(i => i.id === prev.bounceId) : false;
+  const nextBounceInCat = next.bounceId ? next.cat.items.some(i => i.id === next.bounceId) : false;
+  if (prevBounceInCat !== nextBounceInCat) return false;
+
+  for (const item of next.cat.items) {
+    if (prev.cartMap[item.id] !== next.cartMap[item.id]) return false;
+    if (item.parentItemId && prev.cartMap[item.parentItemId] !== next.cartMap[item.parentItemId]) return false;
+  }
+  return true;
 });
 
 export default function DineClient({
@@ -749,6 +778,7 @@ export default function DineClient({
   const [startCountdown, setStartCountdown] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const [showWelcome, setShowWelcome] = useState(false);
@@ -975,6 +1005,25 @@ export default function DineClient({
 
     setState((prev) => {
       const categories = sessionOnly && prev.type === "menu" ? prev.categories : (data.categories || []);
+      const newSessionId = data.session ? data.session.id : null;
+      const newRunningItems = data.session ? data.session.items : [];
+      const newRunningSubtotal = data.session ? data.session.subtotal : 0;
+
+      if (prev.type === "menu") {
+        // Prevent layout stutters by bailing out if nothing actually changed
+        const isSameItems = JSON.stringify(prev.runningItems) === JSON.stringify(newRunningItems);
+        const isSameCategories = prev.categories === categories || (sessionOnly && prev.categories.length > 0);
+        
+        if (
+          isSameItems &&
+          prev.runningSubtotal === newRunningSubtotal &&
+          prev.sessionId === newSessionId &&
+          isSameCategories
+        ) {
+          return prev;
+        }
+      }
+
       return {
         type: "menu",
         hotelName: data.hotel.name,
@@ -982,10 +1031,10 @@ export default function DineClient({
         hotelPlan: data.hotel.plan,
         taxRate: data.hotel.taxRate !== undefined && data.hotel.taxRate !== null ? data.hotel.taxRate : 5,
         isPhoneMandatory: data.hotel.isRepeatingCustomerDiscountEnabled ?? true,
-        sessionId: data.session ? data.session.id : null,
+        sessionId: newSessionId,
         categories,
-        runningItems: data.session ? data.session.items : [],
-        runningSubtotal: data.session ? data.session.subtotal : 0,
+        runningItems: newRunningItems,
+        runningSubtotal: newRunningSubtotal,
       };
     });
   }, [hotelId, tableNumber]);
@@ -1462,6 +1511,16 @@ export default function DineClient({
     }
     return map;
   }, [cart]);
+
+  const runningItemsMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    if (state.type === "menu" && state.runningItems) {
+      for (const i of state.runningItems) {
+        map[i.menuItemId] = true;
+      }
+    }
+    return map;
+  }, [state]);
 
   async function placeOrder() {
     if (cart.length === 0) return;
@@ -2181,30 +2240,22 @@ export default function DineClient({
     return state.categories.map((cat) => {
       let mappedItems = cat.items.map((item) => {
         if (item.parentItemId) {
-          return { ...item, name: `${item.name} 🔄 Refill` };
+          return { ...item, name: `${item.name} 🥤 Refill` };
         }
         return item;
       });
 
       const items = mappedItems.filter((item) => {
         // Search filter
-        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesSearch = item.name.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(deferredSearchQuery.toLowerCase()));
 
         if (!matchesSearch) return false;
-
-        // Refill logic: if it has a parent, hide it unless the parent is in runningItems or cart
-        if (item.parentItemId) {
-          const inRunning = state.runningItems?.some(i => i.menuItemId === item.parentItemId) ?? false;
-          const inCart = cart?.some(i => i.menuItemId === item.parentItemId) ?? false;
-          if (!inRunning && !inCart) return false;
-        }
-
         return true;
       });
       return { ...cat, items };
     }).filter((cat) => cat.items.length > 0);
-  }, [state, searchQuery, cart]);
+  }, [state.type, state.type === "menu" ? state.categories : undefined, deferredSearchQuery]);
 
   const brandVariables = customizations?.primaryColor ? generateBrandColors(customizations.primaryColor) : {};
   const customStyles = {
@@ -2496,6 +2547,7 @@ export default function DineClient({
               updateQty={updateQty}
               bounceId={bounceId}
               setSelectedItem={setSelectedItem}
+              runningItemsMap={runningItemsMap}
             />
           ))
         ) : (

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useEffect, use, useRef, useMemo } from "react";
+import React, { useState, useEffect, use, useRef, useMemo, useDeferredValue } from "react";
 // Script import removed — Razorpay is loaded dynamically via document.createElement
 import { Plus, Minus, Search, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck, Smartphone, Banknote, CreditCard, Loader2, XCircle, Sparkles, X } from "lucide-react";
 import QRCode from "qrcode";
@@ -84,6 +84,7 @@ export default function QuickServiceClient({
 
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   
   const [showCart, setShowCart] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -249,22 +250,27 @@ export default function QuickServiceClient({
     const pollInterval = setInterval(async () => {
       const currentOrders = activeOrdersRef.current;
       try {
-        const updatedOrders = await Promise.all(currentOrders.map(async (order) => {
-          // Skip polling for orders that are already in a terminal state
-          if (order.status === "closed" || order.status === "cancelled") return order;
-          // Skip polling for UPI-QR manual pay orders waiting for admin — they
-          // only update when the admin clicks "Confirm Paid", no point hammering.
-          // (payment_pending + no active PG = static QR shown)
-          const res = await fetch(`/api/quick-service/${hotelId}/order/${order.id}/status`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.status && (data.status !== order.status || data.order_number !== (order as any).order_number)) {
-              return { ...order, status: data.status, order_number: data.order_number || (order as any).order_number };
-            }
+        const updatedOrders = [];
+        for (const order of currentOrders) {
+          if (order.status === "closed" || order.status === "cancelled") {
+            updatedOrders.push(order);
+            continue;
           }
-          return order;
-        }));
-        
+          
+          try {
+            const res = await fetch(`/api/quick-service/${hotelId}/order/${order.id}/status`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.status && (data.status !== order.status || data.order_number !== (order as any).order_number)) {
+                updatedOrders.push({ ...order, status: data.status, order_number: data.order_number || (order as any).order_number });
+                continue;
+              }
+            }
+          } catch (e) {
+            // ignore individual fetch errors
+          }
+          updatedOrders.push(order);
+        }
         let changed = false;
         if (updatedOrders.length !== currentOrders.length) changed = true;
         else {
@@ -332,18 +338,18 @@ export default function QuickServiceClient({
   const filteredCategories = useMemo(() => {
     // FIX: Apply BOTH category and search filters together.
     // Previously, selecting a category tab would silently ignore the search query.
-    const lowerQuery = searchQuery.toLowerCase().trim();
+    const lowerQuery = deferredSearchQuery.toLowerCase().trim();
 
     return categories
       .filter(c => activeCategory === "all" || c.id === activeCategory)
       .map(c => ({
         ...c,
         items: lowerQuery
-          ? c.items.filter(i => i.name.toLowerCase().includes(lowerQuery))
+          ? c.items.filter(i => i.name.toLowerCase().includes(lowerQuery) || (i.description && i.description.toLowerCase().includes(lowerQuery)))
           : c.items,
       }))
       .filter(c => c.items.length > 0);
-  }, [categories, activeCategory, searchQuery]);
+  }, [categories, activeCategory, deferredSearchQuery]);
 
   const hasItems = filteredCategories.some(c => c.items.length > 0);
 
