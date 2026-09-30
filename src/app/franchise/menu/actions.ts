@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function syncFranchiseMenu(sourceHotelId: string) {
+  try {
   const user = await getAuthUser();
   if (!user || user.role !== "hotel_owner") {
     return { success: false, error: "Unauthorized" };
@@ -83,7 +84,7 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
     const catInsertPayloads = [];
 
     for (const sCat of sourceCategories) {
-      const match = existingCats.find((tCat) => tCat.name.toLowerCase() === sCat.name.toLowerCase());
+      const match = existingCats.find((tCat) => tCat.name.trim().toLowerCase() === sCat.name.trim().toLowerCase());
       if (match) {
         catUpdatePromises.push(sb.from("menu_categories").update({ sort_order: sCat.sort_order }).eq("id", match.id));
         categoryIdMap.set(sCat.id, match.id);
@@ -97,27 +98,33 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
     }
 
     // Execute category updates in parallel
-    if (catUpdatePromises.length > 0) await Promise.all(catUpdatePromises);
+    if (catUpdatePromises.length > 0) {
+      await Promise.all(catUpdatePromises);
+    }
 
     // Execute category inserts (need sequential to map IDs)
     for (const payload of catInsertPayloads) {
-      const { data: newCat } = await sb.from("menu_categories").insert(payload).select("id, name").single();
+      const { data: newCat, error: catErr } = await sb.from("menu_categories").insert(payload).select("id, name").single();
+      if (catErr) throw new Error("Category Insert Failed: " + catErr.message);
       if (newCat) {
-        const sCatMatch = sourceCategories.find(sc => sc.name.toLowerCase() === newCat.name.toLowerCase());
+        const sCatMatch = sourceCategories.find(sc => sc.name.trim().toLowerCase() === newCat.name.trim().toLowerCase());
         if (sCatMatch) categoryIdMap.set(sCatMatch.id, newCat.id);
       }
     }
 
     // C. Sync Items (Parallel Updates & Batched Inserts)
-    const sourceItemNames = new Set(sourceItems.map(i => i.name.toLowerCase()));
+    const sourceItemNames = new Set(sourceItems.map(i => i.name.trim().toLowerCase()));
     const itemUpdatePromises = [];
     const itemInsertPayloads = [];
 
     for (const sItem of sourceItems) {
-      const match = existingItems.find((tItem) => tItem.name.toLowerCase() === sItem.name.toLowerCase());
+      const match = existingItems.find((tItem) => tItem.name.trim().toLowerCase() === sItem.name.trim().toLowerCase());
       const mappedCatId = categoryIdMap.get(sItem.category_id);
 
-      if (!mappedCatId) continue;
+      if (!mappedCatId) {
+        console.warn(`Missing mapped category ID for item: ${sItem.name}`);
+        continue;
+      }
 
       if (match) {
         itemUpdatePromises.push(
@@ -133,7 +140,7 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
             contains_nuts: sItem.contains_nuts,
             is_gluten_free: sItem.is_gluten_free,
             is_recommended: sItem.is_recommended
-          }).eq("id", match.id)
+          }).eq("id", match.id).throwOnError() // Add throwOnError to capture silent failures
         );
       } else {
         itemInsertPayloads.push({
@@ -156,8 +163,8 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
 
     // D. Soft-Delete Orphaned Items (Parallel)
     for (const tItem of existingItems) {
-      if (!sourceItemNames.has(tItem.name.toLowerCase())) {
-        itemUpdatePromises.push(sb.from("menu_items").update({ is_available: false }).eq("id", tItem.id));
+      if (!sourceItemNames.has(tItem.name.trim().toLowerCase())) {
+        itemUpdatePromises.push(sb.from("menu_items").update({ is_available: false }).eq("id", tItem.id).throwOnError());
       }
     }
 
@@ -173,7 +180,8 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
 
     // Execute all item inserts in a single batch
     if (itemInsertPayloads.length > 0) {
-      await sb.from("menu_items").insert(itemInsertPayloads);
+      const { error: insErr } = await sb.from("menu_items").insert(itemInsertPayloads);
+      if (insErr) throw new Error("Item Insert Failed: " + insErr.message);
     }
   }
 
@@ -181,4 +189,10 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
   revalidatePath("/dashboard/menu");
 
   return { success: true };
+} catch (error: any) {
+  console.error("Menu Sync Error:", error);
+  return { success: false, error: error.message || "Failed to sync menu" };
 }
+}
+
+
