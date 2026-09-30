@@ -36,7 +36,7 @@ export function DashboardSidebar({
 }: {
   hotelName: string;
   hotelId?: string;
-  franchiseHotels?: { id: string; name: string }[];
+  franchiseHotels?: { id: string; name: string; address?: string | null }[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -104,7 +104,9 @@ export function DashboardSidebar({
                     }}
                   >
                     {franchiseHotels.map(h => (
-                      <option key={h.id} value={h.id} className="text-black">{h.name}</option>
+                      <option key={h.id} value={h.id} className="text-black">
+                        {h.name}{h.address ? ` (${h.address})` : ''}
+                      </option>
                     ))}
                   </select>
                   <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 dark:group-hover:text-gray-300" />
@@ -228,7 +230,9 @@ export function DashboardSidebar({
                         }}
                       >
                         {franchiseHotels.map(h => (
-                          <option key={h.id} value={h.id} className="text-black">{h.name}</option>
+                          <option key={h.id} value={h.id} className="text-black">
+                            {h.name}{h.address ? ` (${h.address})` : ''}
+                          </option>
                         ))}
                       </select>
                       <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 dark:group-hover:text-gray-300" />

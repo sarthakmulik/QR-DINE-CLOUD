@@ -29,7 +29,7 @@ export default async function FranchiseMenuSyncPage() {
 
   const { data: hotels } = await sb
     .from("hotels")
-    .select("id, name")
+    .select("id, name, address")
     .in("organization_id", orgIds)
     .order("name");
 

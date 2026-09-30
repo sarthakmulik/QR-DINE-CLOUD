@@ -5,7 +5,7 @@ import { syncFranchiseMenu } from "./actions";
 import { Store, ArrowRight, AlertTriangle, CheckCircle2, Loader2, UtensilsCrossed } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export function MenuSyncClient({ hotels }: { hotels: { id: string; name: string }[] }) {
+export function MenuSyncClient({ hotels }: { hotels: { id: string; name: string; address?: string | null }[] }) {
   const [sourceHotelId, setSourceHotelId] = useState<string>(hotels[0]?.id || "");
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -69,7 +69,7 @@ export function MenuSyncClient({ hotels }: { hotels: { id: string; name: string 
                 disabled={isLoading}
               >
                 {hotels.map(h => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
+                  <option key={h.id} value={h.id}>{h.name}{h.address ? ` (${h.address})` : ''}</option>
                 ))}
               </select>
               <Store className="w-5 h-5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -91,7 +91,10 @@ export function MenuSyncClient({ hotels }: { hotels: { id: string; name: string 
               {targetHotels.map(h => (
                 <div key={h.id} className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-zinc-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                  {h.name}
+                  <span>
+                    {h.name}
+                    {h.address && <span className="text-xs text-gray-400 font-normal ml-1">({h.address})</span>}
+                  </span>
                 </div>
               ))}
               {targetHotels.length === 0 && (

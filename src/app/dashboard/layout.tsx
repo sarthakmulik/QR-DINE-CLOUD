@@ -30,7 +30,7 @@ export default async function DashboardLayout({
   }
 
   let hotel: Hotel | null = null;
-  let franchiseHotels: { id: string; name: string }[] = [];
+  let franchiseHotels: { id: string; name: string; address: string | null }[] = [];
 
   if (user.hotelId) {
     const sb = createAdminClient();
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
         const { data: members } = await sb.from("organization_members").select("organization_id").eq("user_id", user.id);
         if (members && members.length > 0) {
           const orgIds = members.map(m => m.organization_id);
-          const { data: hotels } = await sb.from("hotels").select("id, name").in("organization_id", orgIds).order("name");
+          const { data: hotels } = await sb.from("hotels").select("id, name, address").in("organization_id", orgIds).order("name");
           if (hotels) franchiseHotels = hotels;
         }
       } catch (err) {

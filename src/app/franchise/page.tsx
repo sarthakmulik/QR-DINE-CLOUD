@@ -22,7 +22,7 @@ export default async function FranchiseDashboardPage() {
   
   const { data: hotels } = await sb
     .from("hotels")
-    .select("id, name, status")
+    .select("id, name, status, address")
     .in("organization_id", orgIds)
     .order("name");
 
@@ -71,6 +71,7 @@ export default async function FranchiseDashboardPage() {
           recentOrders.push({
             id: session.id,
             branchName: branch.name,
+            branchAddress: branch.address,
             total: session.total || 0,
             orderNumber: session.order_number,
             time: session.end_time
@@ -163,7 +164,7 @@ export default async function FranchiseDashboardPage() {
               Branch Performance
             </h2>
           </div>
-          <RevenueChart data={branchStats.map(b => ({ name: b.name, revenue: b.revenue, orders: b.orders }))} />
+          <RevenueChart data={branchStats.map(b => ({ name: `${b.name}${b.address ? ` (${b.address.split(',')[0]})` : ''}`, revenue: b.revenue, orders: b.orders }))} />
         </div>
 
         {/* Recent Franchise Activity */}
@@ -182,9 +183,14 @@ export default async function FranchiseDashboardPage() {
             ) : (
               recentOrders.map((order) => (
                 <div key={order.id} className="p-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg border border-gray-100 dark:border-zinc-700/50 flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">{order.branchName}</span>
-                    <span className="text-xs font-medium text-gray-400 dark:text-zinc-500">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 block">{order.branchName}</span>
+                      {order.branchAddress && (
+                        <span className="text-[10px] text-gray-400 dark:text-zinc-500 block line-clamp-1">{order.branchAddress}</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-gray-400 dark:text-zinc-500 shrink-0">
                       {new Date(order.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -239,6 +245,9 @@ export default async function FranchiseDashboardPage() {
                             <span className="text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 px-1.5 py-0.5 rounded uppercase tracking-wider">Top</span>
                           )}
                         </div>
+                        {branch.address && (
+                          <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5 line-clamp-1">{branch.address}</p>
+                        )}
                       </div>
                     </td>
                     <td className="py-4">
