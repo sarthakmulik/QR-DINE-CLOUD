@@ -62,6 +62,10 @@ export async function syncFranchiseMenu(sourceHotelId: string) {
     return { success: false, error: "Failed to fetch master menu" };
   }
 
+  if (sourceCategories.length === 0 && sourceItems.length === 0) {
+    return { success: false, error: "The selected Master Branch has an empty menu! Please select a branch that actually has menu items." };
+  }
+
   // 4. Sync Loop (Target by Target) - Optimized for Heavy Load
   for (const target of targetHotels) {
     // A. Fetch current target data
