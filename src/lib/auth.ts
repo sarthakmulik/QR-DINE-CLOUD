@@ -121,6 +121,49 @@ export const getAuthUser = cache(async function (): Promise<AuthUser | null> {
     }
   }
 
+  // Franchise Context Switcher for Hotel Owners
+  if (profile.role === "hotel_owner") {
+    const activeHotelId = cookieStore.get("active_hotel_id")?.value;
+    
+    if (activeHotelId && activeHotelId !== profile.hotel_id) {
+      try {
+        const sb = createAdminClient();
+        
+        // 1. Get organizations the user belongs to
+        const { data: members } = await sb
+          .from("organization_members")
+          .select("organization_id")
+          .eq("user_id", user.id);
+          
+        if (members && members.length > 0) {
+          const orgIds = members.map(m => m.organization_id);
+          
+          // 2. Validate the requested hotel belongs to one of their organizations
+          const { data: requestedHotel } = await sb
+            .from("hotels")
+            .select("id, plan, organization_id")
+            .eq("id", activeHotelId)
+            .in("organization_id", orgIds)
+            .maybeSingle();
+            
+          if (requestedHotel) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: profile.name,
+              role: profile.role,
+              hotelId: requestedHotel.id,
+              hotelPlan: requestedHotel.plan || "basic",
+            };
+          }
+        }
+      } catch (err) {
+        console.error("Context switch auth error:", err);
+        // Safe fallthrough to default primary hotel
+      }
+    }
+  }
+
   return {
     id: user.id,
     email: user.email,

@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       serviceType,
       billingAmount,
       useGoogleOAuth,
+      organizationId, // NEW FIELD
     } = body;
 
     if (!name || !ownerName || !ownerEmail || !ownerPhone || !plan || !serviceType) {
@@ -48,13 +49,26 @@ export async function POST(req: NextRequest) {
 
     const loginEmail = generateLoginEmail(name);
     const password = generatePassword();
-    const authEmail = useGoogleOAuth
-      ? ownerEmail.toLowerCase()
-      : loginEmail;
+    const authEmail = useGoogleOAuth ? ownerEmail.toLowerCase() : loginEmail;
 
     const nextDueDate = new Date();
     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
 
+    // 1. Create Organization if it's a new standalone master franchise
+    let activeOrgId = organizationId;
+    if (!activeOrgId) {
+      const { data: newOrg, error: orgError } = await sb
+        .from("organizations")
+        .insert({ name: `${ownerName}'s Group` })
+        .select("id")
+        .single();
+      
+      if (!orgError && newOrg) {
+        activeOrgId = newOrg.id;
+      }
+    }
+
+    // 2. Create Hotel linked to the Organization
     const { data: hotel, error: hotelError } = await sb
       .from("hotels")
       .insert({
@@ -67,6 +81,7 @@ export async function POST(req: NextRequest) {
         service_type: serviceType,
         billing_amount: parseFloat(billingAmount) || 0,
         next_due_date: nextDueDate.toISOString(),
+        organization_id: activeOrgId || null,
       })
       .select("*")
       .single<Hotel>();
@@ -75,6 +90,7 @@ export async function POST(req: NextRequest) {
       throw new Error(hotelError?.message || "Failed to create hotel");
     }
 
+    // 3. Create Branch Manager / Owner Auth User
     const { data: authUser, error: authError } = await sb.auth.admin.createUser({
       email: authEmail,
       password: useGoogleOAuth ? undefined : password,
@@ -87,6 +103,7 @@ export async function POST(req: NextRequest) {
       throw new Error(authError?.message || "Failed to create auth user");
     }
 
+    // 4. Create Profile for Branch Manager
     const { error: profileError } = await sb.from("profiles").insert({
       id: authUser.user.id,
       email: authEmail,
@@ -99,6 +116,15 @@ export async function POST(req: NextRequest) {
       await sb.auth.admin.deleteUser(authUser.user.id);
       await sb.from("hotels").delete().eq("id", hotel.id);
       throw new Error(profileError.message);
+    }
+
+    // 5. If this is a brand new franchise (no organizationId passed), assign this new user as the Master Owner
+    if (!organizationId && activeOrgId) {
+      await sb.from("organization_members").insert({
+        organization_id: activeOrgId,
+        user_id: authUser.user.id,
+        role: "owner"
+      });
     }
 
     let emailResult = { sent: false, message: "Skipped" };
@@ -127,11 +153,7 @@ export async function POST(req: NextRequest) {
         ? { message: "Owner can sign in with Google using their Gmail" }
         : { loginEmail, password, emailResult },
     });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to create hotel" },
-      { status: 500 }
-    );
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || "Internal Server Error" }, { status: 500 });
   }
 }

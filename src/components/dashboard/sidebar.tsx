@@ -21,6 +21,8 @@ import {
   X,
   Moon,
   Sun,
+  ChevronDown,
+  Building,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -30,9 +32,11 @@ import { usePrinter } from "@/components/providers/printer-provider";
 export function DashboardSidebar({
   hotelName,
   hotelId,
+  franchiseHotels = [],
 }: {
   hotelName: string;
   hotelId?: string;
+  franchiseHotels?: { id: string; name: string }[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,6 +52,7 @@ export function DashboardSidebar({
   const { status: printerStatus } = usePrinter();
 
   const links = [
+    ...(franchiseHotels.length > 1 ? [{ href: "/franchise", label: "Franchise HQ", icon: Building }] : []),
     ...(serviceType !== "quick_service" ? [{ href: "/dashboard", label: "Tables & Orders", icon: LayoutGrid }] : []),
     { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed },
     { href: "/dashboard/tables", label: serviceType === "quick_service" ? "Store QR Code" : "QR Codes", icon: QrCode },
@@ -87,8 +92,26 @@ export function DashboardSidebar({
             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs tracking-tight flex-shrink-0">
               QR
             </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight">{hotelName}</p>
+            <div className="min-w-0 flex-1">
+              {franchiseHotels.length > 1 ? (
+                <div className="relative group">
+                  <select 
+                    className="w-full appearance-none bg-transparent font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight pr-5 cursor-pointer focus:outline-none"
+                    value={hotelId}
+                    onChange={(e) => {
+                      document.cookie = `active_hotel_id=${e.target.value}; path=/; max-age=31536000`;
+                      window.location.reload();
+                    }}
+                  >
+                    {franchiseHotels.map(h => (
+                      <option key={h.id} value={h.id} className="text-black">{h.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 dark:group-hover:text-gray-300" />
+                </div>
+              ) : (
+                <p className="font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight">{hotelName}</p>
+              )}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div 
                   className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", 
@@ -193,8 +216,26 @@ export function DashboardSidebar({
                 <div className="w-7 h-7 bg-brand-600 rounded-md flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                   QR
                 </div>
-                <div>
-                  <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[160px] leading-tight">{hotelName}</p>
+                <div className="min-w-0 flex-1">
+                  {franchiseHotels.length > 1 ? (
+                    <div className="relative group">
+                      <select 
+                        className="w-full appearance-none bg-transparent font-semibold text-sm text-gray-900 dark:text-white truncate leading-tight pr-5 cursor-pointer focus:outline-none"
+                        value={hotelId}
+                        onChange={(e) => {
+                          document.cookie = `active_hotel_id=${e.target.value}; path=/; max-age=31536000`;
+                          window.location.reload();
+                        }}
+                      >
+                        {franchiseHotels.map(h => (
+                          <option key={h.id} value={h.id} className="text-black">{h.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-gray-600 dark:group-hover:text-gray-300" />
+                    </div>
+                  ) : (
+                    <p className="font-semibold text-sm text-gray-900 dark:text-white truncate max-w-[160px] leading-tight">{hotelName}</p>
+                  )}
                   <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-tight">Admin Panel</p>
                 </div>
               </div>

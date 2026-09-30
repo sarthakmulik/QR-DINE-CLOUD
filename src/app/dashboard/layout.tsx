@@ -30,13 +30,29 @@ export default async function DashboardLayout({
   }
 
   let hotel: Hotel | null = null;
+  let franchiseHotels: { id: string; name: string }[] = [];
+
   if (user.hotelId) {
-    const { data } = await createAdminClient()
+    const sb = createAdminClient();
+    const { data } = await sb
       .from("hotels")
       .select("*")
       .eq("id", user.hotelId)
       .maybeSingle<Hotel>();
     hotel = data;
+
+    if (user.role === "hotel_owner") {
+      try {
+        const { data: members } = await sb.from("organization_members").select("organization_id").eq("user_id", user.id);
+        if (members && members.length > 0) {
+          const orgIds = members.map(m => m.organization_id);
+          const { data: hotels } = await sb.from("hotels").select("id, name").in("organization_id", orgIds).order("name");
+          if (hotels) franchiseHotels = hotels;
+        }
+      } catch (err) {
+        // Silently fail if table doesn't exist yet
+      }
+    }
   }
 
   return (
@@ -48,7 +64,11 @@ export default async function DashboardLayout({
           )}
           <BroadcastBanner />
           <div className="flex-1 flex overflow-hidden">
-            <DashboardSidebar hotelName={hotel?.name || "Restaurant"} hotelId={user.hotelId} />
+            <DashboardSidebar 
+              hotelName={hotel?.name || "Restaurant"} 
+              hotelId={user.hotelId} 
+              franchiseHotels={franchiseHotels}
+            />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
               {hotel && (hotel.status === "paused" || hotel.status === "suspended") && (
                 <PausedBanner status={hotel.status} />

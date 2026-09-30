@@ -88,6 +88,7 @@ export default function AdminPage() {
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<{id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
@@ -98,6 +99,7 @@ export default function AdminPage() {
     serviceType: "dine_in",
     billingAmount: "",
     useGoogleOAuth: false,
+    organizationId: "",
   });
   const [createResult, setCreateResult] = useState<string | null>(null);
   const [newBroadcast, setNewBroadcast] = useState({ message: "", type: "info", sendViaWhatsapp: false });
@@ -111,14 +113,16 @@ export default function AdminPage() {
   const [platformForm, setPlatformForm] = useState({ whatsapp_api_key: "", whatsapp_rate: "0", password: "" });
 
   async function loadData() {
-    const [hotelsRes, statsRes, broadcastsRes, whatsappRes, platformRes] = await Promise.all([
+    const [hotelsRes, statsRes, broadcastsRes, whatsappRes, platformRes, orgsRes] = await Promise.all([
       fetch("/api/admin/hotels"),
       fetch("/api/admin/stats"),
       fetch("/api/admin/broadcasts"),
       fetch("/api/admin/whatsapp-usage"),
       fetch("/api/admin/platform-settings"),
+      fetch("/api/admin/organizations"),
     ]);
     setHotels(await hotelsRes.json());
+    if (orgsRes && orgsRes.ok) setOrganizations(await orgsRes.json());
     setStats(await statsRes.json());
     if (broadcastsRes.ok) {
       setBroadcasts(await broadcastsRes.json());
@@ -172,6 +176,7 @@ export default function AdminPage() {
         serviceType: "dine_in",
         billingAmount: "",
         useGoogleOAuth: false,
+        organizationId: "",
       });
       loadData();
     }
@@ -715,7 +720,25 @@ export default function AdminPage() {
             />
             Link owner&apos;s Gmail via OAuth (skip auto-generated credentials)
           </label>
-          <Button type="submit" className="w-full">Create Hotel</Button>
+
+          <div className="pt-4 mt-4 border-t border-gray-100 dark:border-zinc-800">
+            <label className="block text-sm font-medium mb-1 text-indigo-600 dark:text-indigo-400">Franchise Assignment (Optional)</label>
+            <select
+              value={form.organizationId || ""}
+              onChange={(e) => setForm({ ...form, organizationId: e.target.value })}
+              className="w-full border border-indigo-200 dark:border-indigo-500/30 rounded-lg px-3 py-2 dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            >
+              <option value="">Create as New Standalone Master Franchise</option>
+              {organizations.map(org => (
+                <option key={org.id} value={org.id}>Add as branch to: {org.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1.5 leading-tight">
+              If an existing franchise is selected, a unique Branch Manager login will be generated, and the Master Franchise owner will instantly gain full access to this new branch.
+            </p>
+          </div>
+
+          <Button type="submit" className="w-full mt-4">Create Hotel</Button>
         </form>
       </Modal>
 
