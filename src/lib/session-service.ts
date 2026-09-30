@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types";
 import { mapTableSession } from "@/lib/types";
 import { sendWhatsappBill } from "./whatsapp-service";
+import { deductInventoryForSession } from "./inventory-service";
 
 function admin() {
   return createAdminClient();
@@ -493,6 +494,11 @@ export async function markAsPaid(
   const closed = updateSessionRes.data;
   if (updateSessionRes.error || !closed) throw new Error(updateSessionRes.error?.message || "Failed to close session");
 
+  // Deduct Inventory asynchronously (don't block the checkout)
+  if (hotel?.id) {
+    deductInventoryForSession(hotel.id, items).catch(e => console.error("Inventory deduction failed:", e));
+  }
+
   // Process Loyalty Points
   const finalPhone = closed.customer_phone || session.customer_phone;
   if (finalPhone) {
@@ -739,3 +745,4 @@ async function processLoyaltyOnCheckout(hotelId: string, phone: string, discount
     last_visit_date: new Date().toISOString()
   }).eq("id", customer.id);
 }
+

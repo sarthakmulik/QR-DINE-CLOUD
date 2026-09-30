@@ -23,6 +23,8 @@ import {
   Sun,
   ChevronDown,
   Building,
+  Package,
+  Receipt,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -55,8 +57,10 @@ export function DashboardSidebar({
     ...(franchiseHotels.length > 1 ? [{ href: "/franchise", label: "Franchise HQ", icon: Building }] : []),
     ...(serviceType !== "quick_service" ? [{ href: "/dashboard", label: "Tables & Orders", icon: LayoutGrid }] : []),
     { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed },
+    { href: "/dashboard/inventory", label: "Inventory (BOM)", icon: Package },
     { href: "/dashboard/tables", label: serviceType === "quick_service" ? "Store QR Code" : "QR Codes", icon: QrCode },
     { href: "/dashboard/orders", label: "Live Orders", icon: ClipboardList },
+    { href: "/dashboard/register", label: "Cash Register", icon: Receipt },
     { href: "/dashboard/history", label: "Order History", icon: BarChart3 },
     { href: "/dashboard/analytics", label: "Analytics", icon: TrendingUp },
     { href: "/dashboard/staff", label: "Staff Panel", icon: Users },

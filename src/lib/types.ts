@@ -332,3 +332,53 @@ export interface PlatformSettings {
   whatsapp_api_key: string | null;
   updated_at: string;
 }
+
+export interface RawMaterial {
+  id: string;
+  hotel_id: string;
+  name: string;
+  unit: string;
+  current_stock: number;
+  min_stock_alert: number;
+  created_at: string;
+}
+
+export interface Recipe {
+  id: string;
+  menu_item_id: string;
+  raw_material_id: string;
+  quantity_used: number;
+  created_at: string;
+  raw_material?: RawMaterial;
+}
+
+export interface InventoryLog {
+  id: string;
+  raw_material_id: string;
+  hotel_id: string;
+  type: "restock" | "deduction" | "adjustment" | "waste";
+  amount: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface CashRegister {
+  id: string;
+  hotel_id: string;
+  opened_by: string;
+  opened_at: string;
+  closed_at: string | null;
+  opening_balance: number;
+  closing_balance: number | null;
+  expected_closing_balance: number | null;
+  status: "open" | "closed";
+}
+
+export interface CashRegisterLog {
+  id: string;
+  register_id: string;
+  type: "cash_in" | "cash_out" | "sale" | "refund";
+  amount: number;
+  reason: string | null;
+  created_at: string;
+}
