@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use, useCallback, useMemo, useRef, useDeferredValue } from "react";
 import { formatINR, formatMenuPrice } from "@/lib/utils";
-import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search, Sparkles, Smartphone } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, AlertCircle, Bell, Star, CheckCircle, Ticket, Loader2, Search, Sparkles, Smartphone, TrendingUp } from "lucide-react";
 import QRCode from "qrcode";
 import { generateBrandColors } from "@/lib/theme";
 import { WelcomeAnimation } from "@/components/ui/WelcomeAnimation";
@@ -33,7 +33,9 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  status?: string;
 }
+
 
 type PageState =
   | { type: "loading" }
@@ -113,6 +115,43 @@ interface CategorySectionProps {
   bounceId: string | null;
   setSelectedItem: (item: any) => void;
   runningItemsMap: Record<string, boolean>;
+  searchQuery?: string;
+}
+
+/* ─── SEARCH HIGHLIGHT UTILITY ─── */
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query || !query.trim()) return <>{text}</>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        new RegExp(`^${escaped}$`, 'i').test(part)
+          ? <mark key={i} className="bg-brand-300/40 text-brand-950 rounded px-0.5 not-italic">{part}</mark>
+          : part
+      )}
+    </>
+  );
+}
+
+/* ─── IMAGE WITH SHIMMER SKELETON ─── */
+function ShimmerImage({ src, alt, className, containerClassName }: {
+  src: string; alt: string; className: string; containerClassName?: string;
+}) {
+  return (
+    <div className={`relative ${containerClassName || ""}`} style={{ overflow: "hidden" }}>
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 animate-pulse" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src} alt={alt}
+        className={`relative ${className}`}
+        style={{ opacity: 0, transition: "opacity 0.35s ease" }}
+        onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "1"; }}
+        loading="lazy"
+      />
+    </div>
+  );
 }
 
 /* ─── SHARED DIETARY BADGES ─── */
@@ -198,7 +237,9 @@ const CategorySection = React.memo(function CategorySection({
   bounceId,
   setSelectedItem,
   runningItemsMap,
+  searchQuery = "",
 }: CategorySectionProps) {
+
 
   const visibleItems = useMemo(() => {
     return cat.items.filter((item) => {
@@ -257,12 +298,11 @@ const CategorySection = React.memo(function CategorySection({
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <div className="relative flex-shrink-0">
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <ShimmerImage
                         src={item.imageUrl}
                         alt={item.name}
                         className="w-[60px] h-[60px] rounded-[1.25rem] object-cover shadow-[0_4px_16px_rgba(0,0,0,0.1)] transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
+                        containerClassName="w-[60px] h-[60px] rounded-[1.25rem]"
                       />
                     ) : (
                       <div className={`w-[60px] h-[60px] rounded-[1.25rem] flex items-center justify-center text-2xl flex-shrink-0 ${
@@ -278,10 +318,10 @@ const CategorySection = React.memo(function CategorySection({
                   <div className="min-w-0 flex-1">
                     <h3 className={`font-extrabold leading-tight text-[15px] tracking-tight truncate transition-colors duration-300 ${
                       isDark ? "text-white group-hover:text-brand-300" : "text-gray-900 group-hover:text-brand-700"
-                    }`}>{item.name}</h3>
+                    }`}>{highlightText(item.name, searchQuery)}</h3>
                     {item.description && (
                       <p className={`text-[12px] line-clamp-1 mt-0.5 font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                        {item.description}
+                        {highlightText(item.description, searchQuery)}
                       </p>
                     )}
                     <div className="mt-2">
@@ -339,12 +379,11 @@ const CategorySection = React.memo(function CategorySection({
                 {/* Image zone */}
                 <div className="relative overflow-hidden w-full h-40 flex-shrink-0">
                   {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <ShimmerImage
                       src={item.imageUrl}
                       alt={item.name}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                      loading="lazy"
+                      containerClassName="w-full h-full"
                     />
                   ) : (
                     <div className={`w-full h-full flex items-center justify-center text-4xl ${
@@ -371,10 +410,10 @@ const CategorySection = React.memo(function CategorySection({
                   <div>
                     <h3 className={`font-extrabold text-[14px] tracking-tight line-clamp-2 leading-tight transition-colors duration-300 ${
                       isDark ? "text-white group-hover:text-brand-300" : "text-gray-950 group-hover:text-brand-700"
-                    }`}>{item.name}</h3>
+                    }`}>{highlightText(item.name, searchQuery)}</h3>
                     {item.description && (
                       <p className={`text-[11px] line-clamp-2 mt-1.5 leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                        {item.description}
+                        {highlightText(item.description, searchQuery)}
                       </p>
                     )}
                   </div>
@@ -437,12 +476,11 @@ const CategorySection = React.memo(function CategorySection({
                 )}
                 <div className="absolute inset-0 z-0 bg-black">
                   {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <ShimmerImage
                       src={item.imageUrl}
                       alt={item.name}
                       className="w-full h-full object-cover opacity-90 transition-transform duration-[2000ms] ease-out group-hover:scale-110"
-                      loading="lazy"
+                      containerClassName="w-full h-full"
                     />
                   ) : (
                     <div className={`w-full h-full flex items-center justify-center text-5xl ${isDark ? "bg-slate-900" : "bg-gradient-to-br from-brand-900 to-amber-900"}`}>🍽️</div>
@@ -453,7 +491,7 @@ const CategorySection = React.memo(function CategorySection({
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 z-10 flex flex-col gap-2.5">
                   <div className="transform transition-transform duration-500 group-hover:-translate-y-1">
-                    <h3 className="font-extrabold text-[15px] leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,1)] line-clamp-2 group-hover:text-brand-300 transition-colors duration-300">{item.name}</h3>
+                    <h3 className="font-extrabold text-[15px] leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,1)] line-clamp-2 group-hover:text-brand-300 transition-colors duration-300">{highlightText(item.name, searchQuery)}</h3>
                     <span className="font-black text-[15px] text-brand-400 drop-shadow-[0_2px_12px_rgba(0,0,0,1)] mt-1 block">
                       {formatMenuPrice(item.price)}
                     </span>
@@ -511,12 +549,11 @@ const CategorySection = React.memo(function CategorySection({
                 
                 {item.imageUrl ? (
                   <div className="relative overflow-hidden rounded-[1.25rem] flex-shrink-0 w-[96px] h-[96px] z-10" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.9)" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <ShimmerImage
                       src={item.imageUrl}
                       alt={item.name}
                       className="w-full h-full object-cover transition-transform duration-[800ms] group-hover:scale-110"
-                      loading="lazy"
+                      containerClassName="w-full h-full"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60 group-hover:opacity-20 transition-opacity duration-500" />
                     {item.isRecommended && (
@@ -538,9 +575,9 @@ const CategorySection = React.memo(function CategorySection({
                 
                 <div className="flex-1 min-w-0 flex flex-col justify-between z-10 py-1">
                   <div>
-                    <h3 className="font-extrabold text-white text-[16px] leading-tight tracking-tight group-hover:text-brand-400 transition-colors duration-300">{item.name}</h3>
+                    <h3 className="font-extrabold text-white text-[16px] leading-tight tracking-tight group-hover:text-brand-400 transition-colors duration-300">{highlightText(item.name, searchQuery)}</h3>
                     {item.description && (
-                      <p className="text-[12px] text-slate-500 font-medium line-clamp-2 mt-1.5 leading-relaxed">{item.description}</p>
+                      <p className="text-[12px] text-slate-500 font-medium line-clamp-2 mt-1.5 leading-relaxed">{highlightText(item.description, searchQuery)}</p>
                     )}
                     <div className="mt-2">
                       <DietaryBadges item={item} isDark={true} />
@@ -592,12 +629,11 @@ const CategorySection = React.memo(function CategorySection({
             >
               <div className="relative flex-shrink-0 -mt-6">
                 {item.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <ShimmerImage
                     src={item.imageUrl}
                     alt={item.name}
                     className="w-[104px] h-[104px] rounded-[1.5rem] object-cover shadow-[0_8px_24px_rgba(0,0,0,0.15)] border-2 border-white dark:border-slate-800 transition-transform duration-[600ms] ease-out group-hover:scale-105 group-hover:-translate-y-1"
-                    loading="lazy"
+                    containerClassName="w-[104px] h-[104px] rounded-[1.5rem]"
                   />
                 ) : (
                   <div className={`w-[104px] h-[104px] rounded-[1.5rem] flex items-center justify-center text-4xl flex-shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.1)] border-2 border-white dark:border-slate-800 transition-transform duration-[600ms] ease-out group-hover:scale-105 group-hover:-translate-y-1 ${
@@ -614,10 +650,10 @@ const CategorySection = React.memo(function CategorySection({
                 <div>
                   <h3 className={`font-extrabold text-[16px] leading-tight tracking-tight transition-colors duration-300 ${
                     isDark ? "text-white group-hover:text-brand-300" : "text-gray-950 group-hover:text-brand-700"
-                  }`}>{item.name}</h3>
+                  }`}>{highlightText(item.name, searchQuery)}</h3>
                   {item.description && (
                     <p className={`text-[12px] font-medium line-clamp-2 mt-1.5 leading-relaxed ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                      {item.description}
+                      {highlightText(item.description, searchQuery)}
                     </p>
                   )}
                   <div className="mt-2">
@@ -656,6 +692,7 @@ const CategorySection = React.memo(function CategorySection({
   if (prev.cat !== next.cat) return false;
   if (prev.layout !== next.layout) return false;
   if (prev.isDark !== next.isDark) return false;
+  if (prev.searchQuery !== next.searchQuery) return false;
 
   const prevBounceInCat = prev.bounceId ? prev.cat.items.some(i => i.id === prev.bounceId) : false;
   const nextBounceInCat = next.bounceId ? next.cat.items.some(i => i.id === next.bounceId) : false;
@@ -785,6 +822,9 @@ export default function DineClient({
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [confirmCountdown, setConfirmCountdown] = useState(3);
+  const [cartBounce, setCartBounce] = useState(false);
+  const prevCartCountRef = useRef(0);
 
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -1503,6 +1543,37 @@ export default function DineClient({
   const cartTotal = useMemo(() => cart.reduce((s, c) => s + c.price * c.quantity, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((s, c) => s + c.quantity, 0), [cart]);
 
+  // Cart pill bounce animation on item add
+  useEffect(() => {
+    if (cartCount > prevCartCountRef.current) {
+      setCartBounce(true);
+      const t = setTimeout(() => setCartBounce(false), 450);
+      return () => clearTimeout(t);
+    }
+    prevCartCountRef.current = cartCount;
+  }, [cartCount]);
+
+  // Auto-return from "Order Confirmed" screen after 3s
+  useEffect(() => {
+    if (state.type !== "confirmed") {
+      setConfirmCountdown(3);
+      return;
+    }
+    setConfirmCountdown(3);
+    const iv = setInterval(() => {
+      setConfirmCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(iv);
+          setState({ type: "loading" });
+          load();
+          return 3;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [state.type, load]);
+
   // Pre-calculate cart quantities mapping for O(1) rendering lookup
   const cartMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -1704,6 +1775,29 @@ export default function DineClient({
                 </p>
               </div>
 
+              {/* Emoji Quick Reactions */}
+              <div className="flex justify-center gap-3 py-1">
+                {[
+                  { emoji: "😞", value: 1, label: "Terrible" },
+                  { emoji: "😐", value: 2, label: "Bad" },
+                  { emoji: "😊", value: 3, label: "Average" },
+                  { emoji: "😄", value: 4, label: "Good" },
+                  { emoji: "🤩", value: 5, label: "Excellent!" },
+                ].map(({ emoji, value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFeedbackRating(value)}
+                    className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-125 ${
+                      feedbackRating === value ? "scale-125" : "opacity-50 hover:opacity-80 hover:scale-110"
+                    }`}
+                    title={label}
+                  >
+                    <span className="text-3xl leading-none">{emoji}</span>
+                  </button>
+                ))}
+              </div>
+
               {/* Star Rating Selectors */}
               <div className="flex flex-col items-center gap-1.5 py-1">
                 <div className="flex justify-center gap-2">
@@ -1730,6 +1824,7 @@ export default function DineClient({
                   </span>
                 )}
               </div>
+
 
               {/* Feedback Comment Input */}
               <div className="space-y-1 text-left">
@@ -1766,7 +1861,9 @@ export default function DineClient({
                 ❤️
               </div>
               <div className="space-y-2">
-                <h1 className="text-2xl font-black text-gray-950 tracking-tight">Thank You!</h1>
+                <h1 className="text-2xl font-black text-gray-950 tracking-tight">
+                  {customerName ? `Thank you, ${customerName.split(" ")[0]}! 🙏` : "Thank You! 🙏"}
+                </h1>
                 <p className="text-sm text-gray-550 font-medium leading-relaxed">
                   Your payment has been received and your session is closed. We hope to see you again!
                 </p>
@@ -1983,19 +2080,37 @@ export default function DineClient({
             
             {/* Items List */}
             <div className="divide-y divide-gray-100 dark:divide-zinc-800/50">
-              {state.items.map((item, idx) => (
-                <div key={idx} className="py-3 flex justify-between text-sm items-center">
-                  <div>
-                    <p className="font-bold text-gray-950 tracking-tight">{item.name}</p>
-                    <p className="text-xs text-gray-450 mt-0.5 font-semibold">
-                      {item.quantity} × {formatINR(item.price)}
-                    </p>
+              {state.items.map((item, idx) => {
+                const status = item.status?.toLowerCase() || 'pending';
+                const statusColors = {
+                  pending: "bg-amber-100/50 text-amber-700 border-amber-200/50 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
+                  preparing: "bg-blue-100/50 text-blue-700 border-blue-200/50 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+                  ready: "bg-emerald-100/50 text-emerald-700 border-emerald-200/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+                  delivered: "bg-gray-100/50 text-gray-700 border-gray-200/50 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-500/20",
+                };
+                const currentColors = statusColors[status as keyof typeof statusColors] || statusColors.pending;
+
+                return (
+                  <div key={idx} className="py-3 flex justify-between text-sm items-center">
+                    <div>
+                      <p className="font-bold text-gray-950 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                        {item.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold">
+                          {item.quantity} × {formatINR(item.price)}
+                        </p>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-widest border ${currentColors}`}>
+                          {status === 'pending' ? '🟡 Pending' : status === 'preparing' ? '🔵 Preparing' : status === 'ready' ? '🟢 Ready' : '✓ Delivered'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-gray-950 dark:text-white tracking-tight">
+                      {formatINR(item.price * item.quantity)}
+                    </span>
                   </div>
-                  <span className="font-extrabold text-gray-950 tracking-tight">
-                    {formatINR(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Dashed Separator */}
@@ -2135,6 +2250,7 @@ export default function DineClient({
   }
 
   if (state.type === "confirmed") {
+    const progressPct = ((3 - confirmCountdown) / 3) * 100;
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 px-4">
         <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-emerald-100 p-8 shadow-xl shadow-emerald-100/50 max-w-sm w-full text-center space-y-6 relative overflow-hidden">
@@ -2153,8 +2269,21 @@ export default function DineClient({
               Your order has been successfully sent to the kitchen! Sit back and relax while we prepare it.
             </p>
           </div>
-          
-          <div className="pt-2">
+
+          {/* Countdown progress bar */}
+          <div className="space-y-2">
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-brand-500 to-emerald-500 rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 font-semibold">
+              Returning to menu in {confirmCountdown}s...
+            </p>
+          </div>
+
+          <div className="pt-1">
             <button
               onClick={() => {
                 setState({ type: "loading" });
@@ -2162,13 +2291,14 @@ export default function DineClient({
               }}
               className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-brand-100 hover:shadow-xl transition-all active:scale-98 flex items-center justify-center gap-2"
             >
-              Order More Items
+              Order More Items Now
             </button>
           </div>
         </div>
       </div>
     );
   }
+
 
   if (state.type === "error") {
     return (
@@ -2466,7 +2596,7 @@ export default function DineClient({
                       isManualScrollingRef.current = false;
                     }, 800);
                   }}
-                  className={`px-5 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap transition-all duration-300 transform ${
+                  className={`px-5 py-2.5 rounded-full text-[13px] font-black whitespace-nowrap transition-all duration-300 transform flex flex-col items-center justify-center gap-0.5 ${
                     isActive
                       ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white scale-105 border border-transparent"
                       : isDark
@@ -2474,7 +2604,8 @@ export default function DineClient({
                         : "bg-white text-gray-550 border border-gray-200/80 hover:bg-gray-50 hover:text-gray-900 active:scale-95 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.02)]"
                   }`}
                 >
-                  {cat.name}
+                  <span>{cat.name}</span>
+                  {isActive && <span className="w-1.5 h-1.5 bg-white rounded-full absolute bottom-1 shadow-sm" />}
                 </button>
               );
             })}
@@ -2506,19 +2637,35 @@ export default function DineClient({
             <div className={`px-5 py-3 divide-y max-h-48 overflow-y-auto ${
               isDark ? "divide-white/5" : "divide-gray-50"
             }`}>
-              {state.runningItems.map((item, idx) => (
-                <div key={idx} className={`py-2.5 flex justify-between text-xs items-center font-semibold ${
-                  isDark ? "text-slate-300" : "text-gray-750"
-                }`}>
-                  <div>
-                    <span className={isDark ? "text-slate-100 font-bold" : "text-gray-900 font-bold"}>{item.name}</span>
-                    <span className={`font-medium ml-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}>×{item.quantity}</span>
+              {state.runningItems.map((item, idx) => {
+                const status = item.status?.toLowerCase() || 'pending';
+                const statusColors = {
+                  pending: isDark ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-amber-100 text-amber-700 border-amber-200",
+                  preparing: isDark ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : "bg-blue-100 text-blue-700 border-blue-200",
+                  ready: isDark ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-emerald-100 text-emerald-700 border-emerald-200",
+                  delivered: isDark ? "bg-gray-500/20 text-gray-400 border-gray-500/30" : "bg-gray-100 text-gray-700 border-gray-200",
+                };
+                const currentColors = statusColors[status as keyof typeof statusColors] || statusColors.pending;
+                
+                return (
+                  <div key={idx} className={`py-2.5 flex justify-between text-xs items-center font-semibold ${
+                    isDark ? "text-slate-300" : "text-gray-750"
+                  }`}>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={isDark ? "text-slate-100 font-bold" : "text-gray-900 font-bold"}>{item.name}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-widest border ${currentColors}`}>
+                          {status === 'pending' ? '🟡 Pending' : status === 'preparing' ? '🔵 Preparing' : status === 'ready' ? '🟢 Ready' : '✓ Delivered'}
+                        </span>
+                      </div>
+                      <span className={`font-medium block mt-0.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}>Qty: {item.quantity}</span>
+                    </div>
+                    <span className={`font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>
+                      {formatINR(item.price * item.quantity)}
+                    </span>
                   </div>
-                  <span className={`font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>
-                    {formatINR(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className={`px-5 py-3.5 border-t flex justify-between items-center text-xs ${
@@ -2593,7 +2740,7 @@ export default function DineClient({
 
             {/* Left: count + price */}
             <div className="flex items-center gap-3 pl-1">
-              <div className="w-9 h-9 rounded-2xl bg-white/20 border border-white/25 flex items-center justify-center font-black text-sm shadow-inner flex-shrink-0 backdrop-blur-sm">
+              <div className={`w-9 h-9 rounded-2xl bg-white/20 border border-white/25 flex items-center justify-center font-black text-sm shadow-inner flex-shrink-0 backdrop-blur-sm transition-transform duration-300 ${cartBounce ? 'scale-125 bg-white text-brand-600' : 'scale-100'}`}>
                 {cartCount}
               </div>
               <div className="flex flex-col text-left">
@@ -2811,6 +2958,31 @@ export default function DineClient({
                   </div>
                 </div>
               )}
+
+              {/* Pairs well with widget */}
+              {upsellsMap[selectedItem.id] && state.type === "menu" && (() => {
+                const pairId = upsellsMap[selectedItem.id];
+                const pair = state.categories.flatMap(c => c.items).find(i => i.id === pairId);
+                if (!pair) return null;
+                return (
+                  <div className={`p-4 mt-2 rounded-3xl border ${isDark ? "bg-brand-900/10 border-brand-500/20" : "bg-brand-50 border-brand-100"}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className={`w-4 h-4 ${isDark ? "text-brand-400" : "text-brand-600"}`} />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-brand-400" : "text-brand-600"}`}>Pairs well with</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 pr-3">
+                        <p className={`font-bold text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{pair.name}</p>
+                        <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-brand-400" : "text-brand-650"}`}>{formatMenuPrice(pair.price)}</p>
+                      </div>
+                      <button onClick={() => addToCart(pair)}
+                        className="w-9 h-9 flex-shrink-0 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center active:scale-90 transition-all shadow-md shadow-brand-500/30">
+                        <Plus className="w-4 h-4" strokeWidth={3} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -2849,46 +3021,97 @@ export default function DineClient({
             </div>
 
             {/* Cart Items list */}
-            <div className={`p-6 overflow-y-auto flex-1 divide-y ${
-              isDark ? "divide-white/5" : "divide-gray-50"
-            }`}>
-              {cart.map((item, index) => (
-                <div
-                  key={item.menuItemId}
-                  className={`flex items-center justify-between ${index > 0 ? "pt-4" : ""}`}
-                >
-                  <div>
-                    <p className={`font-bold text-sm tracking-tight ${isDark ? "text-white" : "text-gray-950"}`}>{item.name}</p>
-                    <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-brand-400" : "text-brand-655"}`}>
-                      {formatMenuPrice(item.price)}
-                    </p>
+            <div className={`p-6 overflow-y-auto flex-1 ${cart.length > 0 ? (isDark ? "divide-y divide-white/5" : "divide-y divide-gray-50") : ""}`}>
+              {cart.length > 0 ? (
+                cart.map((item, index) => (
+                  <div
+                    key={item.menuItemId}
+                    className={`flex items-center justify-between ${index > 0 ? "pt-4" : ""}`}
+                  >
+                    <div>
+                      <p className={`font-bold text-sm tracking-tight ${isDark ? "text-white" : "text-gray-950"}`}>{item.name}</p>
+                      <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-brand-400" : "text-brand-655"}`}>
+                        {formatMenuPrice(item.price)}
+                      </p>
+                    </div>
+                    <div className={`flex items-center border rounded-full h-8 px-1 ${
+                      isDark ? "bg-slate-800 border-white/5" : "bg-gray-50 border-gray-100"
+                    }`}>
+                      <button
+                        onClick={() => updateQty(item.menuItemId, -1)}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors active:scale-75 ${
+                          isDark ? "hover:bg-slate-700 text-brand-400" : "hover:bg-gray-200 text-gray-600"
+                        }`}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className={`font-extrabold text-xs w-5 text-center select-none ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQty(item.menuItemId, 1)}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors active:scale-75 ${
+                          isDark ? "hover:bg-slate-700 text-brand-400" : "hover:bg-gray-200 text-gray-600"
+                        }`}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
-                  <div className={`flex items-center border rounded-full h-8 px-1 ${
-                    isDark ? "bg-slate-800 border-white/5" : "bg-gray-50 border-gray-100"
-                  }`}>
-                    <button
-                      onClick={() => updateQty(item.menuItemId, -1)}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors active:scale-75 ${
-                        isDark ? "hover:bg-slate-700 text-brand-400" : "hover:bg-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className={`font-extrabold text-xs w-5 text-center select-none ${isDark ? "text-white" : "text-gray-900"}`}>
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() => updateQty(item.menuItemId, 1)}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors active:scale-75 ${
-                        isDark ? "hover:bg-slate-700 text-brand-400" : "hover:bg-gray-200 text-gray-600"
-                      }`}
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
+                ))
+              ) : (
+                /* Empty Cart Suggestions */
+                <div className="flex flex-col items-center justify-center h-full animate-fade-in">
+                  <div className="w-16 h-16 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mb-4 border border-brand-100 dark:border-brand-500/20">
+                    <ShoppingBag className="w-8 h-8 text-brand-500" />
                   </div>
+                  <h3 className={`font-extrabold text-lg tracking-tight mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>Your cart is empty</h3>
+                  <p className={`text-sm font-medium text-center mb-6 max-w-[240px] leading-relaxed ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                    Need some inspiration? Here are what others are ordering right now.
+                  </p>
+                  
+                  {trendingItemIds.length > 0 && state.type === "menu" && (
+                    <div className="w-full space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-4 h-4 text-brand-500" />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-brand-400" : "text-brand-600"}`}>
+                          Trending Now
+                        </span>
+                      </div>
+                      {trendingItemIds.slice(0, 3).map(id => {
+                        const allItems = state.categories.flatMap(c => c.items);
+                        const item = allItems.find(i => i.id === id);
+                        if (!item) return null;
+                        
+                        return (
+                          <div key={item.id} className={`p-3 rounded-2xl border flex justify-between items-center ${
+                            isDark ? "bg-white/[0.02] border-white/5" : "bg-white border-gray-100 shadow-sm"
+                          }`}>
+                            <div className="flex-1 pr-3 min-w-0">
+                              <p className={`font-bold text-sm truncate ${isDark ? "text-white" : "text-gray-900"}`}>{item.name}</p>
+                              <p className={`text-xs font-extrabold mt-0.5 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                                {formatMenuPrice(item.price)}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => addToCart(item)}
+                              className={`flex-shrink-0 px-4 py-2 rounded-[1rem] font-bold text-xs flex items-center gap-1.5 transition-all active:scale-90 ${
+                                isDark 
+                                  ? "bg-brand-500/20 text-brand-300 hover:bg-brand-500/30" 
+                                  : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                              }`}
+                            >
+                              <Plus className="w-3.5 h-3.5" /> ADD
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              ))}
+              )}
             </div>
+
 
             {/* Smart AI Upsell Widget */}
             {(() => {
