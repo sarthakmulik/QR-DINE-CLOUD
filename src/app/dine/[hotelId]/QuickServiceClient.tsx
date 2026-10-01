@@ -40,10 +40,12 @@ export default function QuickServiceClient({
   params,
   initialHotel,
   token,
+  mode,
 }: {
   params: Promise<{ hotelId: string }>;
   initialHotel?: Partial<Hotel> | null;
   token?: string;
+  mode?: string;
 }) {
   const { hotelId } = use(params);
   const [loading, setLoading] = useState(true);
@@ -486,7 +488,8 @@ export default function QuickServiceClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: cart.map(i => ({ menuItemId: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-          paymentMethod
+          paymentMethod,
+          orderType: mode === 'takeaway' ? 'takeaway' : 'direct'
         }),
       });
       const data = await res.json();
@@ -552,7 +555,7 @@ export default function QuickServiceClient({
       <div className={`min-h-[100dvh] flex flex-col font-sans transition-colors duration-500 ${t.appBg}`} style={qsStyleVars}>
         <header className={`sticky top-0 z-40 shadow-sm pt-safe px-4 py-4 text-center ${t.header}`}>
           <h1 className={`font-black text-xl tracking-tight ${t.textMain}`}>{hotel?.name}</h1>
-          <p className="text-xs text-slate-500 font-medium tracking-widest uppercase mt-0.5">Quick Service</p>
+          <p className="text-xs text-slate-500 font-medium tracking-widest uppercase mt-0.5">{mode === 'takeaway' ? 'Takeaway Order' : 'Quick Service'}</p>
         </header>
         
         <main className="flex-1 overflow-y-auto p-6 flex flex-col items-center gap-6 pb-24 scroll-smooth">
@@ -737,7 +740,7 @@ export default function QuickServiceClient({
         <div className="px-5 py-4 flex items-center justify-between">
           <div className="flex flex-col">
             <h1 className={`font-black text-2xl tracking-tight leading-none ${t.textMain}`}>{hotel?.name}</h1>
-            <p className="text-[11px] text-brand-500 font-bold uppercase tracking-widest mt-1">Quick Service</p>
+            <p className="text-[11px] text-brand-500 font-bold uppercase tracking-widest mt-1">{mode === 'takeaway' ? 'Takeaway Order' : 'Quick Service'}</p>
           </div>
           {hotel?.logo && (
             <img src={hotel.logo} alt="Logo" className="h-10 w-10 rounded-full object-cover shadow-sm ring-1 ring-black/5" />

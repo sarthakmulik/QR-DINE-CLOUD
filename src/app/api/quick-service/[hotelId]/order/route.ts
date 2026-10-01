@@ -59,7 +59,7 @@ export async function POST(
     // ─────────────────────────────────────────────────────────────────────────
 
     const body = await req.json();
-    const { items, paymentMethod } = body;
+    const { items, paymentMethod, orderType } = body;
 
     // ── Basic shape validation ────────────────────────────────────────────────
     if (!Array.isArray(items) || items.length === 0 || !paymentMethod) {
@@ -118,7 +118,8 @@ export async function POST(
     // ─────────────────────────────────────────────────────────────────────────
 
     // 1. Create a draft session
-    const { session, hotel, error } = await getOrCreateQuickServiceSession(hotelId);
+    const finalOrderType = orderType === 'takeaway' ? 'takeaway' : 'direct';
+    const { session, hotel, error } = await getOrCreateQuickServiceSession(hotelId, null, finalOrderType);
     if (error) {
       return NextResponse.json({ error }, { status: 400 });
     }

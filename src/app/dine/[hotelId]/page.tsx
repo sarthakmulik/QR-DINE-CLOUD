@@ -15,6 +15,7 @@ export default async function QuickServicePageServer({
   const { hotelId } = await params;
   const resolvedSearchParams = await searchParams;
   const token = typeof resolvedSearchParams.t === 'string' ? resolvedSearchParams.t : undefined;
+  const mode = typeof resolvedSearchParams.mode === 'string' ? resolvedSearchParams.mode : undefined;
 
   // Fetch hotel profile for Welcome Animation and Payment Settings
   const sb = createAdminClient();
@@ -32,6 +33,7 @@ export default async function QuickServicePageServer({
       params={params}
       initialHotel={hotel}
       token={token}
+      mode={mode}
     />
   );
 }

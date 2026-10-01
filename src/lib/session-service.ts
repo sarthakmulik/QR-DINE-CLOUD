@@ -583,7 +583,7 @@ export async function autoCleanupSessions(hotelId: string) {
     .lt("start_time", twoHoursAgo);
 }
 
-export async function getOrCreateQuickServiceSession(hotelId: string, expectedSessionId?: string | null) {
+export async function getOrCreateQuickServiceSession(hotelId: string, expectedSessionId?: string | null, orderType: 'direct' | 'takeaway' = 'direct') {
   const sb = admin();
   const hotelRes = await sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>();
   const hotel = hotelRes.data;
@@ -620,7 +620,7 @@ export async function getOrCreateQuickServiceSession(hotelId: string, expectedSe
       tax_amount: 0,
       total: 0,
       discount_amount: 0,
-      order_type: "direct"
+      order_type: orderType
     })
     .select("*")
     .single<TableSession>();
@@ -629,7 +629,17 @@ export async function getOrCreateQuickServiceSession(hotelId: string, expectedSe
   return { session: mapTableSession(newSession, []), hotel, created: true };
 }
 
-export async function createStandaloneSession(hotelId: string, orderType: "takeaway" | "delivery" | "zomato" | "swiggy" | "direct") {
+export async function createStandaloneSession(
+  hotelId: string, 
+  orderType: "takeaway" | "delivery" | "zomato" | "swiggy" | "direct",
+  details?: {
+    customerName?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    deliveryPartnerName?: string;
+    externalOrderId?: string;
+  }
+) {
   const sb = admin();
   const { data: hotel } = await sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>();
   if (!hotel) throw new Error("Hotel not found");
@@ -652,7 +662,12 @@ export async function createStandaloneSession(hotelId: string, orderType: "takea
     discount_amount: 0,
     customer_count: 1,
     order_number: nextOrderNumber,
-    order_type: orderType
+    order_type: orderType,
+    customer_name: details?.customerName || null,
+    customer_phone: details?.customerPhone || null,
+    customer_address: details?.customerAddress || null,
+    delivery_partner_name: details?.deliveryPartnerName || null,
+    external_order_id: details?.externalOrderId || null,
   }).select().single();
 
   if (createError || !newSession) {

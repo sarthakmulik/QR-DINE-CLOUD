@@ -57,6 +57,8 @@ interface TableData {
 
 export default function TablesDashboardPage() {
   const [tables, setTables] = useState<TableData[]>([]);
+  const [showStandaloneModal, setShowStandaloneModal] = useState(false);
+  const [standaloneForm, setStandaloneForm] = useState({ customerName: '', customerPhone: '', customerAddress: '', deliveryPartnerName: '', externalOrderId: '' });
   const [selected, setSelected] = useState<TableData | null>(null);
     const [activeChannel, setActiveChannel] = useState<'dine_in' | 'takeaway' | 'zomato' | 'swiggy'>('dine_in');
   const [loading, setLoading] = useState(true);
@@ -599,15 +601,24 @@ export default function TablesDashboardPage() {
   }
 
   
-  async function handleCreateStandaloneOrder() {
+  async function handleCreateStandaloneOrder(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (activeChannel === "takeaway" && !standaloneForm.customerName) {
+      return alert("Customer Name is required for Takeaway orders");
+    }
     setOpeningSession(true);
     const res = await fetch("/api/hotel/sessions/standalone", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderType: activeChannel }),
+      body: JSON.stringify({ 
+        orderType: activeChannel,
+        ...standaloneForm
+      }),
     });
     setOpeningSession(false);
     if (res.ok) {
+      setShowStandaloneModal(false);
+      setStandaloneForm({ customerName: '', customerPhone: '', customerAddress: '', deliveryPartnerName: '', externalOrderId: '' });
       const refreshedTables = await pollTables();
       const createdSessionData = await res.json();
       const newlyOccupied = refreshedTables?.find((t: any) => t.currentSessionId === createdSessionData.id);
@@ -1056,7 +1067,7 @@ export default function TablesDashboardPage() {
             <p className="text-gray-500 dark:text-zinc-400 max-w-md">
               Create a direct {activeChannel} order without associating it with a physical dining table.
             </p>
-            <button onClick={handleCreateStandaloneOrder} disabled={openingSession} className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition">
+            <button onClick={() => setShowStandaloneModal(true)} disabled={openingSession} className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition">
               + New {activeChannel.toUpperCase()} Order
             </button>
           </div>
@@ -1413,9 +1424,41 @@ export default function TablesDashboardPage() {
             </div>
           </div>
         )}
-      </Modal>
+            </Modal>
 
+      {/* STANDALONE ORDER MODAL */}
+      <Modal open={showStandaloneModal} onClose={() => setShowStandaloneModal(false)} title={'New Order'}>
+        <form onSubmit={handleCreateStandaloneOrder} className="space-y-4 pt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer Name {activeChannel === 'takeaway' && <span className="text-red-500">*</span>}</label>
+            <input type="text" required={activeChannel === 'takeaway'} value={standaloneForm.customerName} onChange={e => setStandaloneForm({...standaloneForm, customerName: e.target.value})} className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-sm" placeholder="e.g. John Doe" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer Phone (Optional)</label>
+            <input type="tel" value={standaloneForm.customerPhone} onChange={e => setStandaloneForm({...standaloneForm, customerPhone: e.target.value})} className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-sm" placeholder="e.g. 9876543210" />
+          </div>
+          {(activeChannel === "zomato" || activeChannel === "swiggy" || false) && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delivery Partner Name</label>
+                <input type="text" value={standaloneForm.deliveryPartnerName} onChange={e => setStandaloneForm({...standaloneForm, deliveryPartnerName: e.target.value})} className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-sm" placeholder="e.g. Rahul (Zomato)" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">External Order ID</label>
+                <input type="text" value={standaloneForm.externalOrderId} onChange={e => setStandaloneForm({...standaloneForm, externalOrderId: e.target.value})} className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-sm" placeholder="e.g. ZOM123" />
+              </div>
+            </>
+          )}
+          <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-zinc-800">
+            <button type="button" onClick={() => setShowStandaloneModal(false)} className="px-4 py-2 font-medium text-gray-600 hover:text-gray-900">Cancel</button>
+            <button type="submit" disabled={openingSession} className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg">{openingSession ? 'Creating...' : 'Create Order'}</button>
+          </div>
+        </form>
+      </Modal>
 
     </div>
   );
 }
+
+
+

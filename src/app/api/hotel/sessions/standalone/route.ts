@@ -7,8 +7,16 @@ export async function POST(req: NextRequest) {
     const { hotelId } = await requireHotelAccess();
     const body = await req.json();
     const orderType = body.orderType || "takeaway";
+    
+    const details = {
+      customerName: body.customerName,
+      customerPhone: body.customerPhone,
+      customerAddress: body.customerAddress,
+      deliveryPartnerName: body.deliveryPartnerName,
+      externalOrderId: body.externalOrderId,
+    };
 
-    const result = await createStandaloneSession(hotelId, orderType);
+    const result = await createStandaloneSession(hotelId, orderType, details);
 
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 400 });
