@@ -17,6 +17,7 @@ interface TableSession {
   id: string;
   tableNumber: number | null;
   orderNumber: number | null;
+  orderType?: string;
   startTime: string;
   status: string;
   items: SessionItem[];
@@ -715,11 +716,23 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                     <div>
                       {session.tableNumber === 0 ? (
                         <>
-                          <h3 className="text-xl font-extrabold text-emerald-400 tracking-tight">
+                          <h3 className={`text-xl font-extrabold tracking-tight ${
+                            session.orderType === "zomato" ? "text-red-500" :
+                            session.orderType === "swiggy" ? "text-orange-500" :
+                            session.orderType === "takeaway" ? "text-blue-400" :
+                            session.orderType === "delivery" ? "text-purple-400" :
+                            "text-emerald-400"
+                          }`}>
                             Order #{session.orderNumber}
                           </h3>
-                          <p className="text-emerald-500/70 text-xs font-bold uppercase tracking-widest mt-0.5">
-                            Quick Service
+                          <p className={`text-xs font-bold uppercase tracking-widest mt-0.5 ${
+                            session.orderType === "zomato" ? "text-red-500/80" :
+                            session.orderType === "swiggy" ? "text-orange-500/80" :
+                            session.orderType === "takeaway" ? "text-blue-400/80" :
+                            session.orderType === "delivery" ? "text-purple-400/80" :
+                            "text-emerald-500/70"
+                          }`}>
+                            {session.orderType ? session.orderType.replace("_", " ") : "Quick Service"}
                           </p>
                         </>
                       ) : (

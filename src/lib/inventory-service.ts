@@ -36,24 +36,18 @@ export async function deductInventoryForSession(hotelId: string, items: SessionI
   const logs = [];
   
   for (const [rawMaterialId, totalDeducted] of Object.entries(deductions)) {
-    // We do this individually or via an RPC. 
-    // Since we don't have an RPC, we fetch current, then update to avoid race conditions.
-    // Wait, Supabase allows RPC or direct decrement? Not natively via REST without RPC.
-    // Let's fetch and update.
-    const { data: rm } = await sb.from("raw_materials").select("current_stock").eq("id", rawMaterialId).single();
-    if (rm) {
-      const newStock = Math.max(0, Number(rm.current_stock) - totalDeducted);
-      updates.push(
-        sb.from("raw_materials").update({ current_stock: newStock }).eq("id", rawMaterialId)
-      );
-      logs.push({
-        raw_material_id: rawMaterialId,
-        hotel_id: hotelId,
-        type: "deduction",
-        amount: totalDeducted,
-        notes: "Auto-deducted from sales"
-      });
-    }
+    // Phase 1 Optimization: Use atomic RPC to prevent race conditions under heavy concurrent traffic
+    updates.push(
+      sb.rpc("atomic_decrement_inventory", { p_material_id: rawMaterialId, p_amount: totalDeducted })
+    );
+    
+    logs.push({
+      raw_material_id: rawMaterialId,
+      hotel_id: hotelId,
+      type: "deduction",
+      amount: totalDeducted,
+      notes: "Auto-deducted from sales"
+    });
   }
 
   // 5. Fire updates concurrently

@@ -82,6 +82,39 @@ export async function GET() {
       };
     });
 
+    // --- NEW: Fetch Standalone Multi-Channel Orders (Zomato/Swiggy/Takeaway) ---
+    const { data: standaloneSessionsData, error: standaloneError } = await sb
+      .from("table_sessions")
+      .select("*, session_items(*)")
+      .eq("hotel_id", hotelId)
+      .is("table_id", null)
+      .neq("status", "closed")
+      .neq("status", "cancelled")
+      .neq("status", "payment_pending"); // Don't show inactive ghost orders
+
+    if (standaloneError) {
+      console.error("Standalone sessions fetch error:", standaloneError);
+    }
+
+    const standaloneSessions = (standaloneSessionsData || []) as (TableSession & { session_items?: SessionItem[] })[];
+    
+    standaloneSessions.forEach(session => {
+      const mapped = mapTableSession(session, session.session_items || []);
+      const label = `${(session.order_type || 'takeaway').toUpperCase()} #${session.order_number || session.id.substring(session.id.length - 4)}`;
+      
+      enriched.push({
+        id: `virtual-${session.id}`,
+        hotelId: session.hotel_id,
+        tableNumber: 0,
+        label,
+        qrCodeUrl: null,
+        dineUrl: '',
+        currentSessionId: session.id,
+        currentSession: mapped,
+        status: getTableStatus(mapped),
+      });
+    });
+
     return NextResponse.json(enriched);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -487,12 +487,18 @@ export async function markAsPaid(
   const [updateSessionRes] = await Promise.all([
     sb.from("table_sessions")
       .update(updatePayload)
-      .eq("id", sessionId).select("*").single<TableSession>(),
-    sb.from("restaurant_tables").update({ current_session_id: null }).eq("id", session.table_id),
+      .eq("id", sessionId)
+      .neq("status", "closed")
+      .select("*")
+      .maybeSingle(),
+    session.table_id ? sb.from("restaurant_tables").update({ current_session_id: null }).eq("id", session.table_id) : Promise.resolve(),
   ]);
 
-  const closed = updateSessionRes.data;
-  if (updateSessionRes.error || !closed) throw new Error(updateSessionRes.error?.message || "Failed to close session");
+  const closed = updateSessionRes.data as TableSession | null;
+  if (!closed) {
+    throw new Error("ALREADY_CLOSED");
+  }
+  if (updateSessionRes.error) throw new Error(updateSessionRes.error?.message || "Failed to close session");
 
   // Deduct Inventory asynchronously (don't block the checkout)
   if (hotel?.id) {
@@ -510,6 +516,27 @@ export async function markAsPaid(
     sendWhatsappBill(finalPhone, closed, items, hotel).catch((err) => {
       console.error("Failed to send background WhatsApp bill:", err);
     });
+  }
+
+  // Update Cash Register for Cash payments asynchronously
+  if (paymentMethod === "Cash") {
+    sb.from("cash_registers")
+      .select("id")
+      .eq("hotel_id", session.hotel_id)
+      .eq("status", "open")
+      .maybeSingle()
+      .then(({ data: reg }) => {
+        if (reg) {
+          sb.from("cash_register_logs").insert({
+            register_id: reg.id,
+            type: "sale",
+            amount: Number(closed.total || 0),
+            reason: `Order #${closed.order_number || closed.id.substring(0,6)}`
+          }).then(({ error }) => {
+            if (error) console.error("Cash log failed:", error);
+          });
+        }
+      });
   }
 
   return mapTableSession(closed, items, hotel || undefined, table || undefined);
@@ -592,13 +619,47 @@ export async function getOrCreateQuickServiceSession(hotelId: string, expectedSe
       subtotal: 0,
       tax_amount: 0,
       total: 0,
-      discount_amount: 0
+      discount_amount: 0,
+      order_type: "direct"
     })
     .select("*")
     .single<TableSession>();
 
   if (!newSession) throw new Error(sessionError?.message || "Failed to create quick service session");
   return { session: mapTableSession(newSession, []), hotel, created: true };
+}
+
+export async function createStandaloneSession(hotelId: string, orderType: "takeaway" | "delivery" | "zomato" | "swiggy" | "direct") {
+  const sb = admin();
+  const { data: hotel } = await sb.from("hotels").select("*").eq("id", hotelId).single<Hotel>();
+  if (!hotel) throw new Error("Hotel not found");
+
+  if (hotel.status === "paused" || hotel.status === "suspended") {
+    return { error: "paused" as const, hotel };
+  }
+
+  const { data: orderNumber, error: rpcError } = await sb.rpc("generate_daily_order_number", { p_hotel_id: hotelId });
+  const nextOrderNumber = orderNumber || 1;
+
+  const { data: newSession, error: createError } = await sb.from("table_sessions").insert({
+    hotel_id: hotelId,
+    table_id: null,
+    table_number: null,
+    status: "open",
+    subtotal: 0,
+    tax_amount: 0,
+    total: 0,
+    discount_amount: 0,
+    customer_count: 1,
+    order_number: nextOrderNumber,
+    order_type: orderType
+  }).select().single();
+
+  if (createError || !newSession) {
+    throw new Error(createError?.message || "Failed to create session");
+  }
+
+  return { session: mapTableSession(newSession as TableSession, []), hotel, created: true };
 }
 
 export async function confirmQuickServiceOrder(sessionId: string, paymentMethod: "Cash" | "UPI" | "Card") {

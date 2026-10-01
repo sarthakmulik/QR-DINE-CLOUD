@@ -53,11 +53,13 @@ export async function POST(
       .select("*")
       .single<TableSession>();
 
-    // Clear the table's current session pointer
-    await sb
-      .from("restaurant_tables")
-      .update({ current_session_id: null })
-      .eq("id", session.table_id);
+    // Clear the table's current session pointer if attached to a table
+    if (session.table_id) {
+      await sb
+        .from("restaurant_tables")
+        .update({ current_session_id: null })
+        .eq("id", session.table_id);
+    }
 
     // Write to audit log
     await sb.from("session_audit").insert({

@@ -111,6 +111,11 @@ export interface TableSession {
   customer_name?: string | null;
   customer_phone?: string | null;
   checkout_initiated_at?: string | null;
+  order_type?: "dine_in" | "takeaway" | "delivery" | "zomato" | "swiggy";
+  customer_address?: string | null;
+  delivery_partner_name?: string | null;
+  delivery_partner_phone?: string | null;
+  external_order_id?: string | null;
 }
 
 export interface SessionItem {
@@ -282,6 +287,11 @@ export function mapTableSession(
     customerName: s.customer_name ?? null,
     customerPhone: s.customer_phone ?? null,
     checkoutInitiatedAt: s.checkout_initiated_at ?? null,
+    orderType: s.order_type ?? "dine_in",
+    customerAddress: s.customer_address ?? null,
+    deliveryPartnerName: s.delivery_partner_name ?? null,
+    deliveryPartnerPhone: s.delivery_partner_phone ?? null,
+    externalOrderId: s.external_order_id ?? null,
     items: items.map(mapSessionItem),
     hotel: hotel ? mapHotel(hotel) : undefined,
     table: table

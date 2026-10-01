@@ -66,3 +66,29 @@ export async function restockMaterial(id: string, amountToAdd: number) {
     return { error: err.message };
   }
 }
+export async function updateRecipe(menuItemId: string, materials: { raw_material_id: string; quantity_used: number }[]) {
+  try {
+    const { hotelId } = await requireHotelAccess();
+    const sb = createAdminClient();
+
+    // 1. Delete existing recipe for this menu item
+    await sb.from("recipes").delete().eq("menu_item_id", menuItemId);
+
+    // 2. Insert new materials if any
+    if (materials.length > 0) {
+      const { error } = await sb.from("recipes").insert(
+        materials.map(m => ({
+          menu_item_id: menuItemId,
+          raw_material_id: m.raw_material_id,
+          quantity_used: m.quantity_used
+        }))
+      );
+      if (error) throw new Error(error.message);
+    }
+
+    revalidatePath("/dashboard/inventory");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}

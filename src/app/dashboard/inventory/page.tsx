@@ -11,13 +11,19 @@ export default async function InventoryPage() {
   if (!user || !user.hotelId) redirect("/login");
 
   const sb = createAdminClient();
-  const { data: rawMaterials } = await sb
-    .from("raw_materials")
-    .select("*")
-    .eq("hotel_id", user.hotelId)
-    .order("name");
+  const [rmRes, menuRes, recipesRes] = await Promise.all([
+    sb.from("raw_materials").select("*").eq("hotel_id", user.hotelId).order("name"),
+    sb.from("menu_items").select("*").eq("hotel_id", user.hotelId).order("name"),
+    sb.from("recipes").select("*").order("created_at")
+  ]);
 
-  const lowStockCount = rawMaterials?.filter(rm => Number(rm.current_stock) <= Number(rm.min_stock_alert)).length || 0;
+  const rawMaterials = rmRes.data || [];
+  const menuItems = menuRes.data || [];
+  // Since recipes doesn't have hotel_id, we filter by our hotel's menu items
+  const hotelMenuItemIds = new Set(menuItems.map(m => m.id));
+  const recipes = (recipesRes.data || []).filter(r => hotelMenuItemIds.has(r.menu_item_id));
+
+  const lowStockCount = rawMaterials.filter(rm => Number(rm.current_stock) <= Number(rm.min_stock_alert)).length;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -39,7 +45,11 @@ export default async function InventoryPage() {
         )}
       </div>
 
-      <InventoryClient rawMaterials={rawMaterials || []} />
+      <InventoryClient 
+        rawMaterials={rawMaterials} 
+        menuItems={menuItems}
+        recipes={recipes}
+      />
     </div>
   );
 }

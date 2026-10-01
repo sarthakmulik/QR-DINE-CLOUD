@@ -20,13 +20,13 @@ async function getKitchenOrders(hotelId: string) {
   const [sessionsRes, cancelledSessionsRes] = await Promise.all([
     sb
       .from("table_sessions")
-      .select("id, status, start_time, table_number, order_number")
+      .select("id, status, start_time, table_number, order_number, order_type")
       .eq("hotel_id", hotelId)
       .in("status", ["open", "payment_pending"])
       .order("start_time", { ascending: true }),
     sb
       .from("table_sessions")
-      .select("id, status, start_time, table_number, order_number")
+      .select("id, status, start_time, table_number, order_number, order_type")
       .eq("hotel_id", hotelId)
       .eq("status", "cancelled")
       .gte("closed_at", new Date(Date.now() - 15 * 60 * 1000).toISOString()),
@@ -67,6 +67,7 @@ async function getKitchenOrders(hotelId: string) {
       startTime: session.start_time,
       tableNumber: session.table_number,
       orderNumber: session.order_number,
+      orderType: session.order_type,
       items: sessionItems.map(item => ({
         id: item.id,
         name: item.name,

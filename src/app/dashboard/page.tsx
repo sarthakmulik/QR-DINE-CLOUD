@@ -44,6 +44,7 @@ interface TableData {
     discountPercent?: number;
     customerPhone?: string | null;
     customerName?: string | null;
+    orderType?: string;
     items: {
       id: string;
       name: string;
@@ -57,6 +58,7 @@ interface TableData {
 export default function TablesDashboardPage() {
   const [tables, setTables] = useState<TableData[]>([]);
   const [selected, setSelected] = useState<TableData | null>(null);
+    const [activeChannel, setActiveChannel] = useState<'dine_in' | 'takeaway' | 'zomato' | 'swiggy'>('dine_in');
   const [loading, setLoading] = useState(true);
   const [hotelPaused, setHotelPaused] = useState(false);
   const [menuItems, setMenuItems] = useState<
@@ -596,6 +598,28 @@ export default function TablesDashboardPage() {
     }
   }
 
+  
+  async function handleCreateStandaloneOrder() {
+    setOpeningSession(true);
+    const res = await fetch("/api/hotel/sessions/standalone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderType: activeChannel }),
+    });
+    setOpeningSession(false);
+    if (res.ok) {
+      const refreshedTables = await pollTables();
+      const createdSessionData = await res.json();
+      const newlyOccupied = refreshedTables?.find((t: any) => t.currentSessionId === createdSessionData.id);
+      if (newlyOccupied) {
+        setSelected(newlyOccupied);
+      }
+    } else {
+      const err = await res.json();
+      alert(err.error || "Failed to create order");
+    }
+  }
+
   async function handleCheckout() {
     if (!selected?.currentSession) return;
     const sessionId = selected.currentSession.id;
@@ -815,7 +839,24 @@ export default function TablesDashboardPage() {
 
   return (
     <div className="space-y-6 animate-page-entrance pb-[60vh] sm:pb-0 h-full relative">
-      {isOffline && (
+      
+      {/* MULTI-CHANNEL TOGGLE */}
+      <div className="flex p-1 bg-gray-100 dark:bg-zinc-900 rounded-xl max-w-fit shadow-inner mb-4">
+        <button onClick={() => setActiveChannel("dine_in")} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeChannel === "dine_in" ? "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}>
+          Dine-In
+        </button>
+        <button onClick={() => setActiveChannel("takeaway")} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeChannel === "takeaway" ? "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}>
+          Takeaway
+        </button>
+        <button onClick={() => setActiveChannel("zomato")} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeChannel === "zomato" ? "bg-red-500 text-white shadow-sm" : "text-gray-500 hover:text-red-500"}`}>
+          Zomato
+        </button>
+        <button onClick={() => setActiveChannel("swiggy")} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeChannel === "swiggy" ? "bg-orange-500 text-white shadow-sm" : "text-gray-500 hover:text-orange-500"}`}>
+          Swiggy
+        </button>
+      </div>
+
+        {isOffline && (
         <div className="bg-yellow-500 text-yellow-950 px-4 py-2 text-sm font-medium rounded-xl flex items-center justify-between mb-4 shadow-sm animate-pulse">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1005,7 +1046,56 @@ export default function TablesDashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      
+      {activeChannel !== "dine_in" ? (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              {activeChannel.toUpperCase()} Orders
+            </h3>
+            <p className="text-gray-500 dark:text-zinc-400 max-w-md">
+              Create a direct {activeChannel} order without associating it with a physical dining table.
+            </p>
+            <button onClick={handleCreateStandaloneOrder} disabled={openingSession} className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition">
+              + New {activeChannel.toUpperCase()} Order
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {tables
+              .filter(t => t.tableNumber === 0 && t.currentSession?.orderType === activeChannel)
+              .map((table) => (
+              <button
+                key={table.id}
+                onClick={() => setSelected(table)}
+                className={`group relative text-left p-4 rounded-2xl border-2 transition-all duration-200 outline-none
+                  border-brand-500 bg-brand-500/10 shadow-[0_0_15px_rgba(var(--brand-500),0.3)]
+                `}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-extrabold text-lg text-gray-900 dark:text-white">
+                    {table.label}
+                  </span>
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shadow-[0_0_8px_currentColor] animate-pulse bg-brand-500`} />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold text-brand-600 dark:text-brand-400">
+                    Running Order
+                  </p>
+                  {table.currentSession && (
+                    <p className="text-xs font-medium text-gray-500 truncate">
+                      ₹{table.currentSession.total}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {isSkeletons ? (
           [...Array(6)].map((_, i) => (
             <div
@@ -1017,7 +1107,7 @@ export default function TablesDashboardPage() {
             </div>
           ))
         ) : (
-          tables.map((table) => (
+          tables.filter(t => t.tableNumber > 0 || !t.currentSession).map((table) => (
             <button
               key={table.id}
               onClick={() => {
@@ -1057,7 +1147,7 @@ export default function TablesDashboardPage() {
             </button>
           ))
         )}
-        {!isSkeletons && tables.length === 0 && (
+        {!isSkeletons && tables.filter(t => t.tableNumber > 0 || !t.currentSession).length === 0 && (
           <div className="col-span-full text-center py-16 text-gray-400">
             <p className="text-sm">No tables configured yet.</p>
             <Link href="/dashboard/tables" className="text-brand-600 dark:text-brand-400 text-sm font-medium underline underline-offset-2 mt-1 inline-block">
@@ -1066,6 +1156,8 @@ export default function TablesDashboardPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       <Modal
         open={!!selected}
