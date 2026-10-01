@@ -2041,7 +2041,7 @@ export default function DineClient({
             )}
             <div>
               <h1 className="font-extrabold text-[15px] text-gray-950 tracking-tight leading-tight">{state.hotelName}</h1>
-              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">Table {tableNumber}</p>
+              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">{parseInt(tableNumber) >= 900000 ? "Takeaway Order" : "Table " + tableNumber}</p>
             </div>
           </div>
           {!isBasic && (
@@ -2495,7 +2495,7 @@ export default function DineClient({
             }`}>{state.hotelName}</h1>
             <p className={`text-[11px] font-semibold mt-0.5 transition-colors ${
               isDark ? "text-slate-400" : "text-gray-400"
-            }`}>Table {tableNumber}</p>
+            }`}>{parseInt(tableNumber) >= 900000 ? "Takeaway Order" : "Table " + tableNumber}</p>
           </div>
         </div>
         {state.hotelPlan.toLowerCase() !== "basic" && (
@@ -2558,7 +2558,7 @@ export default function DineClient({
               {customizations.welcomeMessage}
             </h2>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-450"}`}>
-              {state.hotelName} — Table {tableNumber}
+              {state.hotelName} — {parseInt(tableNumber) >= 900000 ? "Takeaway Order" : "Table " + tableNumber}
             </p>
           </div>
         </div>

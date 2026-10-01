@@ -61,14 +61,20 @@ export async function GET(
       items: (itemsByCategoryId[cat.id] || []).map(mapMenuItem),
     }));
 
+    const isVirtualTakeaway = tableNumber >= 900000;
+    
     let table = tableRes.data as RestaurantTable | null;
     if (!table) {
-      const { data: created, error } = await sb
-        .from("restaurant_tables")
-        .insert({ hotel_id: hotelId, table_number: tableNumber, label: `Table ${tableNumber}` })
-        .select("*").single<RestaurantTable>();
-      if (error || !created) return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
-      table = created;
+      if (isVirtualTakeaway) {
+        table = { id: `virtual-${tableNumber}`, hotel_id: hotelId, table_number: tableNumber, label: `Takeaway #${tableNumber - 900000}` } as RestaurantTable;
+      } else {
+        const { data: created, error } = await sb
+          .from("restaurant_tables")
+          .insert({ hotel_id: hotelId, table_number: tableNumber, label: `Table ${tableNumber}` })
+          .select("*").single<RestaurantTable>();
+        if (error || !created) return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
+        table = created;
+      }
     }
 
     let activeSession = null;

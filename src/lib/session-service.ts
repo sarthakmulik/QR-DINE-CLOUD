@@ -116,14 +116,20 @@ async function loadTableWithSession(hotelId: string, tableNumber: number) {
     .eq("table_number", tableNumber)
     .maybeSingle<RestaurantTable>();
 
+  const isVirtualTakeaway = tableNumber >= 900000;
+  
   if (!table) {
-    const { data: created, error } = await sb
-      .from("restaurant_tables")
-      .insert({ hotel_id: hotelId, table_number: tableNumber, label: `Table ${tableNumber}` })
-      .select("*")
-      .single<RestaurantTable>();
-    if (error || !created) throw new Error("Failed to create table");
-    table = created;
+    if (isVirtualTakeaway) {
+      table = { id: `virtual-${tableNumber}`, hotel_id: hotelId, table_number: tableNumber, label: `Takeaway #${tableNumber - 900000}` } as RestaurantTable;
+    } else {
+      const { data: created, error } = await sb
+        .from("restaurant_tables")
+        .insert({ hotel_id: hotelId, table_number: tableNumber, label: `Table ${tableNumber}` })
+        .select("*")
+        .single<RestaurantTable>();
+      if (error || !created) throw new Error("Failed to create table");
+      table = created;
+    }
   }
 
   let currentSession: (TableSession & { items: SessionItem[] }) | null = null;
@@ -211,14 +217,17 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
       discountPercent = await calculateLoyaltyDiscount(hotelId, customerPhone);
     }
 
+    const isVirtualTakeaway = tableNumber >= 900000;
+
     const { data: newSession, error: sessionError } = await sb
       .from("table_sessions")
       .insert({ 
         ...(offlineId ? { id: offlineId } : {}),
         hotel_id: hotelId, 
-        table_id: table.id, 
+        table_id: isVirtualTakeaway ? null : table.id, 
         table_number: tableNumber, 
         status: "open", 
+        order_type: isVirtualTakeaway ? "takeaway" : "dine_in",
         customer_count: 1,
         subtotal: 0,
         tax_amount: 0,
@@ -232,7 +241,9 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
       .single<TableSession>();
 
     if (newSession) {
-      sb.from("restaurant_tables").update({ current_session_id: newSession.id }).eq("id", table.id).then(() => {});
+      if (!isVirtualTakeaway) {
+        sb.from("restaurant_tables").update({ current_session_id: newSession.id }).eq("id", table.id).then(() => {});
+      }
       return { session: mapTableSession(newSession, []), hotel, table, created: true };
     }
 

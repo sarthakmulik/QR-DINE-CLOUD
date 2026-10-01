@@ -464,38 +464,25 @@ export default function TablesPage() {
         )}
       </div>
 
-      {/* TAKEAWAY / QUICK SERVICE QR SCANNERS */}
+      {/* TAKEAWAY SCANNERS */}
       <div className="mt-16 mb-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Counter QR Codes</h2>
-          <p className="text-slate-500 font-medium mt-1 text-sm">Download these generic QR codes to place at your counter for Takeaway or Quick Service customers.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Takeaway Scanner</h2>
+          <p className="text-slate-500 font-medium mt-1 text-sm">Download this QR code to place at your counter for Takeaway customers. It will give them the Dine-in UI.</p>
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Quick Service QR */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col items-center">
-            <h3 className="font-bold text-lg mb-1">Quick Service</h3>
-            <p className="text-xs text-slate-500 mb-4 font-medium">(Direct / Dine-in)</p>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
-              {genericDineUrl ? <DynamicQRCode ref={genericQrRef} url={genericDineUrl} width={200} height={200} logo={hotelLogo || undefined} /> : <div className="w-[200px] h-[200px] flex items-center justify-center text-slate-400"><RefreshCw className="animate-spin" /></div>}
-            </div>
-            <div className="flex gap-2 w-full mt-auto">
-              <Button onClick={() => copyUrl(genericDineUrl, "generic")} variant="secondary" className="flex-1">Copy Link</Button>
-              <Button onClick={() => genericDineUrl && genericQrRef.current?.download("quick-service-qr", "png")} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold">Download</Button>
-            </div>
-          </div>
-
           {/* Takeaway QR */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-brand-200 dark:border-brand-800 flex flex-col items-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-brand-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-widest">Takeaway Mode</div>
-            <h3 className="font-bold text-lg mb-1">Takeaway (Counter)</h3>
-            <p className="text-xs text-brand-600 font-medium mb-4">Orders will show as Takeaway</p>
+            <div className="absolute top-0 right-0 bg-brand-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-widest">Takeaway</div>
+            <h3 className="font-bold text-lg mb-1">Takeaway Scanner</h3>
+            <p className="text-xs text-brand-600 font-medium mb-4">Place at your billing counter</p>
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
-              {genericDineUrl ? <DynamicQRCode ref={takeawayQrRef} url={genericDineUrl + (genericDineUrl.includes("?") ? "&" : "?") + "mode=takeaway"} width={200} height={200} logo={hotelLogo || undefined} /> : <div className="w-[200px] h-[200px] flex items-center justify-center text-slate-400"><RefreshCw className="animate-spin" /></div>}
+              {hotelId ? <DynamicQRCode ref={takeawayQrRef} url={(typeof window !== 'undefined' ? window.location.origin : '') + `/takeaway/${hotelId}`} width={200} height={200} logo={hotelLogo || undefined} /> : <div className="w-[200px] h-[200px] flex items-center justify-center text-slate-400"><RefreshCw className="animate-spin" /></div>}
             </div>
             <div className="flex gap-2 w-full mt-auto">
-              <Button onClick={() => copyUrl(genericDineUrl + (genericDineUrl.includes("?") ? "&" : "?") + "mode=takeaway", "takeaway")} variant="secondary" className="flex-1">Copy Link</Button>
-              <Button onClick={() => genericDineUrl && takeawayQrRef.current?.download("takeaway-qr", "png")} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold">Download</Button>
+              <Button onClick={() => copyUrl((typeof window !== 'undefined' ? window.location.origin : '') + `/takeaway/${hotelId}`, "takeaway")} variant="secondary" className="flex-1">Copy Link</Button>
+              <Button onClick={() => takeawayQrRef.current?.download("takeaway-qr", "png")} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold">Download</Button>
             </div>
           </div>
         </div>
