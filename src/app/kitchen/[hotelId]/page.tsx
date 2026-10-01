@@ -714,7 +714,7 @@ export default function KitchenPage({ params }: { params: Promise<{ hotelId: str
                     } ${viewMode === "timeline" ? "border-b-0 bg-transparent flex-col justify-center items-start p-0 flex-shrink-0 w-32" : (isGhost || isCancelled ? "rounded-none" : "rounded-t-2xl")}`}
                   >
                     <div>
-                      {session.tableNumber === 0 ? (
+                      {!session.tableNumber || session.tableNumber === 0 || session.tableNumber >= 900000 ? (
                         <>
                           <h3 className={`text-xl font-extrabold tracking-tight ${
                             session.orderType === "zomato" ? "text-red-500" :

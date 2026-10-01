@@ -133,7 +133,19 @@ async function loadTableWithSession(hotelId: string, tableNumber: number) {
   }
 
   let currentSession: (TableSession & { items: SessionItem[] }) | null = null;
-  if (table.current_session_id) {
+  if (isVirtualTakeaway) {
+    const { data: session } = await sb
+      .from("table_sessions")
+      .select("*")
+      .eq("hotel_id", hotelId)
+      .eq("table_number", tableNumber)
+      .neq("status", "closed")
+      .maybeSingle<TableSession>();
+    if (session) {
+      const items = await getSessionItems(session.id);
+      currentSession = { ...session, items };
+    }
+  } else if (table.current_session_id) {
     const { data: session } = await sb
       .from("table_sessions")
       .select("*")

@@ -248,7 +248,7 @@ export default function TablesDashboardPage() {
     }
 
     const [tablesRes, profileRes, menuRes, statsRes] = await Promise.all([
-      fetch("/api/hotel/tables"),
+      fetch("/api/hotel/tables?includeStandalone=true"),
       fetch("/api/hotel/profile"),
       fetch("/api/hotel/menu/categories"),
       fetch("/api/hotel/overview-stats"),
@@ -308,7 +308,7 @@ export default function TablesDashboardPage() {
       do {
         pendingPollRef.current = false;
         try {
-          const res = await fetch("/api/hotel/tables");
+          const res = await fetch("/api/hotel/tables?includeStandalone=true");
           if (res.ok) {
             const tablesRaw = await res.json();
             const tablesData = adjustTablesData(tablesRaw);
