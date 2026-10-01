@@ -591,12 +591,8 @@ export async function autoCleanupSessions(hotelId: string) {
   const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
   const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
 
-  // 1. Auto-collect ready orders forgotten for 5 mins
-  await sb.from("table_sessions")
-    .update({ status: "closed", closed_at: new Date().toISOString() })
-    .eq("hotel_id", hotelId)
-    .eq("status", "ready_for_pickup")
-    .lt("start_time", fiveMinsAgo);
+  // 1. Removed aggressive auto-close for ready_for_pickup orders
+  // The staff must explicitly mark them as collected after payment.
 
   // 2. Auto-cancel unpaid QS orders abandoned for 10 mins
   await sb.from("table_sessions")

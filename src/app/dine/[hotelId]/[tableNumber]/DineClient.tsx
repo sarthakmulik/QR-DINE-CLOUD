@@ -47,6 +47,7 @@ type PageState =
       hotelPlan: string;
       taxRate: number;
       sessionId: string;
+      orderNumber?: number | null;
       items: CartItem[];
       subtotal: number;
       discountAmount: number;
@@ -61,13 +62,14 @@ type PageState =
       taxRate: number;
       isPhoneMandatory: boolean;
       sessionId: string | null;
+      orderNumber?: number | null;
       categories: Category[];
       runningItems: CartItem[];
       runningSubtotal: number;
     }
   | { type: "confirmed" }
   | { type: "error"; message: string }
-  | { type: "thankyou"; hotelName: string; hotelLogo: string | null; hotelPlan: string; sessionId: string }
+  | { type: "thankyou"; hotelName: string; hotelLogo: string | null; hotelPlan: string; sessionId: string; orderNumber?: number | null }
   | { type: "closed" };
 
 function getCartKey(hotelId: string, tableNumber: string) {
@@ -934,6 +936,7 @@ export default function DineClient({
     if (data.error === "checkout") {
       if (data.session?.id) {
         sessionStorage.setItem(`last_session_id_${hotelId}_${tableNumber}`, data.session.id);
+        if (data.session.orderNumber) sessionStorage.setItem(`last_order_number_${hotelId}_${tableNumber}`, data.session.orderNumber.toString());
         sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
       }
       if (data.hotel) {
@@ -952,6 +955,7 @@ export default function DineClient({
           hotelPlan: data.hotel.plan,
           taxRate: data.hotel.taxRate !== undefined && data.hotel.taxRate !== null ? data.hotel.taxRate : 5,
           sessionId: data.session.id,
+          orderNumber: data.session.orderNumber,
           items: data.session.items || [],
           subtotal: data.session.subtotal,
           discountAmount: data.session.discountAmount || 0,
@@ -971,6 +975,7 @@ export default function DineClient({
 
     if (data.session?.id) {
       sessionStorage.setItem(`last_session_id_${hotelId}_${tableNumber}`, data.session.id);
+      if (data.session.orderNumber) sessionStorage.setItem(`last_order_number_${hotelId}_${tableNumber}`, data.session.orderNumber.toString());
       sessionStorage.removeItem(`session_closed_at_${hotelId}_${tableNumber}`);
       sessionStorage.setItem(`table_last_active_${hotelId}_${tableNumber}`, Date.now().toString());
     } else {
@@ -988,11 +993,11 @@ export default function DineClient({
       const closedAt = sessionStorage.getItem(`session_closed_at_${hotelId}_${tableNumber}`);
       
       if (lastSessionId) {
-        let isRecentlyClosed = false;
+        let isRecentlyClosed = true;
         if (closedAt) {
           const diff = Date.now() - parseInt(closedAt);
-          if (diff <= 30 * 60 * 1000) { // 30 minutes
-            isRecentlyClosed = true;
+          if (diff > 30 * 60 * 1000) { // 30 minutes
+            isRecentlyClosed = false;
           }
         }
         
@@ -1006,6 +1011,7 @@ export default function DineClient({
             hotelLogo: data.hotel.logo,
             hotelPlan: data.hotel.plan,
             sessionId: lastSessionId,
+            orderNumber: sessionStorage.getItem(`last_order_number_${hotelId}_${tableNumber}`) ? parseInt(sessionStorage.getItem(`last_order_number_${hotelId}_${tableNumber}`) as string) : null,
           });
           return;
         } else {
@@ -1032,12 +1038,13 @@ export default function DineClient({
       const lastActiveStr = sessionStorage.getItem(`table_last_active_${hotelId}_${tableNumber}`);
       if (lastActiveStr) {
         const diff = Date.now() - parseInt(lastActiveStr);
-        if (diff < 12 * 60 * 60 * 1000) {
-          // If they were active here recently, block them from starting a new session on this table
+        // Virtual Takeaway tables (>= 900000) are device-specific, so allow them to start new sessions immediately
+        if (diff < 12 * 60 * 60 * 1000 && parseInt(tableNumber) < 900000) {
+          // If they were active here recently, block them from starting a new session on this physical table
           setState({ type: "closed" });
           return;
         } else {
-          // Expired, allow fresh start
+          // Expired or Virtual Table, allow fresh start
           sessionStorage.removeItem(`table_last_active_${hotelId}_${tableNumber}`);
         }
       }
@@ -2041,7 +2048,7 @@ export default function DineClient({
             )}
             <div>
               <h1 className="font-extrabold text-[15px] text-gray-950 tracking-tight leading-tight">{state.hotelName}</h1>
-              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">{parseInt(tableNumber) >= 900000 ? "Takeaway Order" : "Table " + tableNumber}</p>
+              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">{parseInt(tableNumber) >= 900000 ? (state.orderNumber ? `Takeaway Order #${state.orderNumber}` : "Takeaway Order") : "Table " + tableNumber}</p>
             </div>
           </div>
           {!isBasic && (
@@ -2495,7 +2502,7 @@ export default function DineClient({
             }`}>{state.hotelName}</h1>
             <p className={`text-[11px] font-semibold mt-0.5 transition-colors ${
               isDark ? "text-slate-400" : "text-gray-400"
-            }`}>{parseInt(tableNumber) >= 900000 ? "Takeaway Order" : "Table " + tableNumber}</p>
+            }`}>{parseInt(tableNumber) >= 900000 ? (state.orderNumber ? `Takeaway Order #${state.orderNumber}` : "Takeaway Order") : "Table " + tableNumber}</p>
           </div>
         </div>
         {state.hotelPlan.toLowerCase() !== "basic" && (
@@ -2558,7 +2565,7 @@ export default function DineClient({
               {customizations.welcomeMessage}
             </h2>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-450"}`}>
-              {state.hotelName} — {parseInt(tableNumber) >= 900000 ? "Takeaway Order" : "Table " + tableNumber}
+              {state.hotelName} — {parseInt(tableNumber) >= 900000 ? (state.orderNumber ? `Takeaway Order #${state.orderNumber}` : "Takeaway Order") : "Table " + tableNumber}
             </p>
           </div>
         </div>
