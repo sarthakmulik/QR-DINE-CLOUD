@@ -27,6 +27,7 @@ interface Session {
   customerName?: string | null;
   customerPhone?: string | null;
   checkoutInitiatedAt?: string | null;
+  paymentMethod?: string | null;
 }
 
 export default function LiveOrdersPage() {
@@ -88,13 +89,20 @@ export default function LiveOrdersPage() {
     }
   }
 
-  async function handleMarkCollected(sessionId: string) {
+  async function handleMarkCollected(sessionId: string, currentPaymentMethod: string | null, total: number) {
+    let methodToSubmit = undefined;
+    if (total > 0 && !currentPaymentMethod) {
+      const input = window.prompt(`This order (₹${total}) is unpaid. Enter payment mode (Cash/UPI) or leave blank:`);
+      if (input === null) return;
+      if (input.trim()) methodToSubmit = input.trim();
+    }
+
     mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
       const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/force-close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Collected by customer" })
+        body: JSON.stringify({ reason: "Collected by customer", paymentMethod: methodToSubmit })
       });
       if ('offline' in res && res.offline) refreshQueue();
       mutate();
@@ -292,7 +300,7 @@ export default function LiveOrdersPage() {
                       {isReady ? "Ready to Collect" : "Cooking Now"}
                     </div>
                     <button 
-                      onClick={() => isOpenQS ? handleMarkReady(session.id) : handleMarkCollected(session.id)}
+                      onClick={() => isOpenQS ? handleMarkReady(session.id) : handleMarkCollected(session.id, session.paymentMethod || null, session.total || 0)}
                       className={`w-full font-black py-3 px-3 rounded-xl text-sm transition-all active:scale-95 shadow-sm ${
                         isOpenQS 
                           ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20" 

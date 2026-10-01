@@ -231,6 +231,12 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
 
     const isVirtualTakeaway = tableNumber >= 900000;
 
+    let assignedOrderNumber = null;
+    if (isVirtualTakeaway) {
+      const { data: orderNumResult } = await sb.rpc("generate_daily_order_number", { p_hotel_id: hotelId });
+      assignedOrderNumber = orderNumResult || 1;
+    }
+
     const { data: newSession, error: sessionError } = await sb
       .from("table_sessions")
       .insert({ 
@@ -240,6 +246,7 @@ export async function getOrCreateOpenSession(hotelId: string, tableNumber: numbe
         table_number: tableNumber, 
         status: "open", 
         order_type: isVirtualTakeaway ? "takeaway" : "dine_in",
+        order_number: assignedOrderNumber,
         customer_count: 1,
         subtotal: 0,
         tax_amount: 0,

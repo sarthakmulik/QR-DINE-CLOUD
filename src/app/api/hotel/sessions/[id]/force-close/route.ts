@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireHotelAccess } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { recalculateSessionTotals } from "@/lib/session-service";
+import { recalculateSessionTotals, markAsPaid } from "@/lib/session-service";
 import type { TableSession } from "@/lib/types";
 
 /**
@@ -40,6 +40,10 @@ export async function POST(
     await recalculateSessionTotals(id);
 
     const now = new Date().toISOString();
+
+    if (body.paymentMethod && !session.payment_method) {
+      await markAsPaid(id, body.paymentMethod, session);
+    }
 
     const { data: closed } = await sb
       .from("table_sessions")
