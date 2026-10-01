@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { findProfileForUser } from "@/lib/profile";
 
-const PUBLIC_PATHS = ["/login", "/dine", "/bill", "/auth", "/api/auth", "/kitchen", "/staff"];
+const PUBLIC_PATHS = ["/login", "/dine", "/bill", "/auth", "/api/auth", "/kitchen", "/staff", "/takeaway"];
 
 function isPublicPath(path: string) {
   return PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
