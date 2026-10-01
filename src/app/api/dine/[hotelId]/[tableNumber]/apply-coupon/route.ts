@@ -37,12 +37,28 @@ export async function POST(
       return NextResponse.json({ error: "invalid_qr" }, { status: 403 });
     }
 
-    const table = tableRes.data;
-    if (!table || !table.current_session_id) {
-      return NextResponse.json({ error: "No active session on this table" }, { status: 400 });
+    let sessionId = null;
+    const isVirtualTakeaway = tableNumber >= 900000;
+    
+    if (isVirtualTakeaway) {
+      const { data: session } = await sb
+        .from("table_sessions")
+        .select("id")
+        .eq("hotel_id", hotelId)
+        .eq("table_number", tableNumber)
+        .neq("status", "closed")
+        .maybeSingle();
+      if (session) sessionId = session.id;
+    } else {
+      const table = tableRes.data;
+      if (table && table.current_session_id) {
+        sessionId = table.current_session_id;
+      }
     }
 
-    const sessionId = table.current_session_id;
+    if (!sessionId) {
+      return NextResponse.json({ error: "No active session on this table" }, { status: 400 });
+    }
 
     if (code) {
       const [sessionRes, couponRes] = await Promise.all([

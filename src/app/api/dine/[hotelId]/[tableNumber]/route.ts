@@ -78,7 +78,14 @@ export async function GET(
     }
 
     let activeSession = null;
-    if (table.current_session_id) {
+    if (isVirtualTakeaway) {
+      const { data: sessionWithItems } = await sb
+        .from("table_sessions").select("*, session_items(*)")
+        .eq("hotel_id", hotelId).eq("table_number", tableNumber).neq("status", "closed").maybeSingle();
+      if (sessionWithItems) {
+        activeSession = mapTableSession(sessionWithItems as TableSession, (sessionWithItems.session_items || []) as SessionItem[]);
+      }
+    } else if (table.current_session_id) {
       const { data: sessionWithItems } = await sb
         .from("table_sessions").select("*, session_items(*)")
         .eq("id", table.current_session_id).maybeSingle();
