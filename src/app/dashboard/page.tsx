@@ -756,7 +756,7 @@ export default function TablesDashboardPage() {
     //   open → checkout_initiated → closed
     // ...and that `order_number` is assigned correctly (happens during checkout).
     // We do NOT do this if the session is already in checkout_initiated/bill_printed.
-    if (sessionStatus === "open") {
+    if (sessionStatus === "open" || sessionStatus === "ready_for_pickup") {
       const checkoutRes = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1277,7 +1277,7 @@ export default function TablesDashboardPage() {
               </div>
             </div>
 
-            {selected.currentSession.status === "open" && (
+            {(selected.currentSession.status === "open" || selected.currentSession.status === "ready_for_pickup") && (
               <div className="space-y-4 border-t border-gray-100 dark:border-zinc-800 pt-4">
                 <div className="flex flex-wrap gap-2 items-end">
                   <div className="flex-1 min-w-[200px]">
@@ -1309,41 +1309,13 @@ export default function TablesDashboardPage() {
                   </Button>
                 </div>
 
-                <div className="border-t border-gray-100 dark:border-zinc-800 pt-4 space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">
-                      Customer WhatsApp Number (Optional)
-                    </label>
-                    <div className="flex gap-2 max-w-xs">
-                      <span className="inline-flex items-center px-3 rounded-lg border border-gray-300 dark:border-zinc-700/80 bg-gray-50 dark:bg-zinc-900/50 text-gray-500 dark:text-zinc-400 text-sm">
-                        +91
-                      </span>
-                      <input
-                        type="tel"
-                        placeholder="10-digit number"
-                        value={whatsappNumbers[selected.currentSession.id] || ""}
-                        onChange={(e) => {
-                          // [L-2 FIX] Only allow digits to prevent invalid phone data
-                          const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-                          setWhatsappNumbers((prev) => ({
-                            ...prev,
-                            [selected.currentSession!.id]: digits,
-                          }));
-                        }}
-                        className="flex-1 border border-gray-300 dark:border-zinc-700/80 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800/50 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        maxLength={10}
-                        inputMode="numeric"
-                        pattern="[0-9]{10}"
-                      />
-                    </div>
-                  </div>
-                  <Button onClick={handleCheckout}>Initiate Checkout</Button>
-                </div>
               </div>
             )}
 
             {(selected.currentSession.status === "checkout_initiated" ||
-              selected.currentSession.status === "bill_printed") && (
+              selected.currentSession.status === "bill_printed" ||
+              selected.currentSession.status === "open" ||
+              selected.currentSession.status === "ready_for_pickup") && (
               <div className="space-y-4 border-t border-gray-100 dark:border-zinc-800 pt-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1">
@@ -1375,6 +1347,9 @@ export default function TablesDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-2">
+                  {(selected.currentSession.status === "open" || selected.currentSession.status === "ready_for_pickup") && (
+                    <Button onClick={handleCheckout}>Initiate Checkout</Button>
+                  )}
                   <Button onClick={handlePrint} disabled={isPrinting}>
                     {isPrinting ? "Opening..." : "🖨️ Print Bill"}
                   </Button>
