@@ -90,19 +90,7 @@ export default function LiveOrdersPage() {
     }
   }
 
-  async function handleMarkCollected(sessionId: string, currentPaymentMethod: string | null, total: number) {
-    let methodToSubmit: string | undefined = undefined;
-    if (total > 0 && !currentPaymentMethod) {
-      const input = window.prompt(`This order (₹${total}) is UNPAID. Enter payment mode: Cash, UPI or Card`, "Cash");
-      if (input === null) return;
-      const normalized = input.trim().toLowerCase();
-      if (!["cash", "upi", "card"].includes(normalized)) {
-        alert("Please enter a valid payment mode: Cash, UPI or Card. Order was NOT closed.");
-        return;
-      }
-      methodToSubmit = normalized;
-    }
-
+  async function handleMarkCollected(sessionId: string, methodToSubmit?: string) {
     mutate(prev => prev?.filter(s => s.id !== sessionId), false);
     try {
       const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/force-close`, {
@@ -118,6 +106,21 @@ export default function LiveOrdersPage() {
       mutate();
     } catch (err) {
       mutate(); // rollback
+      console.error(err);
+    }
+  }
+
+  async function handleInitiateCheckout(sessionId: string) {
+    mutate(prev => prev?.map(s => s.id === sessionId ? { ...s, status: "checkout_initiated" } : s), false);
+    try {
+      const res = await fetchOrQueue(`/api/hotel/sessions/${sessionId}/checkout`, { method: "POST" });
+      if ('offline' in res && res.offline) refreshQueue();
+      else if ('ok' in res && res.ok) {
+        window.open(`/bill/${sessionId}`, '_blank');
+      }
+      mutate();
+    } catch (err) {
+      mutate();
       console.error(err);
     }
   }
@@ -303,22 +306,54 @@ export default function LiveOrdersPage() {
                   </div>
                 )}
 
-                {(isReady || isOpenQS) && (
+                {(!session.table && session.status !== "closed" && session.status !== "cancelled") && (
                   <div className={`mb-5 border rounded-2xl p-4 flex flex-col gap-3 text-center shadow-inner ${isReady ? 'bg-emerald-50 border-emerald-200/60' : 'bg-blue-50 border-blue-200/60'}`}>
                     <div className={`text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 ${isReady ? 'text-emerald-800' : 'text-blue-800'}`}>
                       <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isReady ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
-                      {isReady ? "Ready to Collect" : "Cooking Now"}
+                      {isReady ? "Ready to Collect" : isCheckout ? "Payment Pending" : "Cooking Now"}
                     </div>
-                    <button 
-                      onClick={() => isOpenQS ? handleMarkReady(session.id) : handleMarkCollected(session.id, session.paymentMethod || null, session.total || 0)}
-                      className={`w-full font-black py-3 px-3 rounded-xl text-sm transition-all active:scale-95 shadow-sm ${
-                        isOpenQS 
-                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20" 
-                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
-                      }`}
-                    >
-                      {isOpenQS ? "Mark as Ready" : "Mark as Collected"}
-                    </button>
+                    
+                    {isOpenQS && (
+                      <button 
+                        onClick={() => handleMarkReady(session.id)}
+                        className="w-full font-black py-3 px-3 rounded-xl text-sm transition-all active:scale-95 shadow-sm bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"
+                      >
+                        Mark as Ready
+                      </button>
+                    )}
+
+                    {(isReady || isCheckout || isPaymentPending) && (
+                      <div className="flex flex-col gap-2 mt-1">
+                        {(!session.paymentMethod && session.total > 0) && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <button 
+                              onClick={() => handleInitiateCheckout(session.id)}
+                              className="col-span-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-black text-white font-bold py-2 px-3 rounded-lg text-[11px] uppercase tracking-widest transition-colors shadow-sm"
+                            >
+                              Print Bill / Checkout
+                            </button>
+                            <button 
+                              onClick={() => handleMarkCollected(session.id, "Cash")}
+                              className="bg-emerald-100 dark:bg-emerald-500/10 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-bold py-2 px-2 rounded-lg text-[11px] uppercase tracking-widest transition-colors border border-emerald-200 dark:border-emerald-500/30"
+                            >
+                              Pay Cash
+                            </button>
+                            <button 
+                              onClick={() => handleMarkCollected(session.id, "UPI")}
+                              className="bg-purple-100 dark:bg-purple-500/10 hover:bg-purple-200 dark:hover:bg-purple-500/20 text-purple-800 dark:text-purple-400 font-bold py-2 px-2 rounded-lg text-[11px] uppercase tracking-widest transition-colors border border-purple-200 dark:border-purple-500/30"
+                            >
+                              Pay UPI
+                            </button>
+                          </div>
+                        )}
+                        <button 
+                          onClick={() => handleMarkCollected(session.id, session.paymentMethod || undefined)}
+                          className="w-full font-black py-2.5 px-3 rounded-xl text-sm transition-all active:scale-95 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                        >
+                          Mark as Collected
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
