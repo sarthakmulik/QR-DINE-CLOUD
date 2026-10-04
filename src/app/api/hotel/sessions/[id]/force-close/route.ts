@@ -36,13 +36,35 @@ export async function POST(
       return NextResponse.json({ error: "Session is already closed" }, { status: 400 });
     }
 
+    // Normalize + validate payment method (staff may type "cash", "upi", etc.)
+    let paymentMethod: "Cash" | "UPI" | "Card" | null = null;
+    if (body.paymentMethod) {
+      const map: Record<string, "Cash" | "UPI" | "Card"> = { cash: "Cash", upi: "UPI", card: "Card" };
+      paymentMethod = map[String(body.paymentMethod).trim().toLowerCase()] || null;
+      if (!paymentMethod) {
+        return NextResponse.json(
+          { error: "Invalid payment method. Use Cash, UPI or Card." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Recalculate totals before closing to ensure accuracy
     await recalculateSessionTotals(id);
 
     const now = new Date().toISOString();
 
-    if (body.paymentMethod && !session.payment_method) {
-      await markAsPaid(id, body.paymentMethod, session);
+    // Unpaid order collected with a payment: markAsPaid closes the session AND logs
+    // payment_method + cash register atomically, so we must not close it a second time.
+    if (paymentMethod && !session.payment_method) {
+      await markAsPaid(id, paymentMethod, session);
+      await sb.from("session_audit").insert({
+        session_id: id,
+        hotel_id: hotelId,
+        action: "force_closed",
+        reason: `${reason} (paid via ${paymentMethod})`,
+      });
+      return NextResponse.json({ success: true, closedAt: now, paymentMethod });
     }
 
     const { data: closed } = await sb

@@ -139,8 +139,8 @@ async function loadTableWithSession(hotelId: string, tableNumber: number) {
       .select("*")
       .eq("hotel_id", hotelId)
       .eq("table_number", tableNumber)
-      .neq("status", "closed")
-      .maybeSingle<TableSession>();
+      .not("status", "in", "(closed,cancelled)")
+      .order("start_time", { ascending: false }).limit(1).maybeSingle<TableSession>();
     if (session) {
       const items = await getSessionItems(session.id);
       currentSession = { ...session, items };
@@ -584,15 +584,42 @@ export function getTableStatus(
 export async function autoCleanupSessions(hotelId: string) {
   const sb = admin();
   const now = Date.now();
-  const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
   // 2. Auto-cancel unpaid QS orders abandoned for 10 minutes.
   // start_time is reset when the customer initiates checkout (confirmQuickServiceOrder),
   // so this strictly means 10 minutes from the time they clicked "Pay Online".
   const tenMinsAgo = new Date(now - 10 * 60 * 1000).toISOString();
   const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
+  const sixHoursAgo = new Date(now - 6 * 60 * 60 * 1000).toISOString();
 
-  // 1. Removed aggressive auto-close for ready_for_pickup orders
-  // The staff must explicitly mark them as collected after payment.
+  // 0. Quick Service (no table) ready orders forgotten for 5 mins are auto-collected.
+  // QR-takeaway virtual-table sessions (table_number >= 900000) are EXCLUDED so customers
+  // can keep tracking their order until staff marks it collected.
+  const fiveMinsAgo = new Date(now - 5 * 60 * 1000).toISOString();
+  await sb.from("table_sessions")
+    .update({ status: "closed", closed_at: new Date().toISOString() })
+    .eq("hotel_id", hotelId)
+    .eq("status", "ready_for_pickup")
+    .is("table_number", null)
+    .lt("start_time", fiveMinsAgo);
+
+  // 1. Unpaid virtual-takeaway ready orders are never auto-closed: staff must collect payment
+  // and explicitly mark them collected. Only PAID ones left uncollected for 6h are closed.
+  await sb.from("table_sessions")
+    .update({ status: "closed", closed_at: new Date().toISOString(), end_time: new Date().toISOString() })
+    .eq("hotel_id", hotelId)
+    .eq("status", "ready_for_pickup")
+    .gte("table_number", 900000)
+    .not("payment_method", "is", null)
+    .lt("start_time", sixHoursAgo);
+
+  // 1b. QR takeaway (virtual table) sessions that were opened but never got a single item.
+  await sb.from("table_sessions")
+    .update({ status: "cancelled", closed_at: new Date().toISOString() })
+    .eq("hotel_id", hotelId)
+    .gte("table_number", 900000)
+    .eq("status", "open")
+    .eq("subtotal", 0)
+    .lt("start_time", twoHoursAgo);
 
   // 2. Auto-cancel unpaid QS orders abandoned for 10 mins
   await sb.from("table_sessions")

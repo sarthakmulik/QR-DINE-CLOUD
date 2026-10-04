@@ -81,7 +81,7 @@ export async function GET(
     if (isVirtualTakeaway) {
       const { data: sessionWithItems } = await sb
         .from("table_sessions").select("*, session_items(*)")
-        .eq("hotel_id", hotelId).eq("table_number", tableNumber).neq("status", "closed").maybeSingle();
+        .eq("hotel_id", hotelId).eq("table_number", tableNumber).not("status", "in", "(closed,cancelled)").order("start_time", { ascending: false }).limit(1).maybeSingle();
       if (sessionWithItems) {
         activeSession = mapTableSession(sessionWithItems as TableSession, (sessionWithItems.session_items || []) as SessionItem[]);
       }

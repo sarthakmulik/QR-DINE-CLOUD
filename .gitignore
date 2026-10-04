@@ -54,3 +54,6 @@ android-app/android/.gradle/
 android-app/android/app/build/
 android-app/android/capacitor-cordova-android-plugins/
 firebase-adminsdk.json
+# scratch patch scripts
+/patch*.js
+/scratch-*.js

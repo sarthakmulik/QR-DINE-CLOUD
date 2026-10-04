@@ -46,8 +46,8 @@ export async function POST(
         .select("id")
         .eq("hotel_id", hotelId)
         .eq("table_number", tableNumber)
-        .neq("status", "closed")
-        .maybeSingle();
+        .not("status", "in", "(closed,cancelled)")
+        .order("start_time", { ascending: false }).limit(1).maybeSingle();
       if (session) sessionId = session.id;
     } else {
       const table = tableRes.data;

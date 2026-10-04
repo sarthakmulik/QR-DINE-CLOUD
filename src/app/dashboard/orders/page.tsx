@@ -90,11 +90,16 @@ export default function LiveOrdersPage() {
   }
 
   async function handleMarkCollected(sessionId: string, currentPaymentMethod: string | null, total: number) {
-    let methodToSubmit = undefined;
+    let methodToSubmit: string | undefined = undefined;
     if (total > 0 && !currentPaymentMethod) {
-      const input = window.prompt(`This order (₹${total}) is unpaid. Enter payment mode (Cash/UPI) or leave blank:`);
+      const input = window.prompt(`This order (₹${total}) is UNPAID. Enter payment mode: Cash, UPI or Card`, "Cash");
       if (input === null) return;
-      if (input.trim()) methodToSubmit = input.trim();
+      const normalized = input.trim().toLowerCase();
+      if (!["cash", "upi", "card"].includes(normalized)) {
+        alert("Please enter a valid payment mode: Cash, UPI or Card. Order was NOT closed.");
+        return;
+      }
+      methodToSubmit = normalized;
     }
 
     mutate(prev => prev?.filter(s => s.id !== sessionId), false);
@@ -105,6 +110,10 @@ export default function LiveOrdersPage() {
         body: JSON.stringify({ reason: "Collected by customer", paymentMethod: methodToSubmit })
       });
       if ('offline' in res && res.offline) refreshQueue();
+      else if ('ok' in res && !res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to mark order as collected.");
+      }
       mutate();
     } catch (err) {
       mutate(); // rollback
