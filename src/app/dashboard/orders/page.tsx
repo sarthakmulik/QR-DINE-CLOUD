@@ -24,6 +24,7 @@ interface Session {
   total: number;
   items: { id: string; name: string; quantity: number; price: number; addedAt: string }[];
   table: { label: string };
+  orderType?: string;
   customerName?: string | null;
   customerPhone?: string | null;
   checkoutInitiatedAt?: string | null;
@@ -240,7 +241,7 @@ export default function LiveOrdersPage() {
                 <div className="flex items-start justify-between mb-5">
                   <div>
                     <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                      {session.table?.label ? `Table ${session.table.label}` : `Quick Service`}
+                      {session.table?.label ? `Table ${session.table.label}` : session.orderType === 'takeaway' ? 'Takeaway' : session.orderType === 'zomato' ? 'Zomato' : session.orderType === 'swiggy' ? 'Swiggy' : 'Quick Service'}
                       {session.orderNumber && <span className="text-brand-600 ml-1">#{session.orderNumber}</span>}
                     </h3>
                     {session.customerName && (

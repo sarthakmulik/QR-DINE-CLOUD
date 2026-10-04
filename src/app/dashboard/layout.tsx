@@ -73,7 +73,7 @@ export default async function DashboardLayout({
               {hotel && (hotel.status === "paused" || hotel.status === "suspended") && (
                 <PausedBanner status={hotel.status} />
               )}
-              <main className="flex-1 pt-[calc(3.5rem+1.25rem)] md:pt-0 pb-[calc(4rem+1rem)] md:pb-0 overflow-y-auto overscroll-y-none">
+              <main className="flex-1 pt-[calc(3.5rem+1.25rem)] md:pt-0 pb-[calc(4rem+1rem)] md:pb-0 overflow-y-auto overscroll-y-none [scrollbar-gutter:stable]">
               <div className="max-w-7xl mx-auto w-full p-6 md:p-8 animate-fade-in">
                 {children}
               </div>
